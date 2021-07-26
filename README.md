@@ -20,6 +20,8 @@ It currently implements basic browsing functionality and new features:
 * Using the space bar on the directory screen shows bookmarks (which can be edited in Bookmarks.txt)
 * Using the space bar on the files screen allows you to open the current file with an external program (which can be edited in OpenWith.txt)
 * O to open files in default application and O on directories to open in file explorer.
+* L to open a drive.
+* Q to quit.
 
 Open With Feature:
 
