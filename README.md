@@ -9,6 +9,7 @@ This is a simple xtree explorer inspired by eXtreme xtree and the original XTree
 You can find the archive of freeware eXtreme here: http://members.iinet.net.au/~bertdb/ryan/eXtreme
 
 Note: Only basic browsing is implemented, eg you can't create folders copy or move files.
+Only tested on 64 bit windows 10.
 
 Here is how it looks:
 ![alt text](https://github.com/ryan-de-boer/SimpleXTreeReleases/blob/main/images/image1.png?raw=true)
