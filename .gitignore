@@ -30,3 +30,7 @@
 *.exe
 *.out
 *.app
+
+src/test
+src/x64
+src/.vs
