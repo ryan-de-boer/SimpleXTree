@@ -9,9 +9,11 @@ This is a simple xtree explorer inspired by eXtreme xtree and the original XTree
 You can find the archive of freeware eXtreme here: http://members.iinet.net.au/~bertdb/ryan/eXtreme
 
 Note: Only basic browsing is implemented, eg you can't create folders copy or move files.
+
 Only tested on 64 bit windows 10.
 
 Here is how it looks:
+
 ![alt text](https://github.com/ryan-de-boer/SimpleXTreeReleases/blob/main/images/image1.png?raw=true)
 
 It currently implements basic browsing functionality and two new features: 
@@ -19,7 +21,9 @@ It currently implements basic browsing functionality and two new features:
 * Using the space bar on the files screen allows you to open the current file with an external program (which can be edited in OpenWith.txt)
 
 Open With Feature:
+
 ![alt text](https://github.com/ryan-de-boer/SimpleXTreeReleases/blob/main/images/image2_openwith.png?raw=true)
 
 Bookmarks Feature:
+
 ![alt text](https://github.com/ryan-de-boer/SimpleXTreeReleases/blob/main/images/image3_bookmarks.png?raw=true)
