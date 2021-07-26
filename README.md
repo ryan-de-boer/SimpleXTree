@@ -16,9 +16,10 @@ Here is how it looks:
 
 ![alt text](https://github.com/ryan-de-boer/SimpleXTreeReleases/blob/main/images/image1.png?raw=true)
 
-It currently implements basic browsing functionality and two new features: 
+It currently implements basic browsing functionality and new features: 
 * Using the space bar on the directory screen shows bookmarks (which can be edited in Bookmarks.txt)
 * Using the space bar on the files screen allows you to open the current file with an external program (which can be edited in OpenWith.txt)
+* O to open files in default application and O on directories to open in file explorer.
 
 Open With Feature:
 
