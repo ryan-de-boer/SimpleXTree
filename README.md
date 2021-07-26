@@ -6,7 +6,7 @@ The latest binary version is 0.0 and can be downloaded: https://github.com/ryan-
 You can find other releases here: https://github.com/ryan-de-boer/SimpleXTreeReleases
 
 This is a simple xtree explorer inspired by eXtreme xtree and the original XTree Gold. Unfortunately the site for eXtreme no longer exists so you can only get an archive version.
-You can find the archive of freeware eXtreme here: http://members.iinet.net.au/~bertdb/ryan/eXtreme/EXTREME%20xtree%20archive.7z
+You can find the archive of freeware eXtreme here: http://members.iinet.net.au/~bertdb/ryan/eXtreme
 
 ![alt text](https://github.com/ryan-de-boer/SimpleXTreeReleases/blob/main/images/image1.png?raw=true)
 
