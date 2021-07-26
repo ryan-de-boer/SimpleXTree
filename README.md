@@ -8,6 +8,9 @@ You can find other releases here: https://github.com/ryan-de-boer/SimpleXTreeRel
 This is a simple xtree explorer inspired by eXtreme xtree and the original XTree Gold. Unfortunately the site for eXtreme no longer exists so you can only get an archive version.
 You can find the archive of freeware eXtreme here: http://members.iinet.net.au/~bertdb/ryan/eXtreme
 
+Note: Only basic browsing is implemented, eg you can't create folders copy or move files.
+
+Here is how it looks:
 ![alt text](https://github.com/ryan-de-boer/SimpleXTreeReleases/blob/main/images/image1.png?raw=true)
 
 It currently implements basic browsing functionality and two new features: 
