@@ -1,0 +1,2 @@
+Notepad|%windir%\system32\notepad.exe|"%1"
+Paint|%windir%\system32\mspaint.exe|"%1"

@@ -1,0 +1,2 @@
+C Drive|c:\
+D Drive|d:\
