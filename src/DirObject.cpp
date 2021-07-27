@@ -3,6 +3,7 @@
 #include <filesystem>
 #include "StrUtil.h"
 #include <fstream>
+#include <windows.h>
 
 namespace SimpleXTree
 {
@@ -186,6 +187,8 @@ namespace SimpleXTree
   {
 	  	std::ofstream myfile;
 	  	myfile.open("wtf.txt");
+
+		myfile << std::hex << GetConsoleWindow() << std::endl;
 
 	  //int size = RecursiveSize();
 	  //int currentIndex = 0;
