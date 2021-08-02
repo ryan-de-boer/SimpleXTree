@@ -149,6 +149,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Bookmarks.h" />
+    <ClInclude Include="DateTime.h" />
     <ClInclude Include="DirObject.h" />
     <ClInclude Include="LogDrive.h" />
     <ClInclude Include="OpenWith.h" />
@@ -159,6 +160,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Bookmarks.cpp" />
+    <ClCompile Include="DateTime.cpp" />
     <ClCompile Include="DirObject.cpp" />
     <ClCompile Include="HookExample.cpp" />
     <ClCompile Include="LogDrive.cpp" />
