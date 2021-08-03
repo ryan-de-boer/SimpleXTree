@@ -9,5 +9,7 @@ namespace SimpleXTree
 	{
 	public:
 		static std::wstring GetDateTime();
+	private:
+		static std::wstring GetWeekDayTwoLetter();
 	};
 }
