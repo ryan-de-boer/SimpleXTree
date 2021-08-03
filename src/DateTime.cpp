@@ -28,6 +28,32 @@ namespace SimpleXTree
 		time_t t = time(NULL);
 		tm* timePtr = localtime(&t);
 
+		std::wstring weekday = L"Su";
+		switch (timePtr->tm_wday)
+		{
+		case 0:
+			weekday = L"Su";
+			break;
+		case 1:
+			weekday = L"Mo";
+			break;
+		case 2:
+			weekday = L"Tu";
+			break;
+		case 3:
+			weekday = L"We";
+			break;
+		case 4:
+			weekday = L"Th";
+			break;
+		case 5:
+			weekday = L"Fr";
+			break;
+		case 6:
+			weekday = L"Sa";
+			break;
+		}
+
 		std::wstringstream yearWs;
 		yearWs << (timePtr->tm_year + 1900);
 		std::wstring yearTwoLetter = yearWs.str().substr(2, 2);
@@ -82,7 +108,7 @@ namespace SimpleXTree
 		std::wstring sec = secWs.str();
 
 		std::wstringstream ws;
-		ws << GetWeekDayTwoLetter() << L" " << day << L"-" << month << L"-" << yearTwoLetter << L" " << hour << L":" << min << L":" << sec << L" ";
+		ws << weekday << L" " << day << L"-" << month << L"-" << yearTwoLetter << L" " << hour << L":" << min << L":" << sec << L" ";
 		if (timePtr->tm_hour < 12)
 		{
 			ws << "am";
@@ -95,6 +121,7 @@ namespace SimpleXTree
 		return ws.str();
 	}
 
+	//gives incorrect weekday for wednesday
     std::wstring DateTime::GetWeekDayTwoLetter()
 	{
 		//		auto t = system_clock::now();
