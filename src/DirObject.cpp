@@ -85,6 +85,11 @@ namespace SimpleXTree
 	  return StrUtil::s2ws(Path);
   }
 
+  std::wstring DirObject::PathChar() const
+  {
+	  return PathW().substr(0, 1);
+  }
+
   void DirObject::Expand()
   {
     Collapse();

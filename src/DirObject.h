@@ -16,6 +16,7 @@ namespace SimpleXTree
     bool IsExpanded;
     std::string Path;
 	std::wstring PathW() const;
+	std::wstring PathChar() const;
 
     void Expand();
     void Collapse();
