@@ -14,5 +14,7 @@ namespace SimpleXTree
 	static bool Replace(std::wstring& str, const std::wstring& from, const std::wstring& to);
 	static void ReplaceAll(std::wstring& str, const std::wstring& from, const std::wstring& to);
 	static std::vector<std::wstring> Tokenize(std::wstring const& line, std::wstring const& delimiter);
+	static bool StartsWith(const std::wstring& str, const std::wstring& prefix);
+	static bool EndsWith(const std::wstring& str, const std::wstring& suffix);
   };
 }

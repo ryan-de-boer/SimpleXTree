@@ -129,4 +129,16 @@ namespace SimpleXTree
 	  }
 	  return tokens;
   }
+
+  //https://stackoverflow.com/questions/874134/find-out-if-string-ends-with-another-string-in-c
+
+  bool StrUtil::StartsWith(const std::wstring& str, const std::wstring& prefix)
+  {
+	  return str.size() >= prefix.size() && 0 == str.compare(0, prefix.size(), prefix);
+  }
+
+  bool StrUtil::EndsWith(const std::wstring& str, const std::wstring& suffix)
+  {
+	  return str.size() >= suffix.size() && 0 == str.compare(str.size() - suffix.size(), suffix.size(), suffix);
+  }
 }
