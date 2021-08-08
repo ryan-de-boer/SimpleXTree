@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <fstream>
+#include <Windows.h>
 
 namespace SimpleXTree
 {
@@ -24,6 +25,10 @@ namespace SimpleXTree
     std::vector<DirObject> ChildrenPaths;
 	std::vector<std::wstring> Files;
 	unsigned long long DirSize;
+	DWORD Attrib;
+	std::wstring GetAttributes();
+	std::wstring GetCreatedDate();
+	std::wstring GetCreatedTime();
 	//std::vector<long> FileSizes;
 	//unsigned long GetFileSizeL(int i);
 	unsigned long long GetAllFilesSize();

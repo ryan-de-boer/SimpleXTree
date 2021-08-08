@@ -8,7 +8,7 @@
 
 namespace SimpleXTree
 {
-  DirObject::DirObject(std::string const& path, DirObject* parent) : Parent(parent), IsExpanded(false), Path(path), DirSize(0)
+  DirObject::DirObject(std::string const& path, DirObject* parent) : Parent(parent), IsExpanded(false), Path(path), DirSize(0), Attrib(0)
   {
   }
 
@@ -20,6 +20,7 @@ namespace SimpleXTree
 	  this->ChildrenPaths = copy.ChildrenPaths;
 	  this->AllPaths = copy.AllPaths;
 	  this->DirSize = copy.DirSize;
+	  this->Attrib = copy.Attrib;
   }
 
   DirObject::~DirObject()
@@ -92,12 +93,163 @@ namespace SimpleXTree
 	  return PathW().substr(0, 1);
   }
 
+  std::wstring DirObject::GetAttributes()
+  {
+	  std::wstringstream buf;
+	  if (Parent == NULL)
+	  {
+		  return L""; // none for root dir
+	  }
+	  if (Attrib == INVALID_FILE_ATTRIBUTES)
+	  {
+		  return L"INVALID_FILE_ATTRIBUTES";
+	  }
+	  if (Attrib & FILE_ATTRIBUTE_READONLY)
+	  {
+		  buf << "r";
+	  }
+	  if (Attrib & FILE_ATTRIBUTE_ARCHIVE)
+	  {
+		  buf << "a";
+	  }
+	  if (Attrib & FILE_ATTRIBUTE_SYSTEM)
+	  {
+		  buf << "s";
+	  }
+	  if (Attrib & FILE_ATTRIBUTE_HIDDEN)
+	  {
+		  buf << "h";
+	  }
+	  return buf.str();
+  }
+
+  //https://stackoverflow.com/questions/40185204/c-my-method-to-get-a-files-created-date-on-windows-os-is-crashing-my-console-a
+  std::wstring Created(std::wstring const& name)
+  {
+	  WIN32_FILE_ATTRIBUTE_DATA fad;
+	  std::wstring created;
+	  SYSTEMTIME st;
+
+	  if (!GetFileAttributesEx(name.c_str(), GetFileExInfoStandard, &fad))
+	  {
+		  std::wstring error(L"Error");
+		  // error condition, could call GetLastError to find out more
+		  return error;
+	  }
+
+	  if (!FileTimeToSystemTime(&fad.ftCreationTime, &st))
+	  {
+		  std::wstring error(L"Error getting created Time");
+		  // error condition, could call GetLastError to find out more
+		  return error;
+	  }
+
+	  std::wstringstream createdBuf;
+	  if (st.wDay < 10)
+	  {
+		  createdBuf << L"0";
+	  }
+	  createdBuf << st.wDay << L"-";
+	  if (st.wMonth < 10)
+	  {
+		  createdBuf << L"0";
+	  }
+	  createdBuf << st.wMonth << L"-" << st.wYear;
+	  return createdBuf.str();
+
+	  //created =
+		 // std::to_wstring(st.wMonth) + L"-" +
+		 // std::to_wstring(st.wDay) + L"-" +
+		 // std::to_wstring(st.wYear);
+	  //return created;
+  }
+
+  std::wstring CreatedTime(std::wstring const& name)
+  {
+	  WIN32_FILE_ATTRIBUTE_DATA fad;
+	  std::wstring created;
+	  SYSTEMTIME stUTC, stLocal;
+
+	  if (!GetFileAttributesEx(name.c_str(), GetFileExInfoStandard, &fad))
+	  {
+		  std::wstring error(L"Error");
+		  // error condition, could call GetLastError to find out more
+		  return error;
+	  }
+
+	  if (!FileTimeToSystemTime(&fad.ftCreationTime, &stUTC))
+	  {
+		  std::wstring error(L"Error getting created Time");
+		  // error condition, could call GetLastError to find out more
+		  return error;
+	  }
+	  SystemTimeToTzSpecificLocalTime(NULL, &stUTC, &stLocal);
+
+	  std::wstringstream createdBuf;
+	  int hour = stLocal.wHour;
+	  if (hour >= 13)
+	  {
+		  hour = hour - 12;
+	  }
+	  else if (hour == 0)
+	  {
+		  hour = 12;
+	  }
+
+	  if (hour < 10)
+	  {
+		  createdBuf << L" ";
+	  }
+	  createdBuf << hour << L":";
+
+	  if (stLocal.wMinute < 10)
+	  {
+		  createdBuf << L"0";
+	  }
+	  createdBuf << stLocal.wMinute << L":";
+
+	  if (stLocal.wSecond < 10)
+	  {
+		  createdBuf << L"0";
+	  }
+	  createdBuf << stLocal.wSecond << L" ";
+
+	  if (stLocal.wHour < 12)
+	  {
+		  createdBuf << L"am";
+	  }
+	  else
+	  {
+		  createdBuf << L"pm";
+	  }
+	  return createdBuf.str();
+
+	  //created =
+	  // std::to_wstring(st.wMonth) + L"-" +
+	  // std::to_wstring(st.wDay) + L"-" +
+	  // std::to_wstring(st.wYear);
+	  //return created;
+  }
+
+  std::wstring DirObject::GetCreatedDate()
+  {
+	  return Created(PathW());
+  }
+
+  std::wstring DirObject::GetCreatedTime()
+  {
+	  return CreatedTime(PathW());
+  }
+
   void DirObject::Expand()
   {
     Collapse();
     IsExpanded = true;
 
 	DirSize = CalculateDirSize(this->PathW());
+
+	//https://docs.microsoft.com/en-us/windows/win32/fileio/retrieving-and-changing-file-attributes
+	Attrib = GetFileAttributes(this->PathW().c_str());
 
     //std::vector<std::string> dFiles;
     for (const auto & entry : std::experimental::filesystem::directory_iterator(Path))
