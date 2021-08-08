@@ -23,10 +23,16 @@ namespace SimpleXTree
     void Expand(int initialCount, int selectedPath);
     std::vector<DirObject> ChildrenPaths;
 	std::vector<std::wstring> Files;
+	unsigned long long DirSize;
+	//std::vector<long> FileSizes;
+	//unsigned long GetFileSizeL(int i);
+	unsigned long long GetAllFilesSize();
 	std::string GetFileName(int index) const;
   std::wstring GetFileNameW(int index) const;
 
     int RecursiveSize();
+	int NumFilesRecursive();
+	std::wstring NumFilesRecursiveW();
 
     std::string GetIndexValue(int currentIndex, int selectedPath);
 
@@ -42,5 +48,15 @@ namespace SimpleXTree
   std::string GetName() const;
   std::wstring GetNameW() const;
 
+  private:
+	  //unsigned long GetFileSizeL(std::wstring filename);
+	  //unsigned long GetFileSizeWin(std::wstring filename);
+
+	  typedef std::wstring String;
+	  typedef std::vector<String> StringVector;
+	  typedef unsigned long long uint64_t;
+
+	  uint64_t CalculateDirSize(const String &path, StringVector *errVect = NULL, uint64_t size = 0);
+	  bool IsBrowsePath(const String& path);
   };
 }

@@ -3,11 +3,12 @@
 #include <filesystem>
 #include "StrUtil.h"
 #include <fstream>
+#include <sstream>
 #include <windows.h>
 
 namespace SimpleXTree
 {
-  DirObject::DirObject(std::string const& path, DirObject* parent) : Parent(parent), IsExpanded(false), Path(path)
+  DirObject::DirObject(std::string const& path, DirObject* parent) : Parent(parent), IsExpanded(false), Path(path), DirSize(0)
   {
   }
 
@@ -18,6 +19,7 @@ namespace SimpleXTree
     this->IsExpanded = copy.IsExpanded;
 	  this->ChildrenPaths = copy.ChildrenPaths;
 	  this->AllPaths = copy.AllPaths;
+	  this->DirSize = copy.DirSize;
   }
 
   DirObject::~DirObject()
@@ -95,6 +97,8 @@ namespace SimpleXTree
     Collapse();
     IsExpanded = true;
 
+	DirSize = CalculateDirSize(this->PathW());
+
     //std::vector<std::string> dFiles;
     for (const auto & entry : std::experimental::filesystem::directory_iterator(Path))
     {
@@ -112,6 +116,7 @@ namespace SimpleXTree
         //dFiles.push_back(StrUtil::ws2s(f));
 //        Files.push_back(StrUtil::ws2s(f));
         Files.push_back(f);
+//		FileSizes.push_back(GetFileSizeL(f));
       }
     }
   }
@@ -121,6 +126,7 @@ namespace SimpleXTree
     IsExpanded = false;
     ChildrenPaths.clear();
 	Files.clear();
+	DirSize = 0;
   }
   
   bool DirObject::IsLastOfParent()
@@ -166,6 +172,130 @@ namespace SimpleXTree
       size += ChildrenPaths[i].RecursiveSize();
     }
     return size;
+  }
+
+  int DirObject::NumFilesRecursive()
+  {
+	  int numFiles = this->Files.size();
+	  for (int i = 0; i < this->ChildrenPaths.size(); ++i)
+	  {
+		  numFiles += this->ChildrenPaths[i].NumFilesRecursive();
+	  }
+	  return numFiles;
+  }
+
+  std::wstring DirObject::NumFilesRecursiveW()
+  {
+	  std::wstringstream buf;
+	  buf << NumFilesRecursive();
+	  return buf.str();
+  }
+
+  //https://stackoverflow.com/questions/10015341/size-of-a-directory
+  //support pagefile.sys
+  //https://stackoverflow.com/questions/16772931/getfileattributes-on-locked-system-file
+
+  uint64_t DirObject::CalculateDirSize(const String &path, StringVector *errVect, uint64_t size)
+  {
+	  WIN32_FIND_DATA data;
+	  HANDLE sh = NULL;
+	  sh = FindFirstFile((path + L"\\*").c_str(), &data);
+
+	  if (sh == INVALID_HANDLE_VALUE)
+	  {
+		  //if we want, store all happened error  
+		  if (errVect != NULL)
+			  errVect->push_back(path);
+		  return size;
+	  }
+
+	  do
+	  {
+		  // skip current and parent
+		  if (!IsBrowsePath(data.cFileName))
+		  {
+			  // if found object is ...
+			  if ((data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY)
+				  // directory, then search it recursievly
+				  ;//				  size = CalculateDirSize(path + L"\\" + data.cFileName, NULL, size);
+			  else
+			  {
+				  // otherwise get object size and add it to directory size
+//				  size += (uint64_t)(data.nFileSizeHigh * (MAXDWORD)+data.nFileSizeLow);
+
+				  _int64 filesize = data.nFileSizeHigh;
+				  filesize <<= 32;
+				  filesize |= data.nFileSizeLow;
+				  size += (uint64_t)(filesize);
+			  }
+		  }
+
+	  } while (FindNextFile(sh, &data)); // do
+
+	  FindClose(sh);
+
+	  return size;
+  }
+
+  bool DirObject::IsBrowsePath(const String& path)
+  {
+	  return (path == _T(".") || path == _T(".."));
+  }
+
+
+  ////https://stackoverflow.com/questions/5840148/how-can-i-get-a-files-size-in-c
+  //unsigned long DirObject::GetFileSizeL(std::wstring filename)
+  //{
+	 // //std::string str = StrUtil::ws2s(filename);
+	 // //struct stat stat_buf;
+	 // //int rc = stat(str.c_str(), &stat_buf);
+	 // //return rc == 0 ? stat_buf.st_size : -1;
+
+	 // unsigned long size = GetFileSizeWin(filename);
+	 // return size;
+  //}
+
+  //unsigned long DirObject::GetFileSizeWin(std::wstring filename)
+  //{
+	 // HANDLE hFile = CreateFile(filename.c_str(),               // file to open
+		//  GENERIC_READ,          // open for reading
+		//  FILE_SHARE_READ,       // share for reading
+		//  NULL,                  // default security
+		//  OPEN_EXISTING,         // existing file only
+		//  FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, // normal file
+		//  NULL);                 // no attr. template
+	 // if (hFile == INVALID_HANDLE_VALUE)
+	 // {
+		//  int a = 1;
+		//  a++;
+	 // }
+	 // DWORD dwFileSize = GetFileSize(hFile, NULL);
+	 // return dwFileSize;
+  //}
+
+  //unsigned long DirObject::GetFileSizeL(int i)
+  //{
+	 // return GetFileSizeL(Files[i]);
+  //}
+
+  unsigned long long DirObject::GetAllFilesSize()
+  {
+	  unsigned long long total = 0;
+	  total += DirSize;
+	  //for (int i = 0; i < Files.size(); ++i)
+	  //{
+		 // for (int j = 0; j < ChildrenPaths.size(); ++j)
+		 // {
+			//  total += ChildrenPaths[j].GetAllFilesSize();
+		 // }
+	  //}
+
+	   for (int j = 0; j < ChildrenPaths.size(); ++j)
+	   {
+	    total += ChildrenPaths[j].GetAllFilesSize();
+	   }
+
+	  return total;
   }
 
   std::string DirObject::GetIndexValue(int currentIndex, int selectedPath)
