@@ -238,11 +238,11 @@ namespace SimpleXTree
 			if (!m_downPressed)
 			{
 				m_downPressed = true;
-				m_selected++;
-				if (m_selected >= Items.size())
-				{
-					m_selected = Items.size() - 1;
-				}
+			}
+			m_selected++;
+			if (m_selected >= Items.size())
+			{
+				m_selected = Items.size() - 1;
 			}
 		}
 		else
@@ -255,16 +255,39 @@ namespace SimpleXTree
 			if (!m_upPressed)
 			{
 				m_upPressed = true;
+			}
+			m_selected--;
+			if (m_selected <= 0)
+			{
+				m_selected = 0;
+			}
+		}
+		else
+		{
+			m_upPressed = false;
+		}
+
+		if ((0x8000 & GetAsyncKeyState((unsigned char)(VK_NEXT))) != 0)
+		{
+			for (int i = 0; i < 45; ++i)
+			{
+				m_selected++;
+				if (m_selected >= Items.size())
+				{
+					m_selected = Items.size() - 1;
+				}
+			}
+		}
+		if ((0x8000 & GetAsyncKeyState((unsigned char)(VK_PRIOR))) != 0)
+		{
+			for (int i = 0; i < 45; ++i)
+			{
 				m_selected--;
 				if (m_selected <= 0)
 				{
 					m_selected = 0;
 				}
 			}
-		}
-		else
-		{
-			m_upPressed = false;
 		}
 
 
