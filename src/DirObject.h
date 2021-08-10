@@ -20,7 +20,8 @@ namespace SimpleXTree
 	std::wstring PathChar() const;
 
     void Expand();
-    void Collapse();
+	void ExpandAll();
+	void Collapse();
     void Expand(int initialCount, int selectedPath);
     std::vector<DirObject> ChildrenPaths;
 	std::vector<std::wstring> Files;

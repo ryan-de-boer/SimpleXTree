@@ -273,6 +273,15 @@ namespace SimpleXTree
     }
   }
 
+  void DirObject::ExpandAll()
+  {
+	  Expand();
+	  for (int i = 0; i < ChildrenPaths.size(); ++i)
+	  {
+		  ChildrenPaths[i].ExpandAll();
+	  }
+  }
+
   void DirObject::Collapse()
   {
     IsExpanded = false;
