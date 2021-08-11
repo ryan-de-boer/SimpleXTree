@@ -290,6 +290,15 @@ namespace SimpleXTree
 			}
 		}
 
+		if  ((0x8000 & GetAsyncKeyState((unsigned char)(VK_HOME))) != 0)
+		{
+			m_selected = 0;
+		}
+
+		if ((0x8000 & GetAsyncKeyState((unsigned char)(VK_END))) != 0)
+		{
+			m_selected = Items.size() - 1;
+		}
 
 		if ((0x8000 & GetAsyncKeyState((unsigned char)(VK_ESCAPE))) != 0)
 		{
