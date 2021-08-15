@@ -25,6 +25,12 @@ namespace SimpleXTree
     void Expand(int initialCount, int selectedPath);
     std::vector<DirObject> ChildrenPaths;
 	std::vector<std::wstring> Files;
+	std::vector<bool> Tags;
+	bool GetTag(int index) const;
+	void Tag();
+	void Untag();
+	void TagAndChildren();
+	void UntagAndChildren();
 	unsigned long long DirSize;
 	DWORD Attrib;
 	std::wstring GetAttributes();

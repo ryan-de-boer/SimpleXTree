@@ -8,80 +8,149 @@
 
 namespace SimpleXTree
 {
-  DirObject::DirObject(std::string const& path, DirObject* parent) : Parent(parent), IsExpanded(false), Path(path), DirSize(0), Attrib(0)
-  {
-  }
+	DirObject::DirObject(std::string const& path, DirObject* parent) : Parent(parent), IsExpanded(false), Path(path), DirSize(0), Attrib(0)
+	{
+	}
 
-  DirObject::DirObject(DirObject const& copy)
-  {
-    this->Path = copy.Path;
-    this->Parent = copy.Parent;
-    this->IsExpanded = copy.IsExpanded;
-	  this->ChildrenPaths = copy.ChildrenPaths;
-	  this->AllPaths = copy.AllPaths;
-	  this->DirSize = copy.DirSize;
-	  this->Attrib = copy.Attrib;
-  }
+	DirObject::DirObject(DirObject const& copy)
+	{
+		this->Path = copy.Path;
+		this->Parent = copy.Parent;
+		this->IsExpanded = copy.IsExpanded;
+		this->ChildrenPaths = copy.ChildrenPaths;
+		this->AllPaths = copy.AllPaths;
+		this->DirSize = copy.DirSize;
+		this->Attrib = copy.Attrib;
+		this->Files = copy.Files;
+		this->Tags = copy.Tags;
+	}
 
-  DirObject::~DirObject()
-  {
-  }
+	DirObject::~DirObject()
+	{
+	}
 
-  std::string DirObject::GetName() const
-  {
-    if (Path.find("\\")!=std::string::npos)
-    {
-      return Path.substr(Path.rfind("\\")+1);
-    }
-    return Path;
-  }
+	std::string DirObject::GetName() const
+	{
+		if (Path.find("\\") != std::string::npos)
+		{
+			return Path.substr(Path.rfind("\\") + 1);
+		}
+		return Path;
+	}
 
-  std::wstring DirObject::GetNameW() const
-  {
-	  return StrUtil::s2ws(GetName());
-  }
+	std::wstring DirObject::GetNameW() const
+	{
+		return StrUtil::s2ws(GetName());
+	}
 
-  std::string DirObject::GetFileName(int index) const
-  {
-	  std::string path = StrUtil::ws2s(Files[index]);
-	  if (path.find("\\") != std::string::npos)
-	  {
-      std::string p2 = path.substr(path.rfind("\\") + 1);
-      if (p2 == "")
-      {
-        int a = 1;
-        a++;
-      }
-      return p2;
-	  }
-    if (path == "")
-    {
-      int a = 1;
-      a++;
-    }
-    return path;
-  }
+	std::string DirObject::GetFileName(int index) const
+	{
+		std::string path = StrUtil::ws2s(Files[index]);
+		if (path.find("\\") != std::string::npos)
+		{
+			std::string p2 = path.substr(path.rfind("\\") + 1);
+			if (p2 == "")
+			{
+				int a = 1;
+				a++;
+			}
+			return p2;
+		}
+		if (path == "")
+		{
+			int a = 1;
+			a++;
+		}
+		return path;
+	}
 
-  std::wstring DirObject::GetFileNameW(int index) const
-  {
-    std::wstring path = Files[index];
-    if (path.find(L"\\") != std::wstring::npos)
-    {
-      std::wstring p2 = path.substr(path.rfind(L"\\") + 1);
-      if (p2 == L"")
-      {
-        int a = 1;
-        a++;
-      }
-      return p2;
-    }
-    if (path == L"")
-    {
-      int a = 1;
-      a++;
-    }
-    return path;
-  }
+	std::wstring DirObject::GetFileNameW(int index) const
+	{
+		std::wstring path = Files[index];
+		if (path.find(L"\\") != std::wstring::npos)
+		{
+			std::wstring p2 = path.substr(path.rfind(L"\\") + 1);
+			if (p2 == L"")
+			{
+				int a = 1;
+				a++;
+			}
+			return p2;
+		}
+		if (path == L"")
+		{
+			int a = 1;
+			a++;
+		}
+		return path;
+	}
+
+	bool DirObject::GetTag(int index) const
+	{
+		if (index >= 0 && index < Tags.size())
+		{
+			return Tags[index];
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	void DirObject::Tag()
+	{
+		if (Tags.size() < Files.size())
+		{
+			for (int i = Tags.size(); i < Files.size(); ++i)
+			{
+				Tags.push_back(false);
+			}
+		}
+		if (Tags.size() != Files.size())
+		{
+			throw std::exception("Tags must equal Files");
+		}
+		for (int i = 0; i < Tags.size(); ++i)
+		{
+			Tags[i] = true;
+		}
+	}
+
+	void DirObject::Untag()
+	{
+		if (Tags.size() < Files.size())
+		{
+			for (int i = Tags.size(); i < Files.size(); ++i)
+			{
+				Tags.push_back(false);
+			}
+		}
+		if (Tags.size() != Files.size())
+		{
+			throw std::exception("Tags must equal Files");
+		}
+		for (int i = 0; i < Tags.size(); ++i)
+		{
+			Tags[i] = false;
+		}
+	}
+
+	void DirObject::TagAndChildren()
+	{
+		Tag();
+		for (int i = 0; i < ChildrenPaths.size(); ++i)
+		{
+			ChildrenPaths[i].TagAndChildren();
+		}
+	}
+	void DirObject::UntagAndChildren()
+	{
+		Untag();
+		for (int i = 0; i < ChildrenPaths.size(); ++i)
+		{
+			ChildrenPaths[i].UntagAndChildren();
+		}
+	}
 
   std::wstring DirObject::PathW() const
   {
@@ -251,6 +320,8 @@ namespace SimpleXTree
 	//https://docs.microsoft.com/en-us/windows/win32/fileio/retrieving-and-changing-file-attributes
 	Attrib = GetFileAttributes(this->PathW().c_str());
 
+	Tags = std::vector<bool>();
+
     //std::vector<std::string> dFiles;
     for (const auto & entry : std::experimental::filesystem::directory_iterator(Path))
     {
@@ -268,6 +339,7 @@ namespace SimpleXTree
         //dFiles.push_back(StrUtil::ws2s(f));
 //        Files.push_back(StrUtil::ws2s(f));
         Files.push_back(f);
+		Tags.push_back(false);
 //		FileSizes.push_back(GetFileSizeL(f));
       }
     }
