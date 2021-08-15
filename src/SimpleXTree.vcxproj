@@ -148,6 +148,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Avail.h" />
     <ClInclude Include="Bookmarks.h" />
     <ClInclude Include="DateTime.h" />
     <ClInclude Include="DirObject.h" />
@@ -160,6 +161,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Avail.cpp" />
     <ClCompile Include="Bookmarks.cpp" />
     <ClCompile Include="DateTime.cpp" />
     <ClCompile Include="DirObject.cpp" />
