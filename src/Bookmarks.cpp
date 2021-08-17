@@ -230,8 +230,17 @@ namespace SimpleXTree
 
 	void Bookmarks::CheckKeys()
 	{
-		if (!m_activated)
-			return;
+    if (!m_activated)
+    {
+      if ((0x8000 & GetAsyncKeyState((unsigned char)(VK_RETURN))) != 0)
+      {
+      }
+      else
+      {
+        m_enterPessed = false;
+      }
+      return;
+    }
 
 		if ((0x8000 & GetAsyncKeyState((unsigned char)(VK_DOWN))) != 0)
 		{

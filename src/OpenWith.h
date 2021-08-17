@@ -41,7 +41,9 @@ namespace SimpleXTree
 		bool m_downPressed;
 		bool m_upPressed;
 		bool m_escPressed;
+  public:
 		bool m_enterPessed;
+  private:
 		std::wstring m_path;
 	};
 }
