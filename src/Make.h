@@ -1,8 +1,10 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <map>
 #include <fstream>
 #include <chrono>
+#include "DirObject.h"
 
 namespace SimpleXTree
 {
@@ -19,7 +21,7 @@ namespace SimpleXTree
 		{
 			return m_activated;
 		}
-		void CheckKeys();
+		void CheckKeys(DirObject* dirObject);
 
 	private:
 		bool m_checkingForKeys;
@@ -35,5 +37,9 @@ namespace SimpleXTree
 		bool m_showAvail;
 		std::wstring m_avail;
 		std::wstring m_drive;
+		DirObject* m_dirObject;
+		std::wstring m_typed;
+		std::map<std::wstring, long long> m_timePressed;
+		std::map<int, bool> m_keyPressed;
 	};
 }

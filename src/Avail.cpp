@@ -239,7 +239,7 @@ namespace SimpleXTree
 
 		if (m_show && !m_lPressed)
 		{
-			for (int i = 0x41; i < 0x5A; ++i)
+			for (int i = 0x41; i <= 0x5A; ++i)
 			{
 				if ((0x8000 & GetAsyncKeyState((unsigned char)(i))) != 0 && CharIsPressed(i))
 				{

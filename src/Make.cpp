@@ -16,6 +16,7 @@
 #include <chrono>
 #include <iostream>
 #include <ctime>
+#include <direct.h>
 #include "FreeDiskSpace.h"
 extern CHAR_INFO* m_bufScreen;
 
@@ -27,9 +28,11 @@ using std::chrono::system_clock;
 
 void Log(std::wstring const& pathW);
 bool CharIsPressed(int getKey);
+bool CharOrNumIsPressed(int getKey);
 extern std::string m_writtenKey;
 void DrawStringSkipSpace(CHAR_INFO *m_bufScreen, int nScreenWidth, int nScreenHeight, int x, int y, std::wstring c, short col = 0x000F);
 bool IsDirectory(std::wstring path);
+void Refresh();
 
 namespace SimpleXTree
 {
@@ -73,7 +76,7 @@ namespace SimpleXTree
 	extern int nScreenWidth;			// Console Screen Size X (columns)
 	extern int nScreenHeight;			// Console Screen Size Y (rows)
 
-	Make::Make() : m_activated(false), m_checkingForKeys(true), m_lPressed(0), m_escPressed(false), m_show(false), m_lastShown(false), m_timeSet(false), m_timePassed(0), m_renderCursor(true), m_waitForKeyLetGo(-1), m_showAvail(false)
+	Make::Make() : m_dirObject(NULL), m_activated(false), m_checkingForKeys(true), m_lPressed(0), m_escPressed(false), m_show(false), m_lastShown(false), m_timeSet(false), m_timePassed(0), m_renderCursor(true), m_waitForKeyLetGo(-1), m_showAvail(false)
 	{
 	}
 
@@ -130,7 +133,9 @@ namespace SimpleXTree
 		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"Enter new directory name                 ↑ history  ◄─┘ ok  F1 help  ESC cancel", FG_GREY | BG_BLACK);
 		DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"                                         ↑       y  ◄─┘     F1       ESC       ", FG_CYAN | BG_BLACK);
 
-	
+		DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, std::wstring(L"MAKE sub-directory under: ").length(), start, m_dirObject->GetNameW(), FG_CYAN | BG_BLACK);
+		DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, std::wstring(L"                      as: ").length(), start+1, m_typed, FG_CYAN | BG_BLACK);
+
 
 		//https://www.delftstack.com/howto/cpp/how-to-get-time-in-milliseconds-cpp/
 		if (!m_timeSet)
@@ -156,22 +161,26 @@ namespace SimpleXTree
 		GetConsoleCursorInfo(Handle, &cursorInfo);
 		cursorInfo.bVisible = true; // set the cursor visibility
 		BOOL res = SetConsoleCursorInfo(Handle, &cursorInfo);
-															  //		SetConsoleTitle(t.str().c_str());            // Set Buffer Size 
+						
+									  //		SetConsoleTitle(t.str().c_str());            // Set Buffer Size 
+
+		std::wstring beforeCursor = std::wstring(L"                      as: ") + m_typed;
 		if (m_showAvail)
 		{
 		}
 		else if (m_renderCursor)
 		{
-			DrawString(m_bufScreen, nScreenWidth, nScreenHeight, std::wstring(L"AVAILABLE SPACE on disk: ").length(), start, L"▄", FG_GREY | BG_BLACK);
+			DrawString(m_bufScreen, nScreenWidth, nScreenHeight, beforeCursor.length(), start+1, L"▄", FG_GREY | BG_BLACK);
 		}
 		else
 		{
-			DrawString(m_bufScreen, nScreenWidth, nScreenHeight, std::wstring(L"AVAILABLE SPACE on disk: ").length(), start, L" ", FG_GREY | BG_BLACK);
+			DrawString(m_bufScreen, nScreenWidth, nScreenHeight, beforeCursor.length(), start+1, L" ", FG_GREY | BG_BLACK);
 		}
 	}
 
-	void Make::CheckKeys()
+	void Make::CheckKeys(DirObject* dirObject)
 	{
+		m_dirObject = dirObject;
 		if (!m_checkingForKeys)
 			return;
 
@@ -183,6 +192,7 @@ namespace SimpleXTree
 				m_show = true;
 				m_activated = true;
 				m_waitForKeyLetGo = -1;
+				m_typed = L"";
 			}
 			else
 			{
@@ -200,22 +210,126 @@ namespace SimpleXTree
 
 		}
 
+		bool enterPressed = (0x8000 & GetAsyncKeyState((unsigned char)(VK_RETURN))) != 0;
+		if (enterPressed && m_typed.length()>0)
+		{
+			int a = 1;
+			//create the directory
 
-		if ((0x8000 & GetAsyncKeyState((unsigned char)(VK_ESCAPE))) != 0 || (0x8000 & GetAsyncKeyState((unsigned char)(VK_RETURN))) != 0)
+			std::wstring createPath = m_dirObject->PathW() + std::wstring(L"\\") + m_typed;
+			_mkdir(StrUtil::ws2s(createPath).c_str());
+			//https://stackoverflow.com/questions/30937227/create-directory-in-c
+
+			enterPressed = false;
+
+			m_escPressed = true;
+			m_show = false;
+			m_activated = false;
+			m_showAvail = false;
+			m_timePressed.clear();
+			m_typed = std::wstring(L"");
+
+			m_dirObject->Expand();
+			Refresh();
+
+			return;
+		}
+
+		if ((0x8000 & GetAsyncKeyState((unsigned char)(VK_ESCAPE))) != 0 || (enterPressed && m_typed.length()==0))
 		{
 			m_escPressed = true;
 			m_show = false;
 			m_activated = false;
 			m_showAvail = false;
+			m_timePressed.clear();
 		}
 		else
 		{
 			m_escPressed = false;
 		}
-
+		
+		if ((0x8000 & GetAsyncKeyState((unsigned char)(VK_BACK))) != 0 && m_typed.length() > 0)
+		{
+			m_typed = m_typed.substr(0, m_typed.length() - 1);
+		}
 
 		if (m_show && !m_lPressed)
 		{
+			
+
+				for (int i = 0x30; i <= 0x39; ++i)
+				{
+					if ((0x8000 & GetAsyncKeyState((unsigned char)(i))) != 0 && CharOrNumIsPressed(i))
+					{
+							bool shift = (0x8000 & GetAsyncKeyState((unsigned char)(VK_SHIFT))) != 0;
+
+							std::wstring key = StrUtil::s2ws(m_writtenKey);
+							if (shift)
+							{
+								std::transform(key.begin(), key.end(), key.begin(),
+									[](unsigned char c) { return std::toupper(c); });
+							}
+
+							long long currentMillisec_since_epoch = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+							//if (m_typed.length()>0 && m_typed.substr(m_typed.length() - 1, 1) == key && m_timePressed.count(key) == 1 && currentMillisec_since_epoch - m_timePressed[key]<1000)
+							if (m_keyPressed.count(i) == 1 && m_keyPressed[i]==true)
+							{
+								// stop repeating
+							}
+							else
+							{
+								m_typed += key;
+								m_timePressed[key] = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+								m_keyPressed[i] = true;
+							}
+
+
+					}
+					else
+					{
+						m_keyPressed[i] = false;
+					}
+
+				}
+
+			for (int i = 0x41; i <= 0x5A; ++i)
+			{
+				if ((0x8000 & GetAsyncKeyState((unsigned char)(i))) != 0 && CharIsPressed(i))
+				{
+					bool shift = (0x8000 & GetAsyncKeyState((unsigned char)(VK_SHIFT))) != 0;
+
+					std::wstring key = StrUtil::s2ws(m_writtenKey);
+					if (shift)
+					{
+						std::transform(key.begin(), key.end(), key.begin(),
+							[](unsigned char c) { return std::toupper(c); });
+					}
+
+					long long currentMillisec_since_epoch = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+					//if (m_typed.length()>0 && m_typed.substr(m_typed.length() - 1, 1) == key && m_timePressed.count(key)==1 && currentMillisec_since_epoch-m_timePressed[key]<1000)
+					if (m_keyPressed.count(i) == 1 && m_keyPressed[i] == true)
+					{
+						// stop repeating
+					}
+					else
+					{
+						m_typed += key;
+						m_timePressed[key] = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+						m_keyPressed[i] = true;
+					}
+
+
+
+		
+					
+
+				}
+				else
+				{
+					m_keyPressed[i] = false;
+				}
+
+			}
 
 
 		}
