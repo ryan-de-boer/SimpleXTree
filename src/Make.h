@@ -22,6 +22,7 @@ namespace SimpleXTree
 			return m_activated;
 		}
 		void CheckKeys(DirObject* dirObject);
+		void KeyEvent(WCHAR ch);
 
 	private:
 		bool m_checkingForKeys;

@@ -178,6 +178,26 @@ namespace SimpleXTree
 		}
 	}
 
+	void Make::KeyEvent(WCHAR ch)
+	{
+		if (ch == '\r' || ch == '\n')
+		{
+
+		}
+		else if (ch == '\b')
+		{
+			if (m_typed.length() > 0)
+			{
+				m_typed = m_typed.substr(0, m_typed.length() - 1);
+			}
+		}
+		else
+		{
+			m_typed += ch;
+		}
+	}
+		
+
 	void Make::CheckKeys(DirObject* dirObject)
 	{
 		m_dirObject = dirObject;
@@ -250,12 +270,12 @@ namespace SimpleXTree
 		
 		if ((0x8000 & GetAsyncKeyState((unsigned char)(VK_BACK))) != 0 && m_typed.length() > 0)
 		{
-			m_typed = m_typed.substr(0, m_typed.length() - 1);
+//			m_typed = m_typed.substr(0, m_typed.length() - 1);
 		}
 
 		if (m_show && !m_lPressed)
 		{
-			
+			/*
 
 				for (int i = 0x30; i <= 0x39; ++i)
 				{
@@ -331,7 +351,7 @@ namespace SimpleXTree
 
 			}
 
-
+			*/
 		}
 
 
