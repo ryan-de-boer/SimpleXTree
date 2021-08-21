@@ -23,7 +23,7 @@
     <ProjectGuid>{A5AB8604-E118-4CC8-A9DE-5F6DC7A48C9A}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>OneLoneCoderTetris</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
     <ProjectName>SimpleXTree</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -150,6 +150,7 @@
   <ItemGroup>
     <ClInclude Include="Avail.h" />
     <ClInclude Include="Bookmarks.h" />
+    <ClInclude Include="Compare.h" />
     <ClInclude Include="DateTime.h" />
     <ClInclude Include="DirObject.h" />
     <ClInclude Include="FreeDiskSpace.h" />
@@ -164,6 +165,7 @@
   <ItemGroup>
     <ClCompile Include="Avail.cpp" />
     <ClCompile Include="Bookmarks.cpp" />
+    <ClCompile Include="Compare.cpp" />
     <ClCompile Include="DateTime.cpp" />
     <ClCompile Include="DirObject.cpp" />
     <ClCompile Include="FreeDiskSpace.cpp" />
