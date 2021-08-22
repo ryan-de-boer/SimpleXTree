@@ -73,7 +73,7 @@ namespace SimpleXTree
 	extern int nScreenWidth;			// Console Screen Size X (columns)
 	extern int nScreenHeight;			// Console Screen Size Y (rows)
 
-	Compare::Compare() : m_dirObject(NULL), m_activated(false), m_checkingForKeys(true), m_lPressed(0), m_escPressed(false), m_show(false), m_lastShown(false), m_timeSet(false), m_timePassed(0), m_renderCursor(true), m_waitForKeyLetGo(-1), m_showAvail(false)
+	Compare::Compare() : m_dirObject(NULL), m_selected(NULL), m_initial(NULL), m_activated(false), m_checkingForKeys(true), m_lPressed(0), m_escPressed(false), m_show(false), m_lastShown(false), m_timeSet(false), m_timePassed(0), m_renderCursor(true), m_waitForKeyLetGo(-1), m_showAvail(false), m_browse(false), m_step2(false)
 	{
 	}
 
@@ -83,11 +83,15 @@ namespace SimpleXTree
 
 	void Compare::Activate()
 	{
+		//if (!m_activated)
+		//	m_initial = m_dirObject;
 		m_activated = true;
 	}
 
 	void Compare::Toggle()
 	{
+		//if (!m_activated)
+		//	m_initial = m_dirObject;
 		m_activated = !m_activated;
 	}
 
@@ -97,70 +101,81 @@ namespace SimpleXTree
 	{
 		if (!m_activated || !m_show)
 			return;
-		/*
-		LOG DISK DRIVE (Logged drives: CD)
-		↑ list
-		C D E                                                      F1 help  ESC cancel
-		*/
 
-		//https://stackoverflow.com/questions/2284110/get-a-list-of-the-available-drives-and-their-sizes/36428737
-		std::wstringstream drive;
-		drive << L" ";
-		DWORD d = GetLogicalDrives();
-		int i;
-		TCHAR Drive[] = _T("A:\\");
-		for (i = 0; i < 26; i++)
+		if (m_step2)
 		{
-			if (d & (1 << i))
-			{
-				std::wstringstream test;
-				test << (TCHAR)(_T('A') + i) << ":\\";
-				if (IsDirectory(test.str()))
-				{
-					Drive[0] = _T('A') + i;
-					drive << (TCHAR)(_T('A') + i) << L" ";
-				}
-			}
+			DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start, L"COMPARE file list in:               with:                                     ", FG_GREY | BG_BLACK);
+			DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, std::wstring(L"COMPARE file list in: ").length(), start, m_initial->GetNameW(), FG_CYAN | BG_BLACK);
+			DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, std::wstring(L"COMPARE file list in:               with: ").length(), start, m_typed, FG_CYAN | BG_BLACK);
+
+			DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 1, L"  tag files that are: Identical (no )  Unique (no )  Newer (no )  Older (no )", FG_GREY | BG_BLACK);
+			DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 1, L"                      I                U             N            O          ", FG_CYAN | BG_BLACK);
+			DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"Select tag criteria   Binary (no )  Subs (no )      ◄─┘ ok  F1 help  ESC cancel", FG_GREY | BG_BLACK);
+			DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"                      B             S               ◄─┘     F1       ESC       ", FG_CYAN | BG_BLACK);
+
+
 		}
-
-		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start, L"COMPARE file list in:               with:                                     ", FG_GREY | BG_BLACK);
-		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 1, L"                                                                              ", FG_GREY | BG_BLACK);
-		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"Enter compare path          F2 F4 point  ↑ history  ◄─┘ ok  F1 help  ESC cancel", FG_GREY | BG_BLACK);
-		DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"                            F2 F4        ↑          ◄─┘     F1       ESC       ", FG_CYAN | BG_BLACK);
-
-		DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, std::wstring(L"COMPARE file list in: ").length(), start, m_dirObject->GetNameW(), FG_CYAN | BG_BLACK);
-
-		//https://www.delftstack.com/howto/cpp/how-to-get-time-in-milliseconds-cpp/
-		if (!m_timeSet)
+		else if (m_browse)
 		{
-			auto millisec_since_epoch = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-			m_timePassed = millisec_since_epoch;
-			m_timeSet = true;
-		}
+			DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start, L"COMPARE file list in:               with:                                     ", FG_GREY | BG_BLACK);
+			DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 1, L"                                                                              ", FG_GREY | BG_BLACK);
+//			DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"Enter compare path                                  ◄─┘ ok  F1 help  ESC cancel", FG_GREY | BG_BLACK);
+//			DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"                                                    ◄─┘     F1       ESC       ", FG_CYAN | BG_BLACK);
+			DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"←↑↓→ scroll              < > select disk  Log disk  ◄─┘ ok  F1 help  ESC cancel", FG_GREY | BG_BLACK);
+			DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"                         < >              L         ◄─┘     F1       ESC       ", FG_CYAN | BG_BLACK);
 
-		auto currentMillisec_since_epoch = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-		if (currentMillisec_since_epoch - m_timePassed > 1000)
-		{
-			m_timePassed = currentMillisec_since_epoch;
-			m_timeSet = true;
-			m_renderCursor = !m_renderCursor;
-		}
-
-		std::wstringstream t;
-		t << m_timePassed;
-		HANDLE Handle = GetStdHandle(STD_OUTPUT_HANDLE);      // Get Handle 
-															  //		SetConsoleTitle(t.str().c_str());            // Set Buffer Size 
-		if (m_showAvail)
-		{
-		}
-		else if (m_renderCursor)
-		{
-			DrawString(m_bufScreen, nScreenWidth, nScreenHeight, std::wstring(L"COMPARE file list in:               with: ").length(), start, L"▄", FG_GREY | BG_BLACK);
+			DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, std::wstring(L"COMPARE file list in: ").length(), start, m_initial->GetNameW(), FG_CYAN | BG_BLACK);
+			DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, std::wstring(L"COMPARE file list in:               with: ").length(), start, m_typed, FG_CYAN | BG_BLACK);
 		}
 		else
 		{
-			DrawString(m_bufScreen, nScreenWidth, nScreenHeight, std::wstring(L"COMPARE file list in:               with: ").length(), start, L" ", FG_GREY | BG_BLACK);
+			DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start, L"COMPARE file list in:               with:                                     ", FG_GREY | BG_BLACK);
+			DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 1, L"                                                                              ", FG_GREY | BG_BLACK);
+			//		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"Enter compare path          F2 F4 point  ↑ history  ◄─┘ ok  F1 help  ESC cancel", FG_GREY | BG_BLACK);
+			//		DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"                            F2 F4        ↑          ◄─┘     F1       ESC       ", FG_CYAN | BG_BLACK);
+			DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"Enter compare path             F2 point  ↑ history  ◄─┘ ok  F1 help  ESC cancel", FG_GREY | BG_BLACK);
+			DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"                               F2        ↑          ◄─┘     F1       ESC       ", FG_CYAN | BG_BLACK);
+
+//			DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, std::wstring(L"COMPARE file list in: ").length(), start, m_dirObject->GetNameW(), FG_CYAN | BG_BLACK);
+			DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, std::wstring(L"COMPARE file list in: ").length(), start, m_initial->GetNameW(), FG_CYAN | BG_BLACK);
+			DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, std::wstring(L"COMPARE file list in:               with: ").length(), start, m_typed, FG_CYAN | BG_BLACK);
+
+			//https://www.delftstack.com/howto/cpp/how-to-get-time-in-milliseconds-cpp/
+			if (!m_timeSet)
+			{
+				auto millisec_since_epoch = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+				m_timePassed = millisec_since_epoch;
+				m_timeSet = true;
+			}
+
+			auto currentMillisec_since_epoch = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+			if (currentMillisec_since_epoch - m_timePassed > 1000)
+			{
+				m_timePassed = currentMillisec_since_epoch;
+				m_timeSet = true;
+				m_renderCursor = !m_renderCursor;
+			}
+
+			std::wstringstream t;
+			t << m_timePassed;
+			HANDLE Handle = GetStdHandle(STD_OUTPUT_HANDLE);      // Get Handle 
+																  //		SetConsoleTitle(t.str().c_str());            // Set Buffer Size 
+			std::wstring beforeCursor = std::wstring(L"COMPARE file list in:               with: ") + m_typed;
+			if (m_showAvail)
+			{
+			}
+			else if (m_renderCursor)
+			{
+				DrawString(m_bufScreen, nScreenWidth, nScreenHeight, beforeCursor.length(), start, L"▄", FG_GREY | BG_BLACK);
+			}
+			else
+			{
+				DrawString(m_bufScreen, nScreenWidth, nScreenHeight, beforeCursor.length(), start, L" ", FG_GREY | BG_BLACK);
+			}
 		}
+
+
+
 	}
 
 	void Compare::CheckKeys(DirObject* dirObject)
@@ -176,6 +191,7 @@ namespace SimpleXTree
 				m_lPressed = true;
 				m_show = true;
 				m_activated = true;
+				m_initial = dirObject;
 				m_waitForKeyLetGo = -1;
 			}
 			else
@@ -194,13 +210,21 @@ namespace SimpleXTree
 
 		}
 
+		if ((0x8000 & GetAsyncKeyState((unsigned char)(VK_RETURN))) != 0)
+		{
+			m_step2 = true;
+		}
+		else
+		{
+		}
 
-		if ((0x8000 & GetAsyncKeyState((unsigned char)(VK_ESCAPE))) != 0 || (0x8000 & GetAsyncKeyState((unsigned char)(VK_RETURN))) != 0)
+		if ((0x8000 & GetAsyncKeyState((unsigned char)(VK_ESCAPE))) != 0)
 		{
 			m_escPressed = true;
 			m_show = false;
 			m_activated = false;
 			m_showAvail = false;
+			m_step2 = false;
 		}
 		else
 		{
@@ -219,20 +243,37 @@ namespace SimpleXTree
 
 	void Compare::KeyEvent(WCHAR ch)
 	{
-		if (ch == '\r' || ch == '\n')
+		if (ch == '\r' || ch == '\n' || ch=='\x1b')
 		{
 
 		}
 		else if (ch == '\b')
 		{
-			//if (m_typed.length() > 0)
-			//{
-			//	m_typed = m_typed.substr(0, m_typed.length() - 1);
-			//}
+			if (m_typed.length() > 0)
+			{
+				m_typed = m_typed.substr(0, m_typed.length() - 1);
+			}
 		}
 		else
 		{
-//			m_typed += ch;
+			m_typed += ch;
 		}
+	}
+
+	void Compare::VK(DWORD vk)
+	{
+		if (vk == VK_F2)
+		{
+			m_browse = true;
+		}
+	}
+
+	void Compare::SelectDir(DirObject* dirObject)
+	{
+		m_selected = dirObject;
+		m_typed = dirObject->PathW();
+		m_browse = false;
+		m_activated = true;
+		m_show = true;
 	}
 }

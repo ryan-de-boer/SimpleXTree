@@ -23,7 +23,8 @@ namespace SimpleXTree
 		}
 		void CheckKeys(DirObject* dirObject);
 		void KeyEvent(WCHAR ch);
-
+		void VK(DWORD vk);
+		void SelectDir(DirObject* dirObject);
 	private:
 		bool m_checkingForKeys;
 		bool m_activated;
@@ -39,5 +40,12 @@ namespace SimpleXTree
 		std::wstring m_avail;
 		std::wstring m_drive;
 		DirObject* m_dirObject;
+		DirObject* m_initial;
+	public:
+		DirObject* m_selected;
+		std::wstring m_typed;
+		bool m_step2;
+	public:
+		bool m_browse;
 	};
 }
