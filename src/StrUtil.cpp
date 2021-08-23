@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
+#include <algorithm>
 
 using std::runtime_error;
 using std::string;
@@ -140,5 +141,20 @@ namespace SimpleXTree
   bool StrUtil::EndsWith(const std::wstring& str, const std::wstring& suffix)
   {
 	  return str.size() >= suffix.size() && 0 == str.compare(str.size() - suffix.size(), suffix.size(), suffix);
+  }
+
+  bool StrUtil::EqualsIgnoreCase(std::wstring const& str1, std::wstring const& str2)
+  {
+    std::wstring first = str1;
+    std::wstring second = str2;
+
+    std::string sFirst = StrUtil::ws2s(first);
+    std::string sSecond = StrUtil::ws2s(second);
+
+    std::transform(sFirst.begin(), sFirst.end(), sFirst.begin(),
+      [](unsigned char c) { return std::toupper(c, std::locale()); });
+    std::transform(sSecond.begin(), sSecond.end(), sSecond.begin(),
+      [](unsigned char c) { return std::toupper(c, std::locale()); });
+    return sFirst == sSecond;
   }
 }

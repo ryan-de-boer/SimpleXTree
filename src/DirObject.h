@@ -27,7 +27,8 @@ namespace SimpleXTree
 	std::vector<std::wstring> Files;
 	std::vector<bool> Tags;
 	bool GetTag(int index) const;
-	void Tag();
+  void Tag(int fileIndex);
+  void Tag();
 	void Untag();
 	void TagAndChildren();
 	void UntagAndChildren();

@@ -116,6 +116,11 @@ namespace SimpleXTree
 		}
 	}
 
+  void DirObject::Tag(int fileIndex)
+  {
+    Tags[fileIndex] = true;
+  }
+
 	void DirObject::Untag()
 	{
 		if (Tags.size() < Files.size())

@@ -8,6 +8,25 @@
 
 namespace SimpleXTree
 {
+  /*
+
+  @CompareTree
+  c           Compares this directory with another. The compare options
+  are:
+  o Identical, tags the files with the same name and file
+  time.
+  o Unique, tags the files which are not in the second
+  list.
+  o Newer, tags the files with the same name and a newer
+  file time.
+  o Older, tags the files with the same name and a older
+  file time.
+  o Binary, tags the files that are the same size and
+  contain exactly the same content.
+  o Subs, preforms the comparison operation into
+  subdirectories aswell.
+
+    */
 	class Compare
 	{
 	public:
@@ -26,6 +45,7 @@ namespace SimpleXTree
 		void VK(DWORD vk);
 		void SelectDir(DirObject* dirObject);
 	private:
+    std::wstring YesNo(bool value);
 		bool m_checkingForKeys;
 		bool m_activated;
 		bool m_lPressed;
@@ -47,5 +67,12 @@ namespace SimpleXTree
 		bool m_step2;
 	public:
 		bool m_browse;
+  private:
+    bool m_identical;
+    bool m_unique;
+    bool m_newer;
+    bool m_older;
+    bool m_binary;
+    bool m_subs;
 	};
 }

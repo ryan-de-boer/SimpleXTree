@@ -16,5 +16,6 @@ namespace SimpleXTree
 	static std::vector<std::wstring> Tokenize(std::wstring const& line, std::wstring const& delimiter);
 	static bool StartsWith(const std::wstring& str, const std::wstring& prefix);
 	static bool EndsWith(const std::wstring& str, const std::wstring& suffix);
+  static bool EqualsIgnoreCase(std::wstring const& str1, std::wstring const& str2);
   };
 }
