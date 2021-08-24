@@ -77,7 +77,7 @@ namespace SimpleXTree
 	Compare::Compare() : m_dirObject(NULL), m_selected(NULL), m_initial(NULL), m_activated(false), 
     m_checkingForKeys(true), m_lPressed(0), m_escPressed(false), m_show(false), m_lastShown(false), m_timeSet(false), 
     m_timePassed(0), m_renderCursor(true), m_waitForKeyLetGo(-1), m_showAvail(false), m_browse(false), m_step2(false), 
-    m_identical(false), m_unique(false), m_newer(false), m_older(false), m_binary(false), m_subs(false)
+    m_identical(false), m_unique(false), m_newer(false), m_older(false), m_binary(false), m_subs(false), m_otherActive(false)
 	{
 	}
 
@@ -419,7 +419,7 @@ namespace SimpleXTree
 	void Compare::CheckKeys(DirObject* dirObject)
 	{
 		m_dirObject = dirObject;
-		if (!m_checkingForKeys)
+		if (!m_checkingForKeys || m_otherActive)
 			return;
 
 		if (!m_show)
