@@ -157,6 +157,7 @@
     <ClInclude Include="Bookmarks.h" />
     <ClInclude Include="Compare.h" />
     <ClInclude Include="DateTime.h" />
+    <ClInclude Include="Delete.h" />
     <ClInclude Include="DirObject.h" />
     <ClInclude Include="FreeDiskSpace.h" />
     <ClInclude Include="LogDrive.h" />
@@ -172,6 +173,7 @@
     <ClCompile Include="Bookmarks.cpp" />
     <ClCompile Include="Compare.cpp" />
     <ClCompile Include="DateTime.cpp" />
+    <ClCompile Include="Delete.cpp" />
     <ClCompile Include="DirObject.cpp" />
     <ClCompile Include="FreeDiskSpace.cpp" />
     <ClCompile Include="HookExample.cpp" />
