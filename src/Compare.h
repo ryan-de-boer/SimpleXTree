@@ -5,6 +5,7 @@
 #include <chrono>
 #include <Windows.h>
 #include "DirObject.h"
+#include "Component.h"
 
 namespace SimpleXTree
 {
@@ -27,7 +28,7 @@ namespace SimpleXTree
   subdirectories aswell.
 
     */
-	class Compare
+	class Compare: public Component
 	{
 	public:
 		Compare();
@@ -39,6 +40,14 @@ namespace SimpleXTree
 		bool IsActivated() const
 		{
 			return m_activated;
+		}
+	    bool IsOtherActivatedAndNotBrowse() const
+		{
+			return IsActivated() && !m_browse;
+		}
+		bool IsOtherActivated() const
+		{
+			return IsActivated();
 		}
 		void CheckKeys(DirObject* dirObject);
 		void KeyEvent(WCHAR ch);
@@ -75,6 +84,6 @@ namespace SimpleXTree
     bool m_binary;
     bool m_subs;
   public:
-    bool m_otherActive;
+
 	};
 }

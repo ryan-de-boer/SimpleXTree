@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <fstream>
+#include "Component.h"
 
 namespace SimpleXTree
 {
@@ -14,7 +15,7 @@ namespace SimpleXTree
 		std::wstring Args;
 	};
 
-	class OpenWith
+	class OpenWith : public Component
 	{
 	public:
 		OpenWith();
@@ -31,6 +32,14 @@ namespace SimpleXTree
 		bool IsActivated() const
 		{
 			return m_activated;
+		}
+		bool IsOtherActivatedAndNotBrowse() const
+		{
+			return IsActivated();
+		}
+		bool IsOtherActivated() const
+		{
+			return IsActivated();
 		}
 		void CheckKeys();
 

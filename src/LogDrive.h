@@ -3,14 +3,24 @@
 #include <vector>
 #include <fstream>
 #include <chrono>
+#include "Component.h"
 
 namespace SimpleXTree
 {
-	class LogDrive
+	class LogDrive : public Component
 	{
 	public:
 		LogDrive();
 		~LogDrive();
+
+		bool IsOtherActivatedAndNotBrowse() const
+		{
+			return IsActivated();
+		}
+		bool IsOtherActivated() const
+		{
+			return IsActivated();
+		}
 
 		void Activate();
 		void Toggle();

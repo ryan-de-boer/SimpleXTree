@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <fstream>
+#include "Component.h"
 
 namespace SimpleXTree
 {
@@ -13,7 +14,7 @@ namespace SimpleXTree
 		std::wstring Path;
 	};
 
-	class Bookmarks
+	class Bookmarks : public Component
 	{
 	public:
 		Bookmarks();
@@ -30,6 +31,14 @@ namespace SimpleXTree
 		bool IsActivated() const
 		{
 			return m_activated;
+		}
+		bool IsOtherActivatedAndNotBrowse() const
+		{
+			return IsActivated();
+		}
+		bool IsOtherActivated() const
+		{
+			return IsActivated();
 		}
 		void CheckKeys();
 

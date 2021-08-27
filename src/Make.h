@@ -5,10 +5,11 @@
 #include <fstream>
 #include <chrono>
 #include "DirObject.h"
+#include "Component.h"
 
 namespace SimpleXTree
 {
-	class Make
+	class Make : public Component
 	{
 	public:
 		Make();
@@ -20,6 +21,14 @@ namespace SimpleXTree
 		bool IsActivated() const
 		{
 			return m_activated;
+		}
+		bool IsOtherActivatedAndNotBrowse() const
+		{
+			return IsActivated();
+		}
+		bool IsOtherActivated() const
+		{
+			return IsActivated();
 		}
 		void CheckKeys(DirObject* dirObject);
 		void KeyEvent(WCHAR ch);

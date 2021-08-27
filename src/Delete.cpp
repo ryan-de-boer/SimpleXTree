@@ -77,8 +77,8 @@ namespace SimpleXTree
 
 	Delete::Delete() : m_dirObject(NULL), m_selected(NULL), m_initial(NULL), m_activated(false),
 		m_checkingForKeys(true), m_lPressed(0), m_escPressed(false), m_show(false), m_lastShown(false), m_timeSet(false),
-		m_timePassed(0), m_renderCursor(true), m_waitForKeyLetGo(-1), m_showAvail(false), m_browse(false), m_yesNo(false),
-		m_identical(false), m_unique(false), m_newer(false), m_older(false), m_binary(false), m_subs(false), m_otherActive(false)
+		m_timePassed(0), m_renderCursor(true), m_waitForKeyLetGo(-1), m_showAvail(false), m_yesNo(false),
+		m_identical(false), m_unique(false), m_newer(false), m_older(false), m_binary(false), m_subs(false)
 	{
 	}
 
@@ -267,17 +267,12 @@ namespace SimpleXTree
 
 	void Delete::VK(DWORD vk)
 	{
-		if (vk == VK_F2)
-		{
-			m_browse = true;
-		}
 	}
 
 	void Delete::SelectDir(DirObject* dirObject)
 	{
 		m_selected = dirObject;
 		m_typed = dirObject->PathW();
-		m_browse = false;
 		m_activated = true;
 		m_show = true;
 	}

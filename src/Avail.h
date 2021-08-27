@@ -3,10 +3,11 @@
 #include <vector>
 #include <fstream>
 #include <chrono>
+#include "Component.h"
 
 namespace SimpleXTree
 {
-	class Avail
+	class Avail : public Component
 	{
 	public:
 		Avail();
@@ -18,6 +19,14 @@ namespace SimpleXTree
 		bool IsActivated() const
 		{
 			return m_activated;
+		}
+		bool IsOtherActivatedAndNotBrowse() const
+		{
+			return IsActivated();
+		}
+		bool IsOtherActivated() const
+		{
+			return IsActivated();
 		}
 		void CheckKeys();
 

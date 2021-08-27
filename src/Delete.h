@@ -5,12 +5,13 @@
 #include <chrono>
 #include <Windows.h>
 #include "DirObject.h"
+#include "Component.h"
 
 namespace SimpleXTree
 {
 	/*
 	*/
-	class Delete
+	class Delete : public Component
 	{
 	public:
 		Delete();
@@ -22,6 +23,14 @@ namespace SimpleXTree
 		bool IsActivated() const
 		{
 			return m_activated;
+		}
+		bool IsOtherActivatedAndNotBrowse() const
+		{
+			return IsActivated();
+		}
+		bool IsOtherActivated() const
+		{
+			return IsActivated();
 		}
 		void CheckKeys(DirObject* dirObject);
 		void KeyEvent(WCHAR ch);
@@ -49,7 +58,7 @@ namespace SimpleXTree
 		std::wstring m_typed;
 		bool m_yesNo;
 	public:
-		bool m_browse;
+//		bool m_browse;
 	private:
 		bool m_identical;
 		bool m_unique;
@@ -58,6 +67,6 @@ namespace SimpleXTree
 		bool m_binary;
 		bool m_subs;
 	public:
-		bool m_otherActive;
+//		bool m_otherActive;
 	};
 }
