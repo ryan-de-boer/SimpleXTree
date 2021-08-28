@@ -250,6 +250,13 @@ namespace SimpleXTree
 			m_typed = std::wstring(L"");
 
 			m_dirObject->Expand();
+			for (int i=0;i<m_dirObject->ChildrenPaths.size();++i)
+			{
+				if (StrUtil::EqualsIgnoreCase(m_dirObject->ChildrenPaths[i].PathW(), createPath))
+				{
+					m_dirObject->ChildrenPaths[i].Expand();
+				}
+			}
 			Refresh();
 
 			return;
