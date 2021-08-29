@@ -19,6 +19,8 @@
 #include <vector>
 #include <experimental/filesystem>
 #include "FreeDiskSpace.h"
+#include <Ktmw32.h>
+#include <shlwapi.h>
 extern CHAR_INFO* m_bufScreen;
 
 using std::cout; using std::endl;
@@ -228,14 +230,88 @@ namespace SimpleXTree
 		{
 			if (ch == 'y')
 			{
-				//do del
-				//https://stackoverflow.com/questions/734717/how-to-delete-a-folder-in-c
+				//https://forums.codeguru.com/showthread.php?139196-move-file-to-RecycleBin
+				//http://www.thescarms.com/vbasic/fileops.aspx
+				//https://stackoverflow.com/questions/4568015/using-shfileoperation-what-errors-are-occuring?rq=1
+				//https://docs.microsoft.com/en-us/windows/win32/api/shlwapi/nf-shlwapi-strcpyw
+
+				SHFILEOPSTRUCT f;
+				ZeroMemory(&f, sizeof(SHFILEOPSTRUCT));
+				f.wFunc = FO_DELETE;
+				f.fFlags = FOF_ALLOWUNDO| FOF_NOCONFIRMATION;
 				std::wstring path = m_dirObject->PathW();
-				std::experimental::filesystem::remove(path);
+//				f.pFrom = L"d:\\tmp\\0new2\\a.txt";
+//				f.pFrom = L"d:\\tmp\\0new2";
+
+				WCHAR wszFrom[MAX_PATH] = { 0 };
+				StrCpyW(wszFrom, path.c_str());
+				CopyMemory(wszFrom + lstrlenW(wszFrom), "\0\0", 2);
+
+				f.pFrom = wszFrom;
+				//SHFileOperation ignores pTo in the delete operation. U must specify FOF_ALLOWUNDO to move the files to the Recycle Bin, or else.....it'll be not be place there!!!!!! How sad!!! Heh heh heh!!! :-D
+				int ret = SHFileOperation(&f);
 				if (m_dirObject->Parent != NULL)
 				{
 					m_dirObject->Parent->Expand();
 				}
+
+				////atomic no recycle bin
+				////https://www.snia.org/sites/default/orig/sdc_archives/2009_presentations/tuesday/ChristianAllred_UnderstandingWindowsFileSystemTransactions.pdf
+				//HANDLE Transaction;
+				//BOOL WorkDone = FALSE;
+				//DWORD TransactionOutcome;
+				//Transaction = CreateTransaction(NULL, NULL, 0, 0, 0, 0, NULL);
+				//try
+				//{
+				//	if (!DeleteFileTransacted(L"d:\\tmp\\0new2\\a.txt", Transaction))
+				//	{
+				//		m_escPressed = true;
+				//		m_show = false;
+				//		m_activated = false;
+				//		m_showAvail = false;
+				//		m_yesNo = false;
+				//		return;
+				//	}
+
+				//	//if (!MoveFileTransacted(L"d:\\tmp\\0new2\\a.txt", Transaction))
+				//	//{
+				//	//	m_escPressed = true;
+				//	//	m_show = false;
+				//	//	m_activated = false;
+				//	//	m_showAvail = false;
+				//	//	m_yesNo = false;
+				//	//	return;
+				//	//}
+
+				//	WorkDone = TRUE;
+				//}
+				//catch (std::exception& ex)
+				//{
+				//	m_escPressed = true;
+				//	m_show = false;
+				//	m_activated = false;
+				//	m_showAvail = false;
+				//	m_yesNo = false;
+				//	return;
+				//}
+	
+				//	if (WorkDone)
+				//	{
+				//		if (!CommitTransaction(Transaction))
+				//		{
+				//		}
+				//	}
+				//	CloseHandle(Transaction); // If Transaction not committed, it will rooll back here.
+	
+
+				////do del
+				////https://stackoverflow.com/questions/734717/how-to-delete-a-folder-in-c
+				//std::wstring path = m_dirObject->PathW();
+				//std::experimental::filesystem::remove(path);
+				//if (m_dirObject->Parent != NULL)
+				//{
+				//	m_dirObject->Parent->Expand();
+				//}
 
 				m_escPressed = true;
 				m_show = false;
