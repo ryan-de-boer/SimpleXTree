@@ -80,7 +80,7 @@ namespace SimpleXTree
 	Delete::Delete() : m_dirObject(NULL), m_selected(NULL), m_initial(NULL), m_activated(false),
 		m_checkingForKeys(true), m_lPressed(0), m_escPressed(false), m_show(false), m_lastShown(false), m_timeSet(false),
 		m_timePassed(0), m_renderCursor(true), m_waitForKeyLetGo(-1), m_showAvail(false), m_yesNo(false),
-		m_identical(false), m_unique(false), m_newer(false), m_older(false), m_binary(false), m_subs(false)
+		m_identical(false), m_unique(false), m_newer(false), m_older(false), m_binary(false), m_subs(false), m_useRecycleBin(true)
 	{
 	}
 
@@ -128,12 +128,34 @@ namespace SimpleXTree
 		}
 		else
 		{
-			DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start, L"DELETE sub-directory:                                                           ", FG_GREY | BG_BLACK);
-			DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 1, L"                                                                              ", FG_GREY | BG_BLACK);
-			DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"Delete this directory?                             Yes  No  F1 help  ESC cancel", FG_GREY | BG_BLACK);
-			DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"                                                   Y    N   F1       ESC       ", FG_CYAN | BG_BLACK);
+      if (m_dirObject->Files.size() > 0)
+      {
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start, L"DELETE branch:                                                                  ", FG_GREY | BG_BLACK);
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 1, L"                                                                              ", FG_GREY | BG_BLACK);
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"Delete this branch and all its contents?           Yes  No  F1 help  ESC cancel", FG_GREY | BG_BLACK);
+        DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"                                                   Y    N   F1       ESC       ", FG_CYAN | BG_BLACK);
 
-			DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, std::wstring(L"DELETE sub-directory: ").length(), start, m_dirObject->GetNameW(), FG_CYAN | BG_BLACK);
+        DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, std::wstring(L"DELETE branch: ").length(), start, m_dirObject->GetNameW(), FG_CYAN | BG_BLACK);
+      }
+      else
+      {
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start, L"DELETE sub-directory:                                                           ", FG_GREY | BG_BLACK);
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 1, L"                                                                              ", FG_GREY | BG_BLACK);
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"Delete this directory?                             Yes  No  F1 help  ESC cancel", FG_GREY | BG_BLACK);
+        DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"                                                   Y    N   F1       ESC       ", FG_CYAN | BG_BLACK);
+
+        DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, std::wstring(L"DELETE sub-directory: ").length(), start, m_dirObject->GetNameW(), FG_CYAN | BG_BLACK);
+      }
+      std::wstring useRecycleBin = L"no ";
+      if (m_useRecycleBin)
+      {
+        useRecycleBin = L"yes";
+      }
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 1, L"                                                       F4 use recycle bin ("+ useRecycleBin+L")", FG_GREY | BG_BLACK);
+
+
+
+
 		}
 
 	}
@@ -230,6 +252,8 @@ namespace SimpleXTree
 		{
 			if (ch == 'y')
 			{
+        if (m_useRecycleBin)
+        {
 				//https://forums.codeguru.com/showthread.php?139196-move-file-to-RecycleBin
 				//http://www.thescarms.com/vbasic/fileops.aspx
 				//https://stackoverflow.com/questions/4568015/using-shfileoperation-what-errors-are-occuring?rq=1
@@ -302,16 +326,18 @@ namespace SimpleXTree
 				//		}
 				//	}
 				//	CloseHandle(Transaction); // If Transaction not committed, it will rooll back here.
-	
-
-				////do del
-				////https://stackoverflow.com/questions/734717/how-to-delete-a-folder-in-c
-				//std::wstring path = m_dirObject->PathW();
-				//std::experimental::filesystem::remove(path);
-				//if (m_dirObject->Parent != NULL)
-				//{
-				//	m_dirObject->Parent->Expand();
-				//}
+        }
+        else
+        {
+          //do del
+          //https://stackoverflow.com/questions/734717/how-to-delete-a-folder-in-c
+          std::wstring path = m_dirObject->PathW();
+          std::experimental::filesystem::remove(path);
+          if (m_dirObject->Parent != NULL)
+          {
+          	m_dirObject->Parent->Expand();
+          }
+        }
 
 				m_escPressed = true;
 				m_show = false;
@@ -343,6 +369,10 @@ namespace SimpleXTree
 
 	void Delete::VK(DWORD vk)
 	{
+    if (vk == VK_F4)
+    {
+      m_useRecycleBin = !m_useRecycleBin;
+    }
 	}
 
 	void Delete::SelectDir(DirObject* dirObject)

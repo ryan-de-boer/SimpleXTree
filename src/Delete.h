@@ -66,6 +66,7 @@ namespace SimpleXTree
 		bool m_older;
 		bool m_binary;
 		bool m_subs;
+    bool m_useRecycleBin;
 	public:
 //		bool m_otherActive;
 	};
