@@ -6,9 +6,11 @@
 #include <sstream>
 #include <windows.h>
 
+bool IsDirectory(std::wstring path);
+
 namespace SimpleXTree
 {
-	DirObject::DirObject(std::string const& path, DirObject* parent) : Parent(parent), IsExpanded(false), Path(path), DirSize(0), Attrib(0)
+	DirObject::DirObject(std::string const& path, DirObject* parent) : Parent(parent), IsExpanded(false), Path(path), DirSize(0), Attrib(0), FileSpec(L"*.*")
 	{
 	}
 
@@ -23,6 +25,8 @@ namespace SimpleXTree
 		this->Attrib = copy.Attrib;
 		this->Files = copy.Files;
 		this->Tags = copy.Tags;
+		this->FileSpec = copy.FileSpec;
+		this->FileSpecFiles = copy.FileSpecFiles;
 	}
 
 	DirObject::~DirObject()
@@ -67,6 +71,27 @@ namespace SimpleXTree
 	std::wstring DirObject::GetFileNameW(int index) const
 	{
 		std::wstring path = Files[index];
+		if (path.find(L"\\") != std::wstring::npos)
+		{
+			std::wstring p2 = path.substr(path.rfind(L"\\") + 1);
+			if (p2 == L"")
+			{
+				int a = 1;
+				a++;
+			}
+			return p2;
+		}
+		if (path == L"")
+		{
+			int a = 1;
+			a++;
+		}
+		return path;
+	}
+
+	std::wstring DirObject::GetFileNameFileSpecW(int index) const
+	{
+		std::wstring path = FileSpecFiles[index];
 		if (path.find(L"\\") != std::wstring::npos)
 		{
 			std::wstring p2 = path.substr(path.rfind(L"\\") + 1);
@@ -348,6 +373,8 @@ namespace SimpleXTree
 //		FileSizes.push_back(GetFileSizeL(f));
       }
     }
+
+	this->ApplyFileSpec(FileSpec);
   }
 
   void DirObject::ExpandAll()
@@ -559,26 +586,26 @@ namespace SimpleXTree
   void DirObject::WriteToFile()
   {
 	  	std::ofstream myfile;
-	  	myfile.open("wtf.txt");
+myfile.open("wtf.txt");
 
-		myfile << std::hex << GetConsoleWindow() << std::endl;
+myfile << std::hex << GetConsoleWindow() << std::endl;
 
-	  //int size = RecursiveSize();
-	  //int currentIndex = 0;
-	  //for (int i = 0; i < size; ++i)
-	  //{
-		 // std::string value = GetIndexValue(currentIndex, i);
+//int size = RecursiveSize();
+//int currentIndex = 0;
+//for (int i = 0; i < size; ++i)
+//{
+   // std::string value = GetIndexValue(currentIndex, i);
 
-		 // myfile << value << std::endl;
-	  //}
+   // myfile << value << std::endl;
+//}
 
-		//for (int i = 0; i < ChildrenPaths.size(); ++i)
-		//{
+  //for (int i = 0; i < ChildrenPaths.size(); ++i)
+  //{
 
-		//}
-		Write(myfile);
+  //}
+Write(myfile);
 
-	  myfile.close();
+myfile.close();
   }
 
   void DirObject::Write(std::ofstream& file)
@@ -603,6 +630,78 @@ namespace SimpleXTree
 	  {
 		  ChildrenPaths[i].Compile(vec);
 	  }
+  }
+
+
+  // http://www.softwareandfinance.com/Visual_CPP/Search_Direcory_File_Vector.html
+  // searchkey = "c:\\kathir\\*.txt";
+
+  int GetFileList(const WCHAR *searchkey, std::vector<std::wstring> &list)
+
+  {
+
+	  WIN32_FIND_DATA fd;
+
+	  HANDLE h = FindFirstFile(searchkey, &fd);
+
+
+
+	  if (h == INVALID_HANDLE_VALUE)
+
+	  {
+
+		  return 0; // no files found
+
+	  }
+
+
+
+	  while (1)
+
+	  {
+
+		  list.push_back(fd.cFileName);
+
+
+
+		  if (FindNextFile(h, &fd) == FALSE)
+
+			  break;
+
+	  }
+
+	  return list.size();
+
+  }
+
+  void DirObject::ApplyFileSpec(std::wstring const& fileSpec)
+  {
+	  this->FileSpec = fileSpec;
+	  std::wstringstream buf;
+	  buf << this->PathW() << L"\\" << fileSpec;
+	  std::wstring pathFileSpec = buf.str();
+
+	  std::vector<std::wstring> list;
+	  GetFileList(pathFileSpec.c_str(), list);
+
+	  FileSpecFiles.clear();
+	  for (int i = 0; i < list.size(); ++i)
+	  {
+		  if (list[i] == L"." || list[i] == L"..")
+			  continue;
+
+		  buf.str(L"");
+		  buf << this->PathW() << L"\\" << list[i];
+		  std::wstring file = buf.str();
+
+		  if (!IsDirectory(file))
+		  {
+			  FileSpecFiles.push_back(file);
+		  }
+	  }
+
+	  int b = 1;
+	  b++;
   }
 
 }

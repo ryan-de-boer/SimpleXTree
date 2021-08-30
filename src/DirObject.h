@@ -23,8 +23,11 @@ namespace SimpleXTree
 	void ExpandAll();
 	void Collapse();
     void Expand(int initialCount, int selectedPath);
+	void ApplyFileSpec(std::wstring const& fileSpec);
     std::vector<DirObject> ChildrenPaths;
 	std::vector<std::wstring> Files;
+	std::vector<std::wstring> FileSpecFiles;
+	std::wstring FileSpec;
 	std::vector<bool> Tags;
 	bool GetTag(int index) const;
   void Tag(int fileIndex);
@@ -42,6 +45,7 @@ namespace SimpleXTree
 	unsigned long long GetAllFilesSize();
 	std::string GetFileName(int index) const;
   std::wstring GetFileNameW(int index) const;
+  std::wstring GetFileNameFileSpecW(int index) const;
 
     int RecursiveSize();
 	int NumFilesRecursive();

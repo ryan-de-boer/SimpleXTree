@@ -161,6 +161,7 @@
     <ClInclude Include="DateTime.h" />
     <ClInclude Include="Delete.h" />
     <ClInclude Include="DirObject.h" />
+    <ClInclude Include="FileSpec.h" />
     <ClInclude Include="FreeDiskSpace.h" />
     <ClInclude Include="LogDrive.h" />
     <ClInclude Include="Make.h" />
@@ -177,6 +178,7 @@
     <ClCompile Include="DateTime.cpp" />
     <ClCompile Include="Delete.cpp" />
     <ClCompile Include="DirObject.cpp" />
+    <ClCompile Include="FileSpec.cpp" />
     <ClCompile Include="FreeDiskSpace.cpp" />
     <ClCompile Include="HookExample.cpp" />
     <ClCompile Include="LogDrive.cpp" />
