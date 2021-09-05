@@ -49,7 +49,7 @@ namespace SimpleXTree
 		{
 			return IsActivated();
 		}
-		void CheckKeys(DirObject* dirObject);
+		void CheckKeys(DirObject* dirObject, bool filesScreen);
 		void KeyEvent(WCHAR ch);
 		void VK(DWORD vk);
 		void SelectDir(DirObject* dirObject);

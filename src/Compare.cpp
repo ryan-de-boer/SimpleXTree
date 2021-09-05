@@ -416,10 +416,10 @@ namespace SimpleXTree
     return files;
   }
 
-	void Compare::CheckKeys(DirObject* dirObject)
+	void Compare::CheckKeys(DirObject* dirObject, bool filesScreen)
 	{
 		m_dirObject = dirObject;
-		if (!m_checkingForKeys || m_otherActive)
+		if (!m_checkingForKeys || m_otherActive || filesScreen)
 			return;
 
 		if (!m_show)
