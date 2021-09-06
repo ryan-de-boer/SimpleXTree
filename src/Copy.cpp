@@ -116,16 +116,49 @@ namespace SimpleXTree
 //		std::experimental::filesystem::copy()
 		//thread https://www.bogotobogo.com/cplusplus/multithreaded4_cplusplus11.php
 
-		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 10, 10, L"┌─────────────────────────────────┐", FG_RED | BG_CYAN);
-		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 10, 11, L"│31% complete                     │", FG_RED | BG_CYAN);
+//    double percentComplete = 32.5;
+    double percentComplete = 50;
+    int iPercentComplete = (int)percentComplete;
+    std::wstringstream wPercentComplete;
+    wPercentComplete << L"│" << iPercentComplete << "% complete";
+    int num = wPercentComplete.str().length();
+    for (int i = num; i < 51; ++i)
+    {
+      wPercentComplete << L" ";
+    }
+    wPercentComplete << L"│";
 
-		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 10, 12, L"│▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░░░░░░░░░░│", FG_RED | BG_CYAN);
-		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 10, 13, L"│Copying 4 items from 0new to 0new│", FG_RED | BG_CYAN);
-		DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 10, 13, L"                      0new    0new│", FG_BLUE | BG_CYAN);
-		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 10, 14, L"│Name: fns.m4a                    │", FG_RED | BG_CYAN);
-		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 10, 15, L"│Time remaining: 10 seconds       │", FG_RED | BG_CYAN);
-		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 10, 16, L"│Items remaining: 3 (469 MB)      │", FG_RED | BG_CYAN);
-		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 10, 17, L"└─────────────────────────────────┘", FG_RED | BG_CYAN);
+    double totalNumBricks = 50.0;
+    int iTotalNumBricks = (int)totalNumBricks;
+    double numBricks = (percentComplete/100.0) * totalNumBricks;
+    int iNumBricks = (int)numBricks;
+    std::wstringstream wBricks;
+    wBricks << L"│";
+    for (int i = 0; i < iNumBricks; ++i)
+    {
+      wBricks << L"▓";
+    }
+    for (int i = iNumBricks; i < iTotalNumBricks; ++i)
+    {
+      wBricks << L"░";
+    }
+    wBricks << L"│";
+
+		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 10, L"┌──────────────────────────────────────────────────┐", FG_BLACK | BG_CYAN);
+//		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 11, L"│31% complete                                      │", FG_BLACK | BG_CYAN);
+    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 11, wPercentComplete.str().c_str(), FG_BLACK | BG_CYAN);
+
+//    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 12, L"│▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│", FG_BLACK | BG_CYAN);
+    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 12, wBricks.str().c_str(), FG_BLACK | BG_CYAN);
+    //DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 10, 13, L"│Copying 4 items from 0new to 0new│", FG_RED | BG_CYAN);
+//    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 10, 13, L"│Copying 4 items from research_new2 to research_new2│", FG_RED | BG_CYAN);
+    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 13, L"│Copying 4 items from:                             │", FG_BLACK | BG_CYAN);
+    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 14, L"│research_new2_123456… to research_new2_123456…    │", FG_BLACK | BG_CYAN);
+    DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 13, 14, L" research_new2_123456… to research_new2_123456…", FG_DARK_BLUE | BG_CYAN);
+		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 15, L"│Name: fns.m4a                                     │", FG_BLACK | BG_CYAN);
+		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 16, L"│Time remaining: 10 seconds                        │", FG_BLACK | BG_CYAN);
+		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 17, L"│Items remaining: 3 (469 MB)                       │", FG_BLACK | BG_CYAN);
+		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 18, L"└──────────────────────────────────────────────────┘", FG_BLACK | BG_CYAN);
 		/*
 		┌────────────────────┐
 		│31% complete
@@ -137,6 +170,8 @@ namespace SimpleXTree
 			Items remaining : 3 (469 MB)
 			└────────────────────┘
 			*/
+    //…
+    //https://www.fileformat.info/info/charset/UTF-8/list.htm
 	}
 
 	void Copy::KeyEvent(WCHAR ch)
