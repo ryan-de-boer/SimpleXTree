@@ -1,14 +1,27 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <queue>
 #include <map>
 #include <fstream>
 #include <chrono>
+#include <thread>
 #include "DirObject.h"
 #include "Component.h"
 
 namespace SimpleXTree
 {
+  class CopyItem
+  {
+  public:
+    CopyItem() {}
+    ~CopyItem() {}
+
+    void DoCopy();
+
+    std::wstring Name;
+  };
+
 	class Copy : public Component
 	{
 	public:
@@ -51,5 +64,13 @@ namespace SimpleXTree
 		std::wstring m_typed;
 		std::map<std::wstring, long long> m_timePressed;
 		std::map<int, bool> m_keyPressed;
+    double m_percent;
+
+    void ThreadFn();
+    std::thread m_member_thread;
+    bool m_exitThread;
+    std::vector<CopyItem> m_copyItems;
+    bool m_threadReadyToCopy;
+    std::wstring m_currentName;
 	};
 }

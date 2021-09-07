@@ -29,6 +29,7 @@
 #include <iostream>
 #include <ctime>
 #include <direct.h>
+#include <thread>
 #include "FreeDiskSpace.h"
 extern CHAR_INFO* m_bufScreen;
 
@@ -88,13 +89,22 @@ namespace SimpleXTree
 	extern int nScreenWidth;			// Console Screen Size X (columns)
 	extern int nScreenHeight;			// Console Screen Size Y (rows)
 
-	Copy::Copy() : m_dirObject(NULL), m_activated(false), m_checkingForKeys(true), m_lPressed(0), m_escPressed(false), m_show(false), m_lastShown(false), m_timeSet(false), m_timePassed(0), m_renderCursor(true), m_waitForKeyLetGo(-1), m_showAvail(false)
+  void CopyItem::DoCopy()
+  {
+    Sleep(1000);
+  }
+
+	Copy::Copy() : m_dirObject(NULL), m_activated(false), m_checkingForKeys(true), m_lPressed(0), m_escPressed(false), m_show(false), m_lastShown(false), m_timeSet(false), m_timePassed(0), m_renderCursor(true), m_waitForKeyLetGo(-1), m_showAvail(false), m_percent(0.0), m_exitThread(false), m_threadReadyToCopy(false), m_currentName(L"")
 	{
+    //https://softwareengineering.stackexchange.com/questions/382195/is-it-okay-to-start-a-thread-from-within-a-constructor-of-a-class
+    m_member_thread = std::thread(&Copy::ThreadFn, this);
 	}
 
 	Copy::~Copy()
 	{
-	}
+    m_exitThread = true;
+    m_member_thread.join();
+  }
 
 	void Copy::Activate()
 	{
@@ -117,7 +127,8 @@ namespace SimpleXTree
 		//thread https://www.bogotobogo.com/cplusplus/multithreaded4_cplusplus11.php
 
 //    double percentComplete = 32.5;
-    double percentComplete = 50;
+//    double percentComplete = 50;
+    double percentComplete = m_percent;
     int iPercentComplete = (int)percentComplete;
     std::wstringstream wPercentComplete;
     wPercentComplete << L"│" << iPercentComplete << "% complete";
@@ -144,6 +155,76 @@ namespace SimpleXTree
     }
     wBricks << L"│";
 
+    int numItems = 15;
+    std::wstringstream wItems;
+    wItems << L"│Copying " << numItems << L" items from:";
+    num = wItems.str().length();
+    for (int i = num; i < 51; ++i)
+    {
+      wItems << L" ";
+    }
+    wItems << L"│";
+
+    std::wstring from = L"research_new2_12345678";
+    std::wstring to = L"research_new2_12345678";
+    std::wstring fromc = from;
+    std::wstring toc = to;
+    std::wstringstream wFrom;
+    std::wstringstream wFromInner;
+    bool fromt = false;
+    if (fromc.length() > 20)
+    {
+      fromc = fromc.substr(0, 20);
+      fromt = true;
+    }
+    bool tot = false;
+    if (toc.length() > 20)
+    {
+      toc = toc.substr(0, 20);
+      tot = true;
+    }
+    wFromInner << fromc << (fromt ? L"…" : L"") << L" to " << toc << (tot ? L"…" : L"");
+    wFrom << L"│" << wFromInner.str();
+    num = wFrom.str().length();
+    for (int i = num; i < 51; ++i)
+    {
+      wFrom << L" ";
+    }
+    wFrom << L"│";
+    std::wstringstream wFrom2;
+    wFrom2 << L" " << fromc << (fromt ? L"…" : L"") << L"    " << toc << (tot ? L"…" : L"");
+
+//    std::wstring name = L"fns.m4a";
+    std::wstring name = m_currentName;
+    std::wstringstream wName;
+    wName << L"│Name: " << name;
+    num = wName.str().length();
+    for (int i = num; i < 51; ++i)
+    {
+      wName << L" ";
+    }
+    wName << L"│";
+
+    std::wstring time = L"11 seconds";
+    std::wstringstream wTime;
+    wTime << L"│Time remaining: " << time;
+    num = wTime.str().length();
+    for (int i = num; i < 51; ++i)
+    {
+      wTime << L" ";
+    }
+    wTime << L"│";
+
+    std::wstring itemsRemaining = L"4 (468 MB)";
+    std::wstringstream wItemsRemaining;
+    wItemsRemaining << L"│Items remaining: " << itemsRemaining;
+    num = wItemsRemaining.str().length();
+    for (int i = num; i < 51; ++i)
+    {
+      wItemsRemaining << L" ";
+    }
+    wItemsRemaining << L"│";
+
 		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 10, L"┌──────────────────────────────────────────────────┐", FG_BLACK | BG_CYAN);
 //		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 11, L"│31% complete                                      │", FG_BLACK | BG_CYAN);
     DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 11, wPercentComplete.str().c_str(), FG_BLACK | BG_CYAN);
@@ -152,13 +233,21 @@ namespace SimpleXTree
     DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 12, wBricks.str().c_str(), FG_BLACK | BG_CYAN);
     //DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 10, 13, L"│Copying 4 items from 0new to 0new│", FG_RED | BG_CYAN);
 //    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 10, 13, L"│Copying 4 items from research_new2 to research_new2│", FG_RED | BG_CYAN);
-    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 13, L"│Copying 4 items from:                             │", FG_BLACK | BG_CYAN);
-    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 14, L"│research_new2_123456… to research_new2_123456…    │", FG_BLACK | BG_CYAN);
-    DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 13, 14, L" research_new2_123456… to research_new2_123456…", FG_DARK_BLUE | BG_CYAN);
-		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 15, L"│Name: fns.m4a                                     │", FG_BLACK | BG_CYAN);
-		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 16, L"│Time remaining: 10 seconds                        │", FG_BLACK | BG_CYAN);
-		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 17, L"│Items remaining: 3 (469 MB)                       │", FG_BLACK | BG_CYAN);
-		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 18, L"└──────────────────────────────────────────────────┘", FG_BLACK | BG_CYAN);
+    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 13, wItems.str().c_str(), FG_BLACK | BG_CYAN);
+//    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 13, L"│Copying 4 items from:                             │", FG_BLACK | BG_CYAN);
+//    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 14, L"│research_new2_123456… to research_new2_123456…    │", FG_BLACK | BG_CYAN);
+//    DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 13, 14, L" research_new2_123456… to research_new2_123456…", FG_DARK_BLUE | BG_CYAN);
+
+    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 14, wFrom.str().c_str(), FG_BLACK | BG_CYAN);
+    DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 13, 14, wFrom2.str().c_str(), FG_DARK_BLUE | BG_CYAN);
+
+//    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 15, L"│Name: fns.m4a                                     │", FG_BLACK | BG_CYAN);
+    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 15, wName.str().c_str(), FG_BLACK | BG_CYAN);
+//    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 16, L"│Time remaining: 10 seconds                        │", FG_BLACK | BG_CYAN);
+    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 16, wTime.str().c_str(), FG_BLACK | BG_CYAN);
+//    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 17, L"│Items remaining: 3 (469 MB)                       │", FG_BLACK | BG_CYAN);
+    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 17, wItemsRemaining.str().c_str(), FG_BLACK | BG_CYAN);
+    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 18, L"└──────────────────────────────────────────────────┘", FG_BLACK | BG_CYAN);
 		/*
 		┌────────────────────┐
 		│31% complete
@@ -193,6 +282,41 @@ namespace SimpleXTree
 		}
 	}
 
+  void Copy::ThreadFn()
+  {
+    if (m_exitThread)
+      return;
+
+    while (!m_exitThread)
+    {
+      if (m_show)
+      {
+        if (m_threadReadyToCopy)
+        {
+          for (int i = 0; i < m_copyItems.size(); ++i)
+          {
+            m_currentName = m_copyItems[i].Name;
+            m_copyItems[i].DoCopy();
+            double v1 = (double)i + 1.0;
+            double v2 = (double)m_copyItems.size();
+            double v3 = v1 / v2;
+            double v4 = 100.0;
+            m_percent = v3 * v4;
+//            m_percent = ((double)i+1.0 / (double)m_copyItems.size()) *100.0;
+          }
+          m_copyItems.clear();
+          m_threadReadyToCopy = false;
+        }
+        //while (m_percent < 100.0)
+        //{
+        //  if (m_exitThread)
+        //    return;
+        //  m_percent += 1.0;
+        //  Sleep(500);
+        //}
+      }
+    }
+  }
 
 	void Copy::CheckKeys(DirObject* dirObject, bool filesScreen)
 	{
@@ -209,6 +333,18 @@ namespace SimpleXTree
 				m_activated = true;
 				m_waitForKeyLetGo = -1;
 				m_typed = L"";
+
+        for (int i = 0; i < 10; ++i)
+        {
+          m_copyItems.push_back(CopyItem());
+        }
+        for (int i = 0; i < 10; ++i)
+        {
+          std::wstringstream buf;
+          buf << L"the_file_" << i;
+          m_copyItems[i].Name = buf.str();
+        }
+        m_threadReadyToCopy = true;
 			}
 			else
 			{
