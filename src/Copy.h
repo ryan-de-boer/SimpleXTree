@@ -20,6 +20,7 @@ namespace SimpleXTree
     void DoCopy();
 
     std::wstring Name;
+    long long SizeInBytes;
   };
 
 	class Copy : public Component
@@ -65,6 +66,13 @@ namespace SimpleXTree
 		std::map<std::wstring, long long> m_timePressed;
 		std::map<int, bool> m_keyPressed;
     double m_percent;
+    double m_timeSecondsLeft;
+    long long m_bytesLeft;
+    bool m_calculating;
+    int m_numLeft;
+    int m_numItems;
+    std::wstring m_from;
+    std::wstring m_to;
 
     void ThreadFn();
     std::thread m_member_thread;

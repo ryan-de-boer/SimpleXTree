@@ -94,7 +94,7 @@ namespace SimpleXTree
     Sleep(1000);
   }
 
-	Copy::Copy() : m_dirObject(NULL), m_activated(false), m_checkingForKeys(true), m_lPressed(0), m_escPressed(false), m_show(false), m_lastShown(false), m_timeSet(false), m_timePassed(0), m_renderCursor(true), m_waitForKeyLetGo(-1), m_showAvail(false), m_percent(0.0), m_exitThread(false), m_threadReadyToCopy(false), m_currentName(L"")
+	Copy::Copy() : m_dirObject(NULL), m_activated(false), m_checkingForKeys(true), m_lPressed(0), m_escPressed(false), m_show(false), m_lastShown(false), m_timeSet(false), m_timePassed(0), m_renderCursor(true), m_waitForKeyLetGo(-1), m_showAvail(false), m_percent(0.0), m_exitThread(false), m_threadReadyToCopy(false), m_currentName(L""), m_timeSecondsLeft(0.0), m_calculating(true), m_numLeft(0), m_numItems(0), m_bytesLeft(0)
 	{
     //https://softwareengineering.stackexchange.com/questions/382195/is-it-okay-to-start-a-thread-from-within-a-constructor-of-a-class
     m_member_thread = std::thread(&Copy::ThreadFn, this);
@@ -155,9 +155,8 @@ namespace SimpleXTree
     }
     wBricks << L"│";
 
-    int numItems = 15;
     std::wstringstream wItems;
-    wItems << L"│Copying " << numItems << L" items from:";
+    wItems << L"│Copying " << m_numItems << L" items from:";
     num = wItems.str().length();
     for (int i = num; i < 51; ++i)
     {
@@ -165,8 +164,8 @@ namespace SimpleXTree
     }
     wItems << L"│";
 
-    std::wstring from = L"research_new2_12345678";
-    std::wstring to = L"research_new2_12345678";
+    std::wstring from = m_from;
+    std::wstring to = m_to;
     std::wstring fromc = from;
     std::wstring toc = to;
     std::wstringstream wFrom;
@@ -205,9 +204,16 @@ namespace SimpleXTree
     }
     wName << L"│";
 
-    std::wstring time = L"11 seconds";
+//    std::wstring time = L"11 seconds";
     std::wstringstream wTime;
-    wTime << L"│Time remaining: " << time;
+    if (m_calculating)
+    {
+      wTime << L"│Time remaining: calculating...";
+    }
+    else
+    {
+      wTime << L"│Time remaining: " << (int)m_timeSecondsLeft << L" seconds";
+    }
     num = wTime.str().length();
     for (int i = num; i < 51; ++i)
     {
@@ -215,9 +221,30 @@ namespace SimpleXTree
     }
     wTime << L"│";
 
-    std::wstring itemsRemaining = L"4 (468 MB)";
+//    std::wstring itemsRemaining = L"4 (468 MB)";
     std::wstringstream wItemsRemaining;
-    wItemsRemaining << L"│Items remaining: " << itemsRemaining;
+    std::wstringstream wSize;
+    if (m_bytesLeft >= 1000000000)
+    {
+      double gigs = ((double)m_bytesLeft) / 1000000000.0;
+      wSize << L" (" << gigs << L" GB)";
+    }
+    else if (m_bytesLeft >= 1000000)
+    {
+      double mb = ((double)m_bytesLeft) / 1000000;
+      wSize << L" (" << mb << L" MB)";
+    }
+    else if (m_bytesLeft >= 1000)
+    {
+      double kb = ((double)m_bytesLeft) / 1000;
+      wSize << L" (" << kb << L" KB)";
+    }
+    else
+    {
+      wSize << L" (" << m_bytesLeft << L" bytes)";
+    }
+    //    wItemsRemaining << L"│Items remaining: " << m_numLeft << L" (468 MB)";
+    wItemsRemaining << L"│Items remaining: " << m_numLeft << wSize.str();
     num = wItemsRemaining.str().length();
     for (int i = num; i < 51; ++i)
     {
@@ -293,16 +320,39 @@ namespace SimpleXTree
       {
         if (m_threadReadyToCopy)
         {
+          long long initialMillisecSinceEpoch = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+          m_calculating = true;
+          m_numLeft = m_copyItems.size();
+          m_numItems = m_copyItems.size();
+          long long bytesLeft = 0;
+          for (int i = 0; i < m_copyItems.size(); ++i)
+          {
+            bytesLeft += m_copyItems[i].SizeInBytes;
+          }
+          m_bytesLeft = bytesLeft;
           for (int i = 0; i < m_copyItems.size(); ++i)
           {
             m_currentName = m_copyItems[i].Name;
             m_copyItems[i].DoCopy();
+
+            long long currentMillisecSinceEpoch = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+            long long millisecSoFar = currentMillisecSinceEpoch - initialMillisecSinceEpoch;
+
             double v1 = (double)i + 1.0;
             double v2 = (double)m_copyItems.size();
             double v3 = v1 / v2;
             double v4 = 100.0;
             m_percent = v3 * v4;
 //            m_percent = ((double)i+1.0 / (double)m_copyItems.size()) *100.0;
+
+            long long millisecPerItem = millisecSoFar / (i + 1);
+            m_numLeft = m_copyItems.size() - i - 1;
+            long long millisecLeft = millisecPerItem * m_numLeft;
+            m_timeSecondsLeft = ((double)millisecLeft) / 1000.0;
+
+            m_bytesLeft -= m_copyItems[i].SizeInBytes;
+
+            m_calculating = false;
           }
           m_copyItems.clear();
           m_threadReadyToCopy = false;
@@ -334,6 +384,10 @@ namespace SimpleXTree
 				m_waitForKeyLetGo = -1;
 				m_typed = L"";
 
+        m_from = L"research_new2_12345678";
+        m_to = L"research_new2_12345678";
+        m_percent = 0.0;
+
         for (int i = 0; i < 10; ++i)
         {
           m_copyItems.push_back(CopyItem());
@@ -343,6 +397,7 @@ namespace SimpleXTree
           std::wstringstream buf;
           buf << L"the_file_" << i;
           m_copyItems[i].Name = buf.str();
+          m_copyItems[i].SizeInBytes = 100000000*(10-i);
         }
         m_threadReadyToCopy = true;
 			}
@@ -363,24 +418,28 @@ namespace SimpleXTree
 		}
 
 		bool enterPressed = (0x8000 & GetAsyncKeyState((unsigned char)(VK_RETURN))) != 0;
-		if (enterPressed && m_typed.length()>0)
-		{
+		//if (enterPressed && m_typed.length()>0)
+		//{
 
-			return;
-		}
+		//	return;
+		//}
 
-		if ((0x8000 & GetAsyncKeyState((unsigned char)(VK_ESCAPE))) != 0 || (enterPressed && m_typed.length() == 0))
-		{
-			m_escPressed = true;
-			m_show = false;
-			m_activated = false;
-			m_showAvail = false;
-			m_timePressed.clear();
-		}
-		else
-		{
-			m_escPressed = false;
-		}
+    if (m_percent >= 100.0)
+    {
+      if ((0x8000 & GetAsyncKeyState((unsigned char)(VK_ESCAPE))) != 0 || enterPressed)
+      {
+        m_escPressed = true;
+        m_show = false;
+        m_activated = false;
+        m_showAvail = false;
+        m_timePressed.clear();
+      }
+      else
+      {
+        m_escPressed = false;
+      }
+    }
+
 
 		m_lastShown = m_show;
 	}
