@@ -219,6 +219,7 @@ namespace SimpleXTree
 				m_lPressed = false;
 				return;
 			}
+      return;
 		}
 		else if ((0x8000 & GetAsyncKeyState((unsigned char)(0x4D/*M*/))) == 0)
 		{
