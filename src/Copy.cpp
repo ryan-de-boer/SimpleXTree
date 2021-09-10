@@ -94,7 +94,7 @@ namespace SimpleXTree
     Sleep(1000);
   }
 
-	Copy::Copy() : m_dirObject(NULL), m_activated(false), m_checkingForKeys(true), m_lPressed(0), m_escPressed(false), m_show(false), m_lastShown(false), m_timeSet(false), m_timePassed(0), m_renderCursor(true), m_waitForKeyLetGo(-1), m_showAvail(false), m_percent(0.0), m_exitThread(false), m_threadReadyToCopy(false), m_currentName(L""), m_timeSecondsLeft(0.0), m_calculating(true), m_numLeft(0), m_numItems(0), m_bytesLeft(0)
+	Copy::Copy() : m_dirObject(NULL), m_activated(false), m_checkingForKeys(true), m_lPressed(0), m_escPressed(false), m_show(false), m_lastShown(false), m_timeSet(false), m_timePassed(0), m_renderCursor(true), m_waitForKeyLetGo(-1), m_showAvail(false), m_percent(0.0), m_exitThread(false), m_threadReadyToCopy(false), m_currentName(L""), m_timeSecondsLeft(0.0), m_calculating(true), m_numLeft(0), m_numItems(0), m_bytesLeft(0), m_selectStep(false), m_fileSpec(L""), m_toStep(false)
 	{
     //https://softwareengineering.stackexchange.com/questions/382195/is-it-okay-to-start-a-thread-from-within-a-constructor-of-a-class
     m_member_thread = std::thread(&Copy::ThreadFn, this);
@@ -122,6 +122,98 @@ namespace SimpleXTree
 	{
 		if (!m_activated || !m_show)
 			return;
+
+    if (m_selectStep)
+    {
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start, L"COPY all tagged files as:                                                         ", FG_GREY | BG_BLACK);
+//      DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, std::wstring(L"COPY all tagged files as: ").length(), start, m_fileSpec, FG_CYAN | BG_BLACK);
+      DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, std::wstring(L"COPY all tagged files as: ").length(), start, m_typed, FG_CYAN | BG_BLACK);
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 1, L"                                                                              ", FG_GREY | BG_BLACK);
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"Enter file spec or strike enter          ↑ history  ◄─┘ ok  F1 help  ESC cancel", FG_GREY | BG_BLACK);
+      DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"                                         ↑          ◄─┘     F1       ESC       ", FG_CYAN | BG_BLACK);
+
+
+      //https://www.delftstack.com/howto/cpp/how-to-get-time-in-milliseconds-cpp/
+      if (!m_timeSet)
+      {
+        auto millisec_since_epoch = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+        m_timePassed = millisec_since_epoch;
+        m_timeSet = true;
+      }
+
+      auto currentMillisec_since_epoch = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+      if (currentMillisec_since_epoch - m_timePassed > 1000)
+      {
+        m_timePassed = currentMillisec_since_epoch;
+        m_timeSet = true;
+        m_renderCursor = !m_renderCursor;
+      }
+
+      std::wstringstream t;
+      t << m_timePassed;
+      HANDLE Handle = GetStdHandle(STD_OUTPUT_HANDLE);      // Get Handle 
+                                                            //		SetConsoleTitle(t.str().c_str());            // Set Buffer Size 
+      std::wstring beforeCursor = std::wstring(L"COPY all tagged files as: ") + m_typed;
+      if (m_showAvail)
+      {
+      }
+      else if (m_renderCursor)
+      {
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, beforeCursor.length(), start, L"▄", FG_GREY | BG_BLACK);
+      }
+      else
+      {
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, beforeCursor.length(), start, L" ", FG_GREY | BG_BLACK);
+      }
+
+
+      return;
+    }
+    else if (m_toStep)
+    {
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start, L"COPY all tagged files as:                                                         ", FG_GREY | BG_BLACK);
+      DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, std::wstring(L"COPY all tagged files as: ").length(), start, m_typed, FG_CYAN | BG_BLACK);
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 1, L"       to:                                                                     ", FG_GREY | BG_BLACK);
+      DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, std::wstring(L"       to: ").length(), start +1, m_typed2, FG_CYAN | BG_BLACK);
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"Enter file spec or strike enter          ↑ history  ◄─┘ ok  F1 help  ESC cancel", FG_GREY | BG_BLACK);
+      DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"                                         ↑          ◄─┘     F1       ESC       ", FG_CYAN | BG_BLACK);
+
+      //https://www.delftstack.com/howto/cpp/how-to-get-time-in-milliseconds-cpp/
+      if (!m_timeSet)
+      {
+        auto millisec_since_epoch = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+        m_timePassed = millisec_since_epoch;
+        m_timeSet = true;
+      }
+
+      auto currentMillisec_since_epoch = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+      if (currentMillisec_since_epoch - m_timePassed > 1000)
+      {
+        m_timePassed = currentMillisec_since_epoch;
+        m_timeSet = true;
+        m_renderCursor = !m_renderCursor;
+      }
+
+      std::wstringstream t;
+      t << m_timePassed;
+      HANDLE Handle = GetStdHandle(STD_OUTPUT_HANDLE);      // Get Handle 
+                                                            //		SetConsoleTitle(t.str().c_str());            // Set Buffer Size 
+//      std::wstring beforeCursor = std::wstring(L"       to: ") + m_typed;
+      std::wstring beforeCursor = std::wstring(L"       to: ") + m_typed2;
+      if (m_showAvail)
+      {
+      }
+      else if (m_renderCursor)
+      {
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, beforeCursor.length(), start+1, L"▄", FG_GREY | BG_BLACK);
+      }
+      else
+      {
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, beforeCursor.length(), start+1, L" ", FG_GREY | BG_BLACK);
+      }
+
+      return;
+    }
 
 //		std::experimental::filesystem::copy()
 		//thread https://www.bogotobogo.com/cplusplus/multithreaded4_cplusplus11.php
@@ -294,16 +386,35 @@ namespace SimpleXTree
 	{
 		if (ch == '\r' || ch == '\n')
 		{
-
+      if (m_selectStep && m_typed==L"")
+      {
+        m_typed = L"*.*";
+        m_selectStep = false;
+        m_toStep = true;
+      }
 		}
 		else if (ch == '\b')
 		{
-			if (m_typed.length() > 0)
-			{
-				m_typed = m_typed.substr(0, m_typed.length() - 1);
-			}
+      if (m_selectStep)
+      {
+        if (m_typed.length() > 0)
+        {
+          m_typed = m_typed.substr(0, m_typed.length() - 1);
+        }
+      }
+      else if (m_toStep)
+      {
+        if (m_typed2.length() > 0)
+        {
+          m_typed2 = m_typed2.substr(0, m_typed2.length() - 1);
+        }
+      }
 		}
-		else
+    else if (m_toStep)
+    {
+      m_typed2 += ch;
+    }
+    else
 		{
 			m_typed += ch;
 		}
@@ -368,6 +479,26 @@ namespace SimpleXTree
     }
   }
 
+  void Copy::StartCopy()
+  {
+    m_from = L"research_new2_12345678";
+    m_to = L"research_new2_12345678";
+    m_percent = 0.0;
+
+    for (int i = 0; i < 10; ++i)
+    {
+      m_copyItems.push_back(CopyItem());
+    }
+    for (int i = 0; i < 10; ++i)
+    {
+      std::wstringstream buf;
+      buf << L"the_file_" << i;
+      m_copyItems[i].Name = buf.str();
+      m_copyItems[i].SizeInBytes = 100000000 * (10 - i);
+    }
+    m_threadReadyToCopy = true;
+  }
+
 	void Copy::CheckKeys(DirObject* dirObject, bool filesScreen)
 	{
 		m_dirObject = dirObject;
@@ -376,6 +507,7 @@ namespace SimpleXTree
 
 		if (!m_show)
 		{
+      bool control = (0x8000 & GetAsyncKeyState((unsigned char)(VK_CONTROL))) != 0;
 			if ((0x8000 & GetAsyncKeyState((unsigned char)(0x43/*C*/))) != 0)
 			{
 				m_lPressed = true;
@@ -383,23 +515,11 @@ namespace SimpleXTree
 				m_activated = true;
 				m_waitForKeyLetGo = -1;
 				m_typed = L"";
-
-        m_from = L"research_new2_12345678";
-        m_to = L"research_new2_12345678";
-        m_percent = 0.0;
-
-        for (int i = 0; i < 10; ++i)
+        m_typed2 = L"";
+        if (control)
         {
-          m_copyItems.push_back(CopyItem());
+          m_selectStep = true;
         }
-        for (int i = 0; i < 10; ++i)
-        {
-          std::wstringstream buf;
-          buf << L"the_file_" << i;
-          m_copyItems[i].Name = buf.str();
-          m_copyItems[i].SizeInBytes = 100000000*(10-i);
-        }
-        m_threadReadyToCopy = true;
 			}
 			else
 			{
@@ -424,9 +544,10 @@ namespace SimpleXTree
 		//	return;
 		//}
 
-    if (m_percent >= 100.0)
+//    if (m_percent >= 100.0)
     {
-      if ((0x8000 & GetAsyncKeyState((unsigned char)(VK_ESCAPE))) != 0 || enterPressed)
+//      if ((0x8000 & GetAsyncKeyState((unsigned char)(VK_ESCAPE))) != 0 || enterPressed)
+      if ((0x8000 & GetAsyncKeyState((unsigned char)(VK_ESCAPE))) != 0)
       {
         m_escPressed = true;
         m_show = false;

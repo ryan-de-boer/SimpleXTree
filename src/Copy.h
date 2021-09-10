@@ -63,6 +63,7 @@ namespace SimpleXTree
 		std::wstring m_drive;
 		DirObject* m_dirObject;
 		std::wstring m_typed;
+    std::wstring m_typed2;
 		std::map<std::wstring, long long> m_timePressed;
 		std::map<int, bool> m_keyPressed;
     double m_percent;
@@ -80,5 +81,9 @@ namespace SimpleXTree
     std::vector<CopyItem> m_copyItems;
     bool m_threadReadyToCopy;
     std::wstring m_currentName;
+    void StartCopy();
+    bool m_selectStep;
+    bool m_toStep;
+    std::wstring m_fileSpec;
 	};
 }
