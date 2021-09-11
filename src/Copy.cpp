@@ -94,7 +94,7 @@ namespace SimpleXTree
     Sleep(1000);
   }
 
-	Copy::Copy() : m_dirObject(NULL), m_activated(false), m_checkingForKeys(true), m_lPressed(0), m_escPressed(false), m_show(false), m_lastShown(false), m_timeSet(false), m_timePassed(0), m_renderCursor(true), m_waitForKeyLetGo(-1), m_showAvail(false), m_percent(0.0), m_exitThread(false), m_threadReadyToCopy(false), m_currentName(L""), m_timeSecondsLeft(0.0), m_calculating(true), m_numLeft(0), m_numItems(0), m_bytesLeft(0), m_selectStep(false), m_fileSpec(L""), m_toStep(false)
+	Copy::Copy() : m_dirObject(NULL), m_activated(false), m_checkingForKeys(true), m_lPressed(0), m_escPressed(false), m_show(false), m_lastShown(false), m_timeSet(false), m_timePassed(0), m_renderCursor(true), m_waitForKeyLetGo(-1), m_showAvail(false), m_percent(0.0), m_exitThread(false), m_threadReadyToCopy(false), m_currentName(L""), m_timeSecondsLeft(0.0), m_calculating(true), m_numLeft(0), m_numItems(0), m_bytesLeft(0), m_selectStep(false), m_fileSpec(L""), m_toStep(false), m_destinationFolder(L""), m_createDirStep(false), m_copyStep(false)
 	{
     //https://softwareengineering.stackexchange.com/questions/382195/is-it-okay-to-start-a-thread-from-within-a-constructor-of-a-class
     m_member_thread = std::thread(&Copy::ThreadFn, this);
@@ -214,159 +214,173 @@ namespace SimpleXTree
 
       return;
     }
+	else if (m_createDirStep)
+	{
+		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start, L"COPY all tagged files as:                                                         ", FG_GREY | BG_BLACK);
+		DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, std::wstring(L"COPY all tagged files as: ").length(), start, m_typed, FG_CYAN | BG_BLACK);
+		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 1, L"       to:                                                                     ", FG_GREY | BG_BLACK);
+		DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, std::wstring(L"       to: ").length(), start + 1, m_typed2, FG_CYAN | BG_BLACK);
+		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"Directory does not exist.  Make new path?          Yes  No  F1 help  ESC cancel", FG_GREY | BG_BLACK);
+		DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"                                                   Y    N   F1       ESC       ", FG_CYAN | BG_BLACK);
 
-//		std::experimental::filesystem::copy()
-		//thread https://www.bogotobogo.com/cplusplus/multithreaded4_cplusplus11.php
 
-//    double percentComplete = 32.5;
-//    double percentComplete = 50;
-    double percentComplete = m_percent;
-    int iPercentComplete = (int)percentComplete;
-    std::wstringstream wPercentComplete;
-    wPercentComplete << L"│" << iPercentComplete << "% complete";
-    int num = wPercentComplete.str().length();
-    for (int i = num; i < 51; ++i)
-    {
-      wPercentComplete << L" ";
-    }
-    wPercentComplete << L"│";
+		return;
+	}
+	else if (m_copyStep)
+	{
 
-    double totalNumBricks = 50.0;
-    int iTotalNumBricks = (int)totalNumBricks;
-    double numBricks = (percentComplete/100.0) * totalNumBricks;
-    int iNumBricks = (int)numBricks;
-    std::wstringstream wBricks;
-    wBricks << L"│";
-    for (int i = 0; i < iNumBricks; ++i)
-    {
-      wBricks << L"▓";
-    }
-    for (int i = iNumBricks; i < iTotalNumBricks; ++i)
-    {
-      wBricks << L"░";
-    }
-    wBricks << L"│";
+		//		std::experimental::filesystem::copy()
+				//thread https://www.bogotobogo.com/cplusplus/multithreaded4_cplusplus11.php
 
-    std::wstringstream wItems;
-    wItems << L"│Copying " << m_numItems << L" items from:";
-    num = wItems.str().length();
-    for (int i = num; i < 51; ++i)
-    {
-      wItems << L" ";
-    }
-    wItems << L"│";
+		//    double percentComplete = 32.5;
+		//    double percentComplete = 50;
+		double percentComplete = m_percent;
+		int iPercentComplete = (int)percentComplete;
+		std::wstringstream wPercentComplete;
+		wPercentComplete << L"│" << iPercentComplete << "% complete";
+		int num = wPercentComplete.str().length();
+		for (int i = num; i < 51; ++i)
+		{
+			wPercentComplete << L" ";
+		}
+		wPercentComplete << L"│";
 
-    std::wstring from = m_from;
-    std::wstring to = m_to;
-    std::wstring fromc = from;
-    std::wstring toc = to;
-    std::wstringstream wFrom;
-    std::wstringstream wFromInner;
-    bool fromt = false;
-    if (fromc.length() > 20)
-    {
-      fromc = fromc.substr(0, 20);
-      fromt = true;
-    }
-    bool tot = false;
-    if (toc.length() > 20)
-    {
-      toc = toc.substr(0, 20);
-      tot = true;
-    }
-    wFromInner << fromc << (fromt ? L"…" : L"") << L" to " << toc << (tot ? L"…" : L"");
-    wFrom << L"│" << wFromInner.str();
-    num = wFrom.str().length();
-    for (int i = num; i < 51; ++i)
-    {
-      wFrom << L" ";
-    }
-    wFrom << L"│";
-    std::wstringstream wFrom2;
-    wFrom2 << L" " << fromc << (fromt ? L"…" : L"") << L"    " << toc << (tot ? L"…" : L"");
+		double totalNumBricks = 50.0;
+		int iTotalNumBricks = (int)totalNumBricks;
+		double numBricks = (percentComplete / 100.0) * totalNumBricks;
+		int iNumBricks = (int)numBricks;
+		std::wstringstream wBricks;
+		wBricks << L"│";
+		for (int i = 0; i < iNumBricks; ++i)
+		{
+			wBricks << L"▓";
+		}
+		for (int i = iNumBricks; i < iTotalNumBricks; ++i)
+		{
+			wBricks << L"░";
+		}
+		wBricks << L"│";
 
-//    std::wstring name = L"fns.m4a";
-    std::wstring name = m_currentName;
-    std::wstringstream wName;
-    wName << L"│Name: " << name;
-    num = wName.str().length();
-    for (int i = num; i < 51; ++i)
-    {
-      wName << L" ";
-    }
-    wName << L"│";
+		std::wstringstream wItems;
+		wItems << L"│Copying " << m_numItems << L" items from:";
+		num = wItems.str().length();
+		for (int i = num; i < 51; ++i)
+		{
+			wItems << L" ";
+		}
+		wItems << L"│";
 
-//    std::wstring time = L"11 seconds";
-    std::wstringstream wTime;
-    if (m_calculating)
-    {
-      wTime << L"│Time remaining: calculating...";
-    }
-    else
-    {
-      wTime << L"│Time remaining: " << (int)m_timeSecondsLeft << L" seconds";
-    }
-    num = wTime.str().length();
-    for (int i = num; i < 51; ++i)
-    {
-      wTime << L" ";
-    }
-    wTime << L"│";
+		std::wstring from = m_from;
+		std::wstring to = m_to;
+		std::wstring fromc = from;
+		std::wstring toc = to;
+		std::wstringstream wFrom;
+		std::wstringstream wFromInner;
+		bool fromt = false;
+		if (fromc.length() > 20)
+		{
+			fromc = fromc.substr(0, 20);
+			fromt = true;
+		}
+		bool tot = false;
+		if (toc.length() > 20)
+		{
+			toc = toc.substr(0, 20);
+			tot = true;
+		}
+		wFromInner << fromc << (fromt ? L"…" : L"") << L" to " << toc << (tot ? L"…" : L"");
+		wFrom << L"│" << wFromInner.str();
+		num = wFrom.str().length();
+		for (int i = num; i < 51; ++i)
+		{
+			wFrom << L" ";
+		}
+		wFrom << L"│";
+		std::wstringstream wFrom2;
+		wFrom2 << L" " << fromc << (fromt ? L"…" : L"") << L"    " << toc << (tot ? L"…" : L"");
 
-//    std::wstring itemsRemaining = L"4 (468 MB)";
-    std::wstringstream wItemsRemaining;
-    std::wstringstream wSize;
-    if (m_bytesLeft >= 1000000000)
-    {
-      double gigs = ((double)m_bytesLeft) / 1000000000.0;
-      wSize << L" (" << gigs << L" GB)";
-    }
-    else if (m_bytesLeft >= 1000000)
-    {
-      double mb = ((double)m_bytesLeft) / 1000000;
-      wSize << L" (" << mb << L" MB)";
-    }
-    else if (m_bytesLeft >= 1000)
-    {
-      double kb = ((double)m_bytesLeft) / 1000;
-      wSize << L" (" << kb << L" KB)";
-    }
-    else
-    {
-      wSize << L" (" << m_bytesLeft << L" bytes)";
-    }
-    //    wItemsRemaining << L"│Items remaining: " << m_numLeft << L" (468 MB)";
-    wItemsRemaining << L"│Items remaining: " << m_numLeft << wSize.str();
-    num = wItemsRemaining.str().length();
-    for (int i = num; i < 51; ++i)
-    {
-      wItemsRemaining << L" ";
-    }
-    wItemsRemaining << L"│";
+		//    std::wstring name = L"fns.m4a";
+		std::wstring name = m_currentName;
+		std::wstringstream wName;
+		wName << L"│Name: " << name;
+		num = wName.str().length();
+		for (int i = num; i < 51; ++i)
+		{
+			wName << L" ";
+		}
+		wName << L"│";
+
+		//    std::wstring time = L"11 seconds";
+		std::wstringstream wTime;
+		if (m_calculating)
+		{
+			wTime << L"│Time remaining: calculating...";
+		}
+		else
+		{
+			wTime << L"│Time remaining: " << (int)m_timeSecondsLeft << L" seconds";
+		}
+		num = wTime.str().length();
+		for (int i = num; i < 51; ++i)
+		{
+			wTime << L" ";
+		}
+		wTime << L"│";
+
+		//    std::wstring itemsRemaining = L"4 (468 MB)";
+		std::wstringstream wItemsRemaining;
+		std::wstringstream wSize;
+		if (m_bytesLeft >= 1000000000)
+		{
+			double gigs = ((double)m_bytesLeft) / 1000000000.0;
+			wSize << L" (" << gigs << L" GB)";
+		}
+		else if (m_bytesLeft >= 1000000)
+		{
+			double mb = ((double)m_bytesLeft) / 1000000;
+			wSize << L" (" << mb << L" MB)";
+		}
+		else if (m_bytesLeft >= 1000)
+		{
+			double kb = ((double)m_bytesLeft) / 1000;
+			wSize << L" (" << kb << L" KB)";
+		}
+		else
+		{
+			wSize << L" (" << m_bytesLeft << L" bytes)";
+		}
+		//    wItemsRemaining << L"│Items remaining: " << m_numLeft << L" (468 MB)";
+		wItemsRemaining << L"│Items remaining: " << m_numLeft << wSize.str();
+		num = wItemsRemaining.str().length();
+		for (int i = num; i < 51; ++i)
+		{
+			wItemsRemaining << L" ";
+		}
+		wItemsRemaining << L"│";
 
 		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 10, L"┌──────────────────────────────────────────────────┐", FG_BLACK | BG_CYAN);
-//		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 11, L"│31% complete                                      │", FG_BLACK | BG_CYAN);
-    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 11, wPercentComplete.str().c_str(), FG_BLACK | BG_CYAN);
+		//		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 11, L"│31% complete                                      │", FG_BLACK | BG_CYAN);
+		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 11, wPercentComplete.str().c_str(), FG_BLACK | BG_CYAN);
 
-//    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 12, L"│▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│", FG_BLACK | BG_CYAN);
-    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 12, wBricks.str().c_str(), FG_BLACK | BG_CYAN);
-    //DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 10, 13, L"│Copying 4 items from 0new to 0new│", FG_RED | BG_CYAN);
-//    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 10, 13, L"│Copying 4 items from research_new2 to research_new2│", FG_RED | BG_CYAN);
-    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 13, wItems.str().c_str(), FG_BLACK | BG_CYAN);
-//    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 13, L"│Copying 4 items from:                             │", FG_BLACK | BG_CYAN);
-//    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 14, L"│research_new2_123456… to research_new2_123456…    │", FG_BLACK | BG_CYAN);
-//    DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 13, 14, L" research_new2_123456… to research_new2_123456…", FG_DARK_BLUE | BG_CYAN);
+		//    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 12, L"│▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│", FG_BLACK | BG_CYAN);
+		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 12, wBricks.str().c_str(), FG_BLACK | BG_CYAN);
+		//DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 10, 13, L"│Copying 4 items from 0new to 0new│", FG_RED | BG_CYAN);
+	//    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 10, 13, L"│Copying 4 items from research_new2 to research_new2│", FG_RED | BG_CYAN);
+		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 13, wItems.str().c_str(), FG_BLACK | BG_CYAN);
+		//    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 13, L"│Copying 4 items from:                             │", FG_BLACK | BG_CYAN);
+		//    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 14, L"│research_new2_123456… to research_new2_123456…    │", FG_BLACK | BG_CYAN);
+		//    DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 13, 14, L" research_new2_123456… to research_new2_123456…", FG_DARK_BLUE | BG_CYAN);
 
-    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 14, wFrom.str().c_str(), FG_BLACK | BG_CYAN);
-    DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 13, 14, wFrom2.str().c_str(), FG_DARK_BLUE | BG_CYAN);
+		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 14, wFrom.str().c_str(), FG_BLACK | BG_CYAN);
+		DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 13, 14, wFrom2.str().c_str(), FG_DARK_BLUE | BG_CYAN);
 
-//    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 15, L"│Name: fns.m4a                                     │", FG_BLACK | BG_CYAN);
-    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 15, wName.str().c_str(), FG_BLACK | BG_CYAN);
-//    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 16, L"│Time remaining: 10 seconds                        │", FG_BLACK | BG_CYAN);
-    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 16, wTime.str().c_str(), FG_BLACK | BG_CYAN);
-//    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 17, L"│Items remaining: 3 (469 MB)                       │", FG_BLACK | BG_CYAN);
-    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 17, wItemsRemaining.str().c_str(), FG_BLACK | BG_CYAN);
-    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 18, L"└──────────────────────────────────────────────────┘", FG_BLACK | BG_CYAN);
+		//    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 15, L"│Name: fns.m4a                                     │", FG_BLACK | BG_CYAN);
+		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 15, wName.str().c_str(), FG_BLACK | BG_CYAN);
+		//    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 16, L"│Time remaining: 10 seconds                        │", FG_BLACK | BG_CYAN);
+		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 16, wTime.str().c_str(), FG_BLACK | BG_CYAN);
+		//    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 17, L"│Items remaining: 3 (469 MB)                       │", FG_BLACK | BG_CYAN);
+		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 17, wItemsRemaining.str().c_str(), FG_BLACK | BG_CYAN);
+		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 18, L"└──────────────────────────────────────────────────┘", FG_BLACK | BG_CYAN);
 		/*
 		┌────────────────────┐
 		│31% complete
@@ -378,8 +392,9 @@ namespace SimpleXTree
 			Items remaining : 3 (469 MB)
 			└────────────────────┘
 			*/
-    //…
-    //https://www.fileformat.info/info/charset/UTF-8/list.htm
+			//…
+			//https://www.fileformat.info/info/charset/UTF-8/list.htm
+	   }
 	}
 
 	void Copy::KeyEvent(WCHAR ch)
@@ -392,6 +407,15 @@ namespace SimpleXTree
         m_selectStep = false;
         m_toStep = true;
       }
+	  else if (m_toStep)
+	  {
+		  m_destinationFolder = m_typed2;
+		  m_toStep = false;
+		  if (!std::experimental::filesystem::exists(m_destinationFolder))
+		  {
+			  m_createDirStep = true;
+		  }
+	  }
 		}
 		else if (ch == '\b')
 		{
@@ -414,6 +438,24 @@ namespace SimpleXTree
     {
       m_typed2 += ch;
     }
+	else if (m_createDirStep && ch == 'y')
+	{
+		std::wstring createPath = m_destinationFolder;
+		_mkdir(StrUtil::ws2s(createPath).c_str());
+		//https://stackoverflow.com/questions/30937227/create-directory-in-c
+
+		m_createDirStep = false;
+		m_copyStep = true;
+		StartCopy();
+	}
+	else if (m_createDirStep && ch == 'n')
+	{
+		m_escPressed = true;
+		m_show = false;
+		m_activated = false;
+		m_showAvail = false;
+		m_timePressed.clear();
+	}
     else
 		{
 			m_typed += ch;
@@ -467,6 +509,12 @@ namespace SimpleXTree
           }
           m_copyItems.clear();
           m_threadReadyToCopy = false;
+
+		  //m_escPressed = true;
+		  //m_show = false;
+		  //m_activated = false;
+		  //m_showAvail = false;
+		  //m_timePressed.clear();
         }
         //while (m_percent < 100.0)
         //{
@@ -538,11 +586,17 @@ namespace SimpleXTree
 		}
 
 		bool enterPressed = (0x8000 & GetAsyncKeyState((unsigned char)(VK_RETURN))) != 0;
-		//if (enterPressed && m_typed.length()>0)
-		//{
+		if (enterPressed && m_copyStep && m_percent>=100.0)
+		{
+			m_copyStep = false;
 
-		//	return;
-		//}
+			m_escPressed = true;
+			m_show = false;
+			m_activated = false;
+			m_showAvail = false;
+			m_timePressed.clear();
+			return;
+		}
 
 //    if (m_percent >= 100.0)
     {
