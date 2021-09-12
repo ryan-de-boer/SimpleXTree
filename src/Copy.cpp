@@ -94,7 +94,10 @@ namespace SimpleXTree
     Sleep(1000);
   }
 
-	Copy::Copy() : m_dirObject(NULL), m_activated(false), m_checkingForKeys(true), m_lPressed(0), m_escPressed(false), m_show(false), m_lastShown(false), m_timeSet(false), m_timePassed(0), m_renderCursor(true), m_waitForKeyLetGo(-1), m_showAvail(false), m_percent(0.0), m_exitThread(false), m_threadReadyToCopy(false), m_currentName(L""), m_timeSecondsLeft(0.0), m_calculating(true), m_numLeft(0), m_numItems(0), m_bytesLeft(0), m_selectStep(false), m_fileSpec(L""), m_toStep(false), m_destinationFolder(L""), m_createDirStep(false), m_copyStep(false)
+	Copy::Copy() : m_dirObject(NULL), m_activated(false), m_checkingForKeys(true), m_lPressed(0), m_escPressed(false), m_show(false), m_lastShown(false), 
+		m_timeSet(false), m_timePassed(0), m_renderCursor(true), m_waitForKeyLetGo(-1), m_showAvail(false), m_percent(0.0), m_exitThread(false), 
+		m_threadReadyToCopy(false), m_currentName(L""), m_timeSecondsLeft(0.0), m_calculating(true), m_numLeft(0), m_numItems(0), m_bytesLeft(0), 
+		m_selectStep(false), m_fileSpec(L""), m_toStep(false), m_destinationFolder(L""), m_createDirStep(false), m_copyStep(false), m_browse(false), m_selected(NULL)
 	{
     //https://softwareengineering.stackexchange.com/questions/382195/is-it-okay-to-start-a-thread-from-within-a-constructor-of-a-class
     m_member_thread = std::thread(&Copy::ThreadFn, this);
@@ -175,8 +178,8 @@ namespace SimpleXTree
       DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, std::wstring(L"COPY all tagged files as: ").length(), start, m_typed, FG_CYAN | BG_BLACK);
       DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 1, L"       to:                                                                     ", FG_GREY | BG_BLACK);
       DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, std::wstring(L"       to: ").length(), start +1, m_typed2, FG_CYAN | BG_BLACK);
-      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"Enter file spec or strike enter          ↑ history  ◄─┘ ok  F1 help  ESC cancel", FG_GREY | BG_BLACK);
-      DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"                                         ↑          ◄─┘     F1       ESC       ", FG_CYAN | BG_BLACK);
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"Enter destination path      F2 F4 point  ↑ history  ◄─┘ ok  F1 help  ESC cancel", FG_GREY | BG_BLACK);
+      DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"                            F2 F4        ↑          ◄─┘     F1       ESC       ", FG_CYAN | BG_BLACK);
 
       //https://www.delftstack.com/howto/cpp/how-to-get-time-in-milliseconds-cpp/
       if (!m_timeSet)
@@ -550,7 +553,7 @@ namespace SimpleXTree
 	void Copy::CheckKeys(DirObject* dirObject, bool filesScreen)
 	{
 		m_dirObject = dirObject;
-		if (!m_checkingForKeys || !filesScreen)
+		if (!m_checkingForKeys)// || !filesScreen)
 			return;
 
 		if (!m_show)
@@ -617,5 +620,25 @@ namespace SimpleXTree
 
 
 		m_lastShown = m_show;
+	}
+
+	void Copy::VK(DWORD vk)
+	{
+		if (vk == VK_F2)
+		{
+			m_browse = true;
+		}
+	}
+
+	void Copy::SelectDir(DirObject* dirObject)
+	{
+		m_selected = dirObject;
+//		m_typed = dirObject->PathW();
+		m_browse = false;
+		m_activated = true;
+		m_show = true;
+
+		m_copyStep = true;
+		StartCopy();
 	}
 }

@@ -38,7 +38,7 @@ namespace SimpleXTree
 		}
 		bool IsOtherActivatedAndNotBrowse() const
 		{
-			return IsActivated();
+			return IsActivated() && !m_browse;
 		}
 		bool IsOtherActivated() const
 		{
@@ -46,7 +46,8 @@ namespace SimpleXTree
 		}
 		void CheckKeys(DirObject* dirObject, bool filesScreen);
 		void KeyEvent(WCHAR ch);
-
+		void VK(DWORD vk);
+		void SelectDir(DirObject* dirObject);
 	private:
 		bool m_checkingForKeys;
 		bool m_activated;
@@ -63,7 +64,9 @@ namespace SimpleXTree
 		std::wstring m_drive;
 		DirObject* m_dirObject;
 		std::wstring m_typed;
+	public:
     std::wstring m_typed2;
+	private:
 	std::wstring m_destinationFolder;
 		std::map<std::wstring, long long> m_timePressed;
 		std::map<int, bool> m_keyPressed;
@@ -88,5 +91,9 @@ namespace SimpleXTree
 	bool m_createDirStep;
 	bool m_copyStep;
     std::wstring m_fileSpec;
+
+	public:
+		DirObject* m_selected;
+		bool m_browse;
 	};
 }
