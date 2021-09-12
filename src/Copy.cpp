@@ -601,7 +601,7 @@ namespace SimpleXTree
 //    if (m_percent >= 100.0)
     {
 //      if ((0x8000 & GetAsyncKeyState((unsigned char)(VK_ESCAPE))) != 0 || enterPressed)
-      if ((0x8000 & GetAsyncKeyState((unsigned char)(VK_ESCAPE))) != 0)
+      if (!m_copyStep && (0x8000 & GetAsyncKeyState((unsigned char)(VK_ESCAPE))) != 0)
       {
         m_escPressed = true;
         m_show = false;
