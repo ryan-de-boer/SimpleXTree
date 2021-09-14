@@ -30,6 +30,7 @@ namespace SimpleXTree
 	std::wstring FileSpec;
 	std::vector<bool> Tags;
 	bool GetTag(int index) const;
+  std::vector<std::wstring> GetTaggedFiles() const;
   void Tag(int fileIndex);
   void Tag();
 	void Untag();

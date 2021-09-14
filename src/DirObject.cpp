@@ -141,6 +141,19 @@ namespace SimpleXTree
 		}
 	}
 
+  std::vector<std::wstring> DirObject::GetTaggedFiles() const
+  {
+    std::vector<std::wstring> taggedFiles;
+    for (int i = 0; i < Tags.size(); ++i)
+    {
+      if (Tags[i])
+      {
+        taggedFiles.push_back(Files[i]);
+      }
+    }
+    return taggedFiles;
+  }
+
   void DirObject::Tag(int fileIndex)
   {
     Tags[fileIndex] = true;

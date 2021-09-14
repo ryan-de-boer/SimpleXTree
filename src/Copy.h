@@ -20,6 +20,8 @@ namespace SimpleXTree
     void DoCopy();
 
     std::wstring Name;
+    std::wstring Path;
+    std::wstring DestPath;
     long long SizeInBytes;
   };
 
@@ -66,9 +68,9 @@ namespace SimpleXTree
 		std::wstring m_typed;
 	public:
     std::wstring m_typed2;
-	private:
 	std::wstring m_destinationFolder;
-		std::map<std::wstring, long long> m_timePressed;
+  private:
+    std::map<std::wstring, long long> m_timePressed;
 		std::map<int, bool> m_keyPressed;
     double m_percent;
     double m_timeSecondsLeft;
@@ -95,5 +97,6 @@ namespace SimpleXTree
 	public:
 		DirObject* m_selected;
 		bool m_browse;
+    bool m_refreshDest;
 	};
 }

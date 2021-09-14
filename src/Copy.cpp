@@ -89,15 +89,25 @@ namespace SimpleXTree
 	extern int nScreenWidth;			// Console Screen Size X (columns)
 	extern int nScreenHeight;			// Console Screen Size Y (rows)
 
+  std::wstring GetName(std::wstring path);
+
   void CopyItem::DoCopy()
   {
-    Sleep(1000);
+    //    Sleep(1000);
+    std::wstringstream buf;
+    buf << this->DestPath << L"\\" << GetName(this->Path);
+    std::wstring dFile = buf.str();
+    if (!std::experimental::filesystem::exists(dFile))
+    {
+      // skip existing files for now, prefer to ask to overwrite though
+      std::experimental::filesystem::copy(this->Path, this->DestPath);
+    }
   }
 
 	Copy::Copy() : m_dirObject(NULL), m_activated(false), m_checkingForKeys(true), m_lPressed(0), m_escPressed(false), m_show(false), m_lastShown(false), 
 		m_timeSet(false), m_timePassed(0), m_renderCursor(true), m_waitForKeyLetGo(-1), m_showAvail(false), m_percent(0.0), m_exitThread(false), 
 		m_threadReadyToCopy(false), m_currentName(L""), m_timeSecondsLeft(0.0), m_calculating(true), m_numLeft(0), m_numItems(0), m_bytesLeft(0), 
-		m_selectStep(false), m_fileSpec(L""), m_toStep(false), m_destinationFolder(L""), m_createDirStep(false), m_copyStep(false), m_browse(false), m_selected(NULL)
+		m_selectStep(false), m_fileSpec(L""), m_toStep(false), m_destinationFolder(L""), m_createDirStep(false), m_copyStep(false), m_browse(false), m_selected(NULL), m_refreshDest(false)
 	{
     //https://softwareengineering.stackexchange.com/questions/382195/is-it-okay-to-start-a-thread-from-within-a-constructor-of-a-class
     m_member_thread = std::thread(&Copy::ThreadFn, this);
@@ -410,15 +420,20 @@ namespace SimpleXTree
         m_selectStep = false;
         m_toStep = true;
       }
-	  else if (m_toStep)
-	  {
-		  m_destinationFolder = m_typed2;
-		  m_toStep = false;
-		  if (!std::experimental::filesystem::exists(m_destinationFolder))
-		  {
-			  m_createDirStep = true;
-		  }
-	  }
+	    else if (m_toStep)
+	    {
+		   m_destinationFolder = m_typed2;
+		   m_toStep = false;
+		   if (!std::experimental::filesystem::exists(m_destinationFolder))
+		   {
+			    m_createDirStep = true;
+		   }
+       else
+       {
+         m_copyStep = true;
+         StartCopy();
+       }
+	    }
 		}
 		else if (ch == '\b')
 		{
@@ -512,6 +527,7 @@ namespace SimpleXTree
           }
           m_copyItems.clear();
           m_threadReadyToCopy = false;
+          m_refreshDest = true;
 
 		  //m_escPressed = true;
 		  //m_show = false;
@@ -530,29 +546,57 @@ namespace SimpleXTree
     }
   }
 
+  std::wstring GetName(std::wstring path)
+  {
+    if (path.find(L"\\") != std::string::npos)
+    {
+      return path.substr(path.rfind(L"\\") + 1);
+    }
+    return path;
+  }
+
   void Copy::StartCopy()
   {
-    m_from = L"research_new2_12345678";
-    m_to = L"research_new2_12345678";
+//    m_from = L"research_new2_12345678";
+//    m_to = L"research_new2_12345678";
+
+    m_from = m_dirObject->GetNameW();
+    m_to = GetName(m_typed2);
+
     m_percent = 0.0;
 
-    for (int i = 0; i < 10; ++i)
+    std::vector<std::wstring> taggedFiles = m_dirObject->GetTaggedFiles();
+    for (int i = 0; i < taggedFiles.size(); ++i)
     {
-      m_copyItems.push_back(CopyItem());
+      CopyItem item = CopyItem();
+      item.Path = taggedFiles[i];
+      item.Name = GetName(item.Path);
+      //https://stackoverflow.com/questions/5840148/how-can-i-get-a-files-size-in-c
+      item.SizeInBytes = std::experimental::filesystem::file_size(item.Path);
+      item.DestPath = m_typed2;
+      m_copyItems.push_back(item);
     }
-    for (int i = 0; i < 10; ++i)
-    {
-      std::wstringstream buf;
-      buf << L"the_file_" << i;
-      m_copyItems[i].Name = buf.str();
-      m_copyItems[i].SizeInBytes = 100000000 * (10 - i);
-    }
+
+    //for (int i = 0; i < 10; ++i)
+    //{
+    //  m_copyItems.push_back(CopyItem());
+    //}
+    //for (int i = 0; i < 10; ++i)
+    //{
+    //  std::wstringstream buf;
+    //  buf << L"the_file_" << i;
+    //  m_copyItems[i].Name = buf.str();
+    //  m_copyItems[i].SizeInBytes = 100000000 * (10 - i);
+    //}
     m_threadReadyToCopy = true;
   }
 
 	void Copy::CheckKeys(DirObject* dirObject, bool filesScreen)
 	{
-		m_dirObject = dirObject;
+    if (!m_browse)
+    {
+      m_dirObject = dirObject;
+    }
 		if (!m_checkingForKeys)// || !filesScreen)
 			return;
 
@@ -589,9 +633,11 @@ namespace SimpleXTree
 		}
 
 		bool enterPressed = (0x8000 & GetAsyncKeyState((unsigned char)(VK_RETURN))) != 0;
-		if (enterPressed && m_copyStep && m_percent>=100.0)
+    bool escPressed = (0x8000 & GetAsyncKeyState((unsigned char)(VK_ESCAPE))) != 0;
+		if ((enterPressed|| escPressed) && m_copyStep && m_percent>=100.0)
 		{
 			m_copyStep = false;
+      m_browse = false;
 
 			m_escPressed = true;
 			m_show = false;
