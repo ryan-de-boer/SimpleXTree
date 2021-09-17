@@ -47,6 +47,10 @@ namespace SimpleXTree
 			return IsActivated();
 		}
 		void CheckKeys(DirObject* dirObject, bool filesScreen);
+		void CheckKeysDO(SimpleXTree::DirObject* dirObject, bool filesScreen)
+		{
+			CheckKeys(dirObject, filesScreen);
+		}
 		void KeyEvent(WCHAR ch);
 		void VK(DWORD vk);
 		void SelectDir(DirObject* dirObject);
