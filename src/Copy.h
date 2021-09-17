@@ -55,6 +55,10 @@ namespace SimpleXTree
 		bool m_activated;
 		bool m_lPressed;
 		bool m_escPressed;
+	public:
+		bool m_enterPressed;
+		int m_numEnterPress;
+	private:
 		bool m_show;
 		long long m_timePassed;
 		bool m_timeSet;
@@ -91,7 +95,9 @@ namespace SimpleXTree
     bool m_selectStep;
     bool m_toStep;
 	bool m_createDirStep;
+	public:
 	bool m_copyStep;
+	private:
     std::wstring m_fileSpec;
 
 	public:

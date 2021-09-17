@@ -107,7 +107,7 @@ namespace SimpleXTree
 	Copy::Copy() : m_dirObject(NULL), m_activated(false), m_checkingForKeys(true), m_lPressed(0), m_escPressed(false), m_show(false), m_lastShown(false), 
 		m_timeSet(false), m_timePassed(0), m_renderCursor(true), m_waitForKeyLetGo(-1), m_showAvail(false), m_percent(0.0), m_exitThread(false), 
 		m_threadReadyToCopy(false), m_currentName(L""), m_timeSecondsLeft(0.0), m_calculating(true), m_numLeft(0), m_numItems(0), m_bytesLeft(0), 
-		m_selectStep(false), m_fileSpec(L""), m_toStep(false), m_destinationFolder(L""), m_createDirStep(false), m_copyStep(false), m_browse(false), m_selected(NULL), m_refreshDest(false)
+		m_selectStep(false), m_fileSpec(L""), m_toStep(false), m_destinationFolder(L""), m_createDirStep(false), m_copyStep(false), m_browse(false), m_selected(NULL), m_refreshDest(false), m_enterPressed(false), m_numEnterPress(0)
 	{
     //https://softwareengineering.stackexchange.com/questions/382195/is-it-okay-to-start-a-thread-from-within-a-constructor-of-a-class
     m_member_thread = std::thread(&Copy::ThreadFn, this);
@@ -632,20 +632,61 @@ namespace SimpleXTree
 
 		}
 
-		bool enterPressed = (0x8000 & GetAsyncKeyState((unsigned char)(VK_RETURN))) != 0;
-    bool escPressed = (0x8000 & GetAsyncKeyState((unsigned char)(VK_ESCAPE))) != 0;
-		if ((enterPressed|| escPressed) && m_copyStep && m_percent>=100.0)
+		if (m_copyStep)
 		{
-			m_copyStep = false;
-      m_browse = false;
+			bool enterPressed = (0x8000 & GetAsyncKeyState((unsigned char)(VK_RETURN))) != 0;
+			bool escPressed = (0x8000 & GetAsyncKeyState((unsigned char)(VK_ESCAPE))) != 0;
+			if (!m_enterPressed && enterPressed)
+			{
+				m_enterPressed = true;
+				m_numEnterPress++;
+			}
+			else if (!enterPressed)
+			{
+				m_enterPressed = false;
+			}
 
-			m_escPressed = true;
-			m_show = false;
-			m_activated = false;
-			m_showAvail = false;
-			m_timePressed.clear();
-			return;
+			if (m_numEnterPress>=2)
+			{
+				if (m_copyStep && m_percent >= 100.0)
+				{
+					m_copyStep = false;
+					m_browse = false;
+//					m_enterPressed = false;
+					m_numEnterPress = 0;
+					m_escPressed = false;
+					m_show = false;
+					m_activated = false;
+					m_showAvail = false;
+					m_timePressed.clear();
+					return;
+				}
+			}
+
+
+			//if (m_enterPressed && !enterPressed)
+			//{
+			//	m_enterPressed = false;
+			//}
+			//else if (!m_enterPressed && enterPressed)
+			//{
+			//	m_enterPressed = true;
+			//	if ((enterPressed || escPressed) && m_copyStep && m_percent >= 100.0)
+			//	{
+			//		m_copyStep = false;
+			//		m_browse = false;
+			//		m_enterPressed = false;
+			//		m_escPressed = false;
+			//		m_show = false;
+			//		m_activated = false;
+			//		m_showAvail = false;
+			//		m_timePressed.clear();
+			//		return;
+			//	}
+			//}
 		}
+
+
 
 //    if (m_percent >= 100.0)
     {
@@ -684,6 +725,8 @@ namespace SimpleXTree
 		m_activated = true;
 		m_show = true;
 
+		m_enterPressed = true;
+		m_numEnterPress = 0;
 		m_copyStep = true;
 		StartCopy();
 	}
