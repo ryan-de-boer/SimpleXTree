@@ -29,7 +29,10 @@ namespace SimpleXTree
 			return IsActivated();
 		}
 		void CheckKeys();
-
+    void CheckKeysDO(SimpleXTree::DirObject* dirObject, bool filesScreen)
+    {
+      CheckKeys();
+    }
 	private:
 		bool m_checkingForKeys;
 		bool m_activated;

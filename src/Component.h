@@ -1,4 +1,9 @@
 #pragma once
+namespace SimpleXTree
+{
+  class DirObject;
+}
+
 class Component
 {
 public:
@@ -15,6 +20,9 @@ public:
 	{
 		return m_isOtherActivated;
 	}
+  virtual void CheckKeysDO(SimpleXTree::DirObject* dirObject, bool filesScreen)
+  {
+  }
 protected:
 	bool m_isOtherActivatedAndNotBrowse;
 	bool m_isOtherActivated;
