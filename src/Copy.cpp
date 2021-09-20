@@ -104,7 +104,7 @@ namespace SimpleXTree
     }
   }
 
-	Copy::Copy() : m_dirObject(NULL), m_activated(false), m_checkingForKeys(true), m_lPressed(0), m_escPressed(false), m_show(false), m_lastShown(false), 
+	Copy::Copy() : m_dirObject("", NULL), m_activated(false), m_checkingForKeys(true), m_lPressed(0), m_escPressed(false), m_show(false), m_lastShown(false), 
 		m_timeSet(false), m_timePassed(0), m_renderCursor(true), m_waitForKeyLetGo(-1), m_showAvail(false), m_percent(0.0), m_exitThread(false), 
 		m_threadReadyToCopy(false), m_currentName(L""), m_timeSecondsLeft(0.0), m_calculating(true), m_numLeft(0), m_numItems(0), m_bytesLeft(0), 
 		m_selectStep(false), m_fileSpec(L""), m_toStep(false), m_destinationFolder(L""), m_createDirStep(false), m_copyStep(false), m_browse(false), m_selected(NULL), m_refreshDest(false), m_enterPressed(false), m_numEnterPress(0)
@@ -560,12 +560,12 @@ namespace SimpleXTree
 //    m_from = L"research_new2_12345678";
 //    m_to = L"research_new2_12345678";
 
-    m_from = m_dirObject->GetNameW();
+    m_from = m_dirObject.GetNameW();
     m_to = GetName(m_typed2);
 
     m_percent = 0.0;
 
-    std::vector<std::wstring> taggedFiles = m_dirObject->GetTaggedFiles();
+    std::vector<std::wstring> taggedFiles = m_dirObject.GetTaggedFiles();
     for (int i = 0; i < taggedFiles.size(); ++i)
     {
       CopyItem item = CopyItem();
@@ -595,7 +595,7 @@ namespace SimpleXTree
 	{
     if (!m_browse)
     {
-      m_dirObject = dirObject;
+      m_dirObject = *dirObject;
     }
 		if (!m_checkingForKeys)// || !filesScreen)
 			return;
