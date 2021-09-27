@@ -108,5 +108,6 @@ namespace SimpleXTree
 		DirObject* m_selected;
 		bool m_browse;
     bool m_refreshDest;
+	bool m_shownCopyScreen;
 	};
 }

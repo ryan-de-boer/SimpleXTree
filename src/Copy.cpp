@@ -107,7 +107,8 @@ namespace SimpleXTree
 	Copy::Copy() : m_dirObject(NULL), m_activated(false), m_checkingForKeys(true), m_lPressed(0), m_escPressed(false), m_show(false), m_lastShown(false), 
 		m_timeSet(false), m_timePassed(0), m_renderCursor(true), m_waitForKeyLetGo(-1), m_showAvail(false), m_percent(0.0), m_exitThread(false), 
 		m_threadReadyToCopy(false), m_currentName(L""), m_timeSecondsLeft(0.0), m_calculating(true), m_numLeft(0), m_numItems(0), m_bytesLeft(0), 
-		m_selectStep(false), m_fileSpec(L""), m_toStep(false), m_destinationFolder(L""), m_createDirStep(false), m_copyStep(false), m_browse(false), m_selected(NULL), m_refreshDest(false), m_enterPressed(false), m_numEnterPress(0)
+		m_selectStep(false), m_fileSpec(L""), m_toStep(false), m_destinationFolder(L""), m_createDirStep(false), m_copyStep(false), m_browse(false), 
+		m_selected(NULL), m_refreshDest(false), m_enterPressed(false), m_numEnterPress(0), m_shownCopyScreen(false)
 	{
     //https://softwareengineering.stackexchange.com/questions/382195/is-it-okay-to-start-a-thread-from-within-a-constructor-of-a-class
     m_member_thread = std::thread(&Copy::ThreadFn, this);
@@ -394,6 +395,7 @@ namespace SimpleXTree
 		//    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 17, L"│Items remaining: 3 (469 MB)                       │", FG_BLACK | BG_CYAN);
 		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 17, wItemsRemaining.str().c_str(), FG_BLACK | BG_CYAN);
 		DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 13, 18, L"└──────────────────────────────────────────────────┘", FG_BLACK | BG_CYAN);
+		m_shownCopyScreen = true;
 		/*
 		┌────────────────────┐
 		│31% complete
@@ -428,7 +430,7 @@ namespace SimpleXTree
 		   {
 			    m_createDirStep = true;
 		   }
-       else
+       else if (!m_browse)
        {
          m_copyStep = true;
          StartCopy();
@@ -557,6 +559,8 @@ namespace SimpleXTree
 
   void Copy::StartCopy()
   {
+	  m_enterPressed = true;
+	  m_shownCopyScreen = false;
 //    m_from = L"research_new2_12345678";
 //    m_to = L"research_new2_12345678";
 
@@ -593,7 +597,7 @@ namespace SimpleXTree
 
 	void Copy::CheckKeys(DirObject* dirObject, bool filesScreen)
 	{
-    if (!m_browse)
+    if (!m_browse && !m_toStep && !m_copyStep && !m_createDirStep)
     {
       m_dirObject = dirObject;
     }
@@ -646,7 +650,7 @@ namespace SimpleXTree
 				m_enterPressed = false;
 			}
 
-			if (m_numEnterPress>=2)
+			if (m_numEnterPress>=1 && m_shownCopyScreen)
 			{
 				if (m_copyStep && m_percent >= 100.0)
 				{
@@ -727,7 +731,11 @@ namespace SimpleXTree
 
 		m_enterPressed = true;
 		m_numEnterPress = 0;
+		/*
 		m_copyStep = true;
 		StartCopy();
+		*/
+		m_selectStep = false;
+		m_toStep = true;
 	}
 }
