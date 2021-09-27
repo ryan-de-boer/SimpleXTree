@@ -72,8 +72,9 @@ namespace SimpleXTree
 		bool m_showAvail;
 		std::wstring m_avail;
 		std::wstring m_drive;
-		DirObject* m_dirObject;
-		std::wstring m_typed;
+//    DirObject* m_dirObject;
+    DirObject m_dirObject;
+    std::wstring m_typed;
 	public:
     std::wstring m_typed2;
 	std::wstring m_destinationFolder;
