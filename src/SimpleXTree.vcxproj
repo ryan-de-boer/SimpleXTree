@@ -168,6 +168,7 @@
     <ClInclude Include="Make.h" />
     <ClInclude Include="OpenWith.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="Search.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Stopwatch.h" />
     <ClInclude Include="StrUtil.h" />
@@ -186,6 +187,7 @@
     <ClCompile Include="HookExample.cpp" />
     <ClCompile Include="LogDrive.cpp" />
     <ClCompile Include="Make.cpp" />
+    <ClCompile Include="Search.cpp" />
     <ClCompile Include="SimpleXTree.cpp" />
     <ClCompile Include="OpenWith.cpp" />
     <ClCompile Include="stdafx.cpp">
