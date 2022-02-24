@@ -104,7 +104,7 @@ namespace SimpleXTree
 
   void Search::Search3(std::wstring theSearchHex)
   {
-    m_startBeforeSearch = thestart;
+//    m_startBeforeSearch = thestart;
     m_numFoundBeforeSearch = numFound;
     m_theSearchPosBeforeSearch = theSearchPos;
 
@@ -198,11 +198,23 @@ namespace SimpleXTree
     theSearchPos = searchPos;
     theAfterSearchPos = searchPos + std::streampos(chSearch.size());
     ReadFile();
+
+    m_startBeforeSearch = thestart;
+    m_numFoundBeforeSearch = numFound;
+    m_theSearchPosBeforeSearch = theSearchPos;
   }
 
   void Search::StartSearch(std::wstring const& theSearchHex)
   {
     m_theSearchHex = theSearchHex;
+    m_startBeforeSearch = thestart;
+    m_threadReadyToSearch = true;
+  }
+
+  void Search::StartSearch(std::wstring const& theSearchHex, __int64 startBeforeSearch)
+  {
+    m_theSearchHex = theSearchHex;
+    m_startBeforeSearch = startBeforeSearch;
     m_threadReadyToSearch = true;
   }
 
@@ -246,7 +258,8 @@ namespace SimpleXTree
     {
       start = m_startBeforeSearch;
       lNumFound = m_numFoundBeforeSearch;
-      lTheSearchPos = 0;// searchObj.m_theSearchPosBeforeSearch;
+//      lTheSearchPos = 0;// searchObj.m_theSearchPosBeforeSearch;
+      lTheSearchPos = m_theSearchPosBeforeSearch;
       DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, 1, L"Searching...────────────────────────────────────────────────────────────────────", FG_BLACK | BG_CYAN);
     }
 

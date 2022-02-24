@@ -17,6 +17,7 @@ namespace SimpleXTree
     Search();
     ~Search();
     void StartSearch(std::wstring const& theSearchHex);
+    void StartSearch(std::wstring const& theSearchHex, __int64 startBeforeSearch);
     bool Searching() const;
     void Render();
   private:
