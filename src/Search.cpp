@@ -445,25 +445,37 @@ namespace SimpleXTree
       }
       else if (m_cursor == CUR_TWO)
       {
-        m_cursorPosition++;
-//        if (m_cursorPosition > 15)
+        //        m_cursorPosition++;
+        //        if (m_cursorPosition > 15)
         {
-//          m_cursorPosition = 0;
+          //          m_cursorPosition = 0;
         }
-        m_cursor = CUR_ONE;
+        //        m_cursor = CUR_ONE;
 
-        if (m_cursorPosition > 703)
+        if (m_cursorPosition >= 703)
         {
-          m_cursorPosition -= 16;
           bool inc = true;
           if ((thestart + std::streampos(688) + std::streampos(16)) >= (theend))
             inc = false;
 
           if (inc)
           {
+            m_cursorPosition++;
+            m_cursor = CUR_ONE;
+
+            m_cursorPosition -= 16;
             thestart += 16;
             ReadFile();
           }
+        }
+        //else if (m_cursorPosition == 703)
+        //{
+
+        //}
+        else
+        {
+          m_cursorPosition++;
+          m_cursor = CUR_ONE;
         }
 
       }
@@ -492,7 +504,7 @@ namespace SimpleXTree
     else if (vk == VK_DOWN)
     {
       RenderNow();
-      m_cursorPosition+=16;
+      m_cursorPosition += 16;
       if (m_cursorPosition > 703)
       {
         m_cursorPosition -= 16;
@@ -526,9 +538,34 @@ namespace SimpleXTree
       {
         m_cursorPosition -= 16;
       }
-
-
     }
+    else if (vk == VK_END)
+    {
+      RenderNow();
+      m_cursorPosition = 703;
+      m_cursor = CUR_TWO;
+    }
+    else if (vk == VK_HOME)
+    {
+      RenderNow();
+      m_cursorPosition = 0;
+      m_cursor = CUR_ONE;
+    }
+    //else if (vk == VK_NEXT)
+    //{
+    //  for (int i = 0; i < 44; ++i) //44 lines in a page
+    //  {
+    //    bool inc = true;
+    //    if ((thestart + std::streampos(688) + std::streampos(16)) >= (theend))
+    //      inc = false;
+    //    if (inc)
+    //    {
+    //      thestart += 16;
+    //    }
+    //  }
+
+    //  ReadFile();
+    //}
   }
 
   void Search::Render()
