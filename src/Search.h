@@ -33,7 +33,10 @@ namespace SimpleXTree
     bool m_exitThread;
     bool m_threadReadyToSearch;
     std::wstring m_theSearchHex;
-
+    long long m_timePassed;
+    bool m_timeSet;
+    bool m_renderCursor;
+    void Search::RenderNow();
   public:
     bool m_editing;
     bool m_activated;

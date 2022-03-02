@@ -22,6 +22,17 @@
 #include "FreeDiskSpace.h"
 #include "Stopwatch.h"
 
+#include <chrono>
+#include <iostream>
+#include <ctime>
+#include <vector>
+
+using std::cout; using std::endl;
+using std::chrono::duration_cast;
+using std::chrono::milliseconds;
+using std::chrono::seconds;
+using std::chrono::system_clock;
+
 using namespace std;
 int HexToInt2(std::wstring str);
 void ReadFile();
@@ -89,8 +100,168 @@ namespace SimpleXTree
     BG_WHITE = 0x00F0,
   };
 
+  enum eCursor
+  {
+    CUR_ONE,
+    CUR_TWO
+  };
+
+  __int64 GetYCoord(__int64 cursorPosition1, eCursor cur)
+  {
+    return cursorPosition1 / 16;
+  }
+
+  __int64 GetXCoord(__int64 cursorPosition1, eCursor cur)
+  {
+    __int64 cursorPosition = cursorPosition1 % 16;
+
+    // Group 1
+    if (cursorPosition == 0 && cur == CUR_ONE)
+    {
+      return 10;
+    }
+    if (cursorPosition == 0 && cur == CUR_TWO)
+    {
+      return 11;
+    }
+    if (cursorPosition == 1 && cur == CUR_ONE)
+    {
+      return 13;
+    }
+    if (cursorPosition == 1 && cur == CUR_TWO)
+    {
+      return 14;
+    }
+    if (cursorPosition == 2 && cur == CUR_ONE)
+    {
+      return 16;
+    }
+    if (cursorPosition == 2 && cur == CUR_TWO)
+    {
+      return 17;
+    }
+    if (cursorPosition == 3 && cur == CUR_ONE)
+    {
+      return 19;
+    }
+    if (cursorPosition == 3 && cur == CUR_TWO)
+    {
+      return 20;
+    }
+
+    // Group 2
+    if (cursorPosition == 4 && cur == CUR_ONE)
+    {
+      return 23;
+    }
+    if (cursorPosition == 4 && cur == CUR_TWO)
+    {
+      return 24;
+    }
+    if (cursorPosition == 5 && cur == CUR_ONE)
+    {
+      return 26;
+    }
+    if (cursorPosition == 5 && cur == CUR_TWO)
+    {
+      return 27;
+    }
+    if (cursorPosition == 6 && cur == CUR_ONE)
+    {
+      return 29;
+    }
+    if (cursorPosition == 6 && cur == CUR_TWO)
+    {
+      return 30;
+    }
+    if (cursorPosition == 7 && cur == CUR_ONE)
+    {
+      return 32;
+    }
+    if (cursorPosition == 7 && cur == CUR_TWO)
+    {
+      return 33;
+    }
+
+    // Group 3
+    if (cursorPosition == 8 && cur == CUR_ONE)
+    {
+      return 36;
+    }
+    if (cursorPosition == 8 && cur == CUR_TWO)
+    {
+      return 37;
+    }
+    if (cursorPosition == 9 && cur == CUR_ONE)
+    {
+      return 39;
+    }
+    if (cursorPosition == 9 && cur == CUR_TWO)
+    {
+      return 40;
+    }
+    if (cursorPosition == 10 && cur == CUR_ONE)
+    {
+      return 42;
+    }
+    if (cursorPosition == 10 && cur == CUR_TWO)
+    {
+      return 43;
+    }
+    if (cursorPosition == 11 && cur == CUR_ONE)
+    {
+      return 45;
+    }
+    if (cursorPosition == 11 && cur == CUR_TWO)
+    {
+      return 46;
+    }
+
+    // Group 4
+    if (cursorPosition == 12 && cur == CUR_ONE)
+    {
+      return 49;
+    }
+    if (cursorPosition == 12 && cur == CUR_TWO)
+    {
+      return 50;
+    }
+    if (cursorPosition == 13 && cur == CUR_ONE)
+    {
+      return 52;
+    }
+    if (cursorPosition == 13 && cur == CUR_TWO)
+    {
+      return 53;
+    }
+    if (cursorPosition == 14 && cur == CUR_ONE)
+    {
+      return 55;
+    }
+    if (cursorPosition == 14 && cur == CUR_TWO)
+    {
+      return 56;
+    }
+    if (cursorPosition == 15 && cur == CUR_ONE)
+    {
+      return 58;
+    }
+    if (cursorPosition == 15 && cur == CUR_TWO)
+    {
+      return 59;
+    }
+    return 0;
+  }
+
+  __int64 m_cursorPosition = 1;
+
+
+
+  eCursor m_cursor = CUR_ONE;
+
   Search::Search() :  m_exitThread(false),
-    m_threadReadyToSearch(false), m_startBeforeSearch(0), m_numFoundBeforeSearch(0), m_theSearchPosBeforeSearch(0), m_editing(false), m_activated(false)
+    m_threadReadyToSearch(false), m_startBeforeSearch(0), m_numFoundBeforeSearch(0), m_theSearchPosBeforeSearch(0), m_editing(false), 
+    m_activated(false), m_timePassed(0), m_timeSet(false), m_renderCursor(true)
   {
     //https://softwareengineering.stackexchange.com/questions/382195/is-it-okay-to-start-a-thread-from-within-a-constructor-of-a-class
     m_member_thread = std::thread(&Search::ThreadFn, this);
@@ -240,12 +411,22 @@ namespace SimpleXTree
     }  
   }
 
+  void Search::RenderNow()
+  {
+    m_renderCursor = true;
+    auto millisec_since_epoch = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+    m_timePassed = millisec_since_epoch;
+    m_timeSet = true;
+  }
 
   void Search::KeyEvent(WCHAR ch)
   {
     if (!m_editing && ch == 'e')
     {
       m_editing = true;
+      m_cursorPosition = 0;
+      m_cursor = CUR_ONE;
+      RenderNow();
     }
   }
 
@@ -254,6 +435,99 @@ namespace SimpleXTree
     if (vk == VK_ESCAPE)
     {
       m_editing = false;
+    }
+    else if (vk == VK_RIGHT)
+    {
+      RenderNow();
+      if (m_cursor == CUR_ONE)
+      {
+        m_cursor = CUR_TWO;
+      }
+      else if (m_cursor == CUR_TWO)
+      {
+        m_cursorPosition++;
+//        if (m_cursorPosition > 15)
+        {
+//          m_cursorPosition = 0;
+        }
+        m_cursor = CUR_ONE;
+
+        if (m_cursorPosition > 703)
+        {
+          m_cursorPosition -= 16;
+          bool inc = true;
+          if ((thestart + std::streampos(688) + std::streampos(16)) >= (theend))
+            inc = false;
+
+          if (inc)
+          {
+            thestart += 16;
+            ReadFile();
+          }
+        }
+
+      }
+    }
+    else if (vk == VK_LEFT)
+    {
+      RenderNow();
+      if (m_cursor == CUR_TWO)
+      {
+        m_cursor = CUR_ONE;
+      }
+      else if (m_cursor == CUR_ONE)
+      {
+        m_cursorPosition--;
+        if (m_cursorPosition < 0)
+        {
+          m_cursorPosition = 0;
+          m_cursor = CUR_ONE;
+        }
+        else
+        {
+          m_cursor = CUR_TWO;
+        }
+      }
+    }
+    else if (vk == VK_DOWN)
+    {
+      RenderNow();
+      m_cursorPosition+=16;
+      if (m_cursorPosition > 703)
+      {
+        m_cursorPosition -= 16;
+        bool inc = true;
+        if ((thestart + std::streampos(688) + std::streampos(16)) >= (theend))
+          inc = false;
+
+        if (inc)
+        {
+          thestart += 16;
+          ReadFile();
+        }
+      }
+    }
+    else if (vk == VK_UP)
+    {
+      RenderNow();
+      if (m_cursorPosition < 16)
+      {
+        if (thestart < 16)
+        {
+          thestart = 0;
+        }
+        else
+        {
+          thestart -= 16;
+        }
+        ReadFile();
+      }
+      else if (m_cursorPosition > 15)
+      {
+        m_cursorPosition -= 16;
+      }
+
+
     }
   }
 
@@ -491,6 +765,7 @@ namespace SimpleXTree
 
       //				  "DA C4 C4 C4  C4 5B 20 42  49 45 57 20  56 65 72 73   ┌────[BIEW Vers";
       DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, buf.str(), FG_CYAN | BG_BLACK);
+
       if (lNumFound > 0)
       {
         std::wstring oneLess = ss.str();
@@ -513,6 +788,43 @@ namespace SimpleXTree
 
     DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"═══════════════════════════════════════════════════════════════─────────────────", FG_GREY | BG_BLACK);
     line++;
+
+    {
+      //https://www.delftstack.com/howto/cpp/how-to-get-time-in-milliseconds-cpp/
+      if (!m_timeSet)
+      {
+        auto millisec_since_epoch = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+        m_timePassed = millisec_since_epoch;
+        m_timeSet = true;
+      }
+
+      auto currentMillisec_since_epoch = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+      if (currentMillisec_since_epoch - m_timePassed > 500)
+      {
+        m_timePassed = currentMillisec_since_epoch;
+        m_timeSet = true;
+        m_renderCursor = !m_renderCursor;
+      }
+
+      if (m_editing && m_renderCursor)
+      {
+        __int64 x = GetXCoord(m_cursorPosition, m_cursor);
+        __int64 y = GetYCoord(m_cursorPosition, m_cursor);
+        std::wstring hex = GetHex(memblock2[m_cursorPosition]);
+        std::wstring hex1 = hex.substr(0, 1);
+        std::wstring hex2 = hex.substr(1, 1);
+        std::wstring hexChar = L"";
+        if (m_cursor == CUR_ONE)
+        {
+          hexChar = hex1;
+        }
+        else if (m_cursor == CUR_TWO)
+        {
+          hexChar = hex2;
+        }
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, x, 2 + y, hexChar, FG_RED | BG_WHITE);
+      }
+    }
 
     if (searchMode)
     {
