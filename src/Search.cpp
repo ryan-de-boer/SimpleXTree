@@ -106,12 +106,12 @@ namespace SimpleXTree
     CUR_TWO
   };
 
-  __int64 GetYCoord(__int64 cursorPosition1, eCursor cur)
+  __int64 Search::GetYCoord(__int64 cursorPosition1, eCursor cur)
   {
     return cursorPosition1 / 16;
   }
 
-  __int64 GetXCoord(__int64 cursorPosition1, eCursor cur)
+  __int64 Search::GetXCoord(__int64 cursorPosition1, eCursor cur)
   {
     __int64 cursorPosition = cursorPosition1 % 16;
 
@@ -260,7 +260,7 @@ namespace SimpleXTree
   eCursor m_cursor = CUR_ONE;
 
   Search::Search() :  m_exitThread(false),
-    m_threadReadyToSearch(false), m_startBeforeSearch(0), m_numFoundBeforeSearch(0), m_theSearchPosBeforeSearch(0), m_editing(false), 
+    m_threadReadyToSearch(false), m_startBeforeSearch(0), m_numFoundBeforeSearch(0), m_theSearchPosBeforeSearch(0), m_editing(false), m_saving(false), 
     m_activated(false), m_timePassed(0), m_timeSet(false), m_renderCursor(true)
   {
     //https://softwareengineering.stackexchange.com/questions/382195/is-it-okay-to-start-a-thread-from-within-a-constructor-of-a-class
@@ -419,6 +419,68 @@ namespace SimpleXTree
     m_timeSet = true;
   }
 
+  class AnEdit
+  {
+  public:
+    WCHAR One;
+    bool OneSet;
+    WCHAR Two;
+    bool TwoSet;
+    AnEdit::AnEdit() : OneSet(false), TwoSet(false), One(0), Two(0)
+    {
+    }
+  };
+
+  std::map<__int64, AnEdit> m_edits;
+  std::vector<__int64> m_orderOfEdits;
+
+  char ReadIt(__int64 pos)
+  {
+    std::ifstream source;
+    source.open(pathToFile, ios::in | ios::binary);
+    bool fo = source.is_open();
+    source.seekg(std::streampos(pos), ios::beg);
+    char* memblock = new char[1];
+    source.read(memblock, 1);
+    char ch = memblock[0];
+    source.close();
+    delete[] memblock;
+    return ch;
+  }
+
+  void WriteIt(__int64 pos, char value)
+  {
+    std::fstream source;
+    source.open(pathToFile, ios::in | ios::out | ios::binary);
+    bool fo = source.is_open();
+    source.seekp(std::streampos(pos), ios::beg);
+    source.write(&value, 1);
+    source.close();
+  }
+
+  //https://stackoverflow.com/questions/17261798/converting-a-hex-string-to-a-byte-array
+  int char2int(char input)
+  {
+    if (input >= '0' && input <= '9')
+      return input - '0';
+    if (input >= 'A' && input <= 'F')
+      return input - 'A' + 10;
+    if (input >= 'a' && input <= 'f')
+      return input - 'a' + 10;
+    throw std::invalid_argument("Invalid input string");
+  }
+
+  // This function assumes src to be a zero terminated sanitized string with
+  // an even number of [0-9a-f] characters, and target to be sufficiently large
+  void hex2bin(const char* src, char* target)
+  {
+    while (*src && src[1])
+    {
+      *(target++) = char2int(*src) * 16 + char2int(src[1]);
+      src += 2;
+    }
+  }
+
   void Search::KeyEvent(WCHAR ch)
   {
     if (!m_editing && ch == 'e')
@@ -428,6 +490,90 @@ namespace SimpleXTree
       m_cursor = CUR_ONE;
       RenderNow();
     }
+    else if (m_saving && ch == 'y')
+    {
+      m_saving = false;
+      m_editing = false;
+      // save edits:
+
+      std::map<__int64, AnEdit>::iterator it;
+      for (it = m_edits.begin(); it != m_edits.end(); it++)
+      {
+        __int64 address = it->first;
+        char ch = ReadIt(address);
+        std::wstring hexStr = GetHex(ch);
+        std::wstring one = hexStr.substr(0, 1);
+        std::wstring two = hexStr.substr(1, 1);
+        if (it->second.OneSet)
+        {
+          one = it->second.One;
+        }
+        if (it->second.TwoSet)
+        {
+          two = it->second.Two;
+        }
+        std::wstringstream buf;
+        buf << one << two;
+
+        char target[1];
+        hex2bin(StrUtil::ws2s(buf.str()).c_str(), target);
+
+        WriteIt(address, target[0]);
+      }
+
+      m_edits.clear();
+      m_orderOfEdits.clear();
+      ReadFile();
+    }
+    else if (m_saving && ch == 'n')
+    {
+      m_editing = false;
+      m_saving = false;
+      m_edits.clear();
+      m_orderOfEdits.clear();
+    }
+    else if (m_editing && ((ch>='a' && ch<='f')|| (ch >= 'A' && ch <= 'F') || (ch >= '0' && ch <= '9')))
+    {
+      ch = std::toupper(ch);
+      if (m_cursor == CUR_ONE)
+      {
+        std::map<__int64, AnEdit>::iterator it = m_edits.find(thestart + m_cursorPosition);
+        if (it != m_edits.end())
+        {
+          it->second.One = ch;
+          it->second.OneSet = true;
+        }
+        else
+        {
+          AnEdit edit;
+          edit.One = ch;
+          edit.OneSet = true;
+          m_edits[thestart + m_cursorPosition] = edit;
+        }
+        m_orderOfEdits.push_back(thestart + m_cursorPosition);
+        VK(VK_RIGHT);
+      }
+      else if (m_cursor == CUR_TWO)
+      {
+        std::map<__int64, AnEdit>::iterator it = m_edits.find(thestart + m_cursorPosition);
+        if (it != m_edits.end())
+        {
+          it->second.Two = ch;
+          it->second.TwoSet = true;
+        }
+        else
+        {
+          AnEdit edit;
+          edit.Two = ch;
+          edit.TwoSet = true;
+          m_edits[thestart + m_cursorPosition] = edit;
+        }
+        m_orderOfEdits.push_back(thestart + m_cursorPosition);
+        VK(VK_RIGHT);
+      }
+      int a = 1;
+      a++;
+    }
   }
 
   void Search::VK(DWORD vk)
@@ -435,6 +581,9 @@ namespace SimpleXTree
     if (vk == VK_ESCAPE)
     {
       m_editing = false;
+      m_saving = false;
+      m_edits.clear();
+      m_orderOfEdits.clear();
     }
     else if (vk == VK_RIGHT)
     {
@@ -551,21 +700,53 @@ namespace SimpleXTree
       m_cursorPosition = 0;
       m_cursor = CUR_ONE;
     }
-    //else if (vk == VK_NEXT)
-    //{
-    //  for (int i = 0; i < 44; ++i) //44 lines in a page
-    //  {
-    //    bool inc = true;
-    //    if ((thestart + std::streampos(688) + std::streampos(16)) >= (theend))
-    //      inc = false;
-    //    if (inc)
-    //    {
-    //      thestart += 16;
-    //    }
-    //  }
+    else if (vk == VK_RETURN && m_editing)
+    {
+      m_saving = true;
+    }
+  }
 
-    //  ReadFile();
-    //}
+  bool Search::HasCoord(__int64 x, __int64 y, std::wstring& hexChar)
+  {
+    std::map<__int64, AnEdit>::iterator it;
+    for (it = m_edits.begin(); it != m_edits.end(); it++)
+    {
+      if (m_cursor == CUR_ONE && it->second.OneSet)
+      {
+        __int64 address = it->first;
+        __int64 offset = address - thestart;
+        if (offset >= 0 && offset <= 703)
+        {
+          __int64 ox = GetXCoord(offset, CUR_ONE);
+          __int64 oy = GetYCoord(offset, CUR_ONE);
+          if (ox == x && oy == y)
+          {
+            std::wstringstream out;
+            out << it->second.One;
+            hexChar = out.str();
+            return true;
+          }
+        }
+      }
+      else if (m_cursor == CUR_TWO && it->second.TwoSet)
+      {
+        __int64 address = it->first;
+        __int64 offset = address - thestart;
+        if (offset >= 0 && offset <= 703)
+        {
+          __int64 ox = GetXCoord(offset, CUR_TWO);
+          __int64 oy = GetYCoord(offset, CUR_TWO);
+          if (ox == x && oy == y)
+          {
+            std::wstringstream out;
+            out << it->second.Two;
+            hexChar = out.str();
+            return true;
+          }
+        }
+      }
+    } //endFor
+    return false;
   }
 
   void Search::Render()
@@ -843,6 +1024,37 @@ namespace SimpleXTree
         m_renderCursor = !m_renderCursor;
       }
 
+      std::map<__int64, AnEdit>::iterator it;
+      for (it = m_edits.begin(); it != m_edits.end(); it++)
+      {
+        if (it->second.OneSet)
+        {
+          __int64 address = it->first;
+          __int64 offset = address - thestart;
+          if (offset >= 0 && offset <= 703)
+          {
+            __int64 x = GetXCoord(offset, CUR_ONE);
+            __int64 y = GetYCoord(offset, CUR_ONE);
+            std::wstringstream out;
+            out << it->second.One;
+            DrawString(m_bufScreen, nScreenWidth, nScreenHeight, x, 2 + y, out.str(), FG_CYAN | BG_BLACK);
+          }
+        }
+        if (it->second.TwoSet)
+        {
+          __int64 address = it->first;
+          __int64 offset = address - thestart;
+          if (offset >= 0 && offset <= 703)
+          {
+            __int64 x = GetXCoord(offset, CUR_TWO);
+            __int64 y = GetYCoord(offset, CUR_TWO);
+            std::wstringstream out;
+            out << it->second.Two;
+            DrawString(m_bufScreen, nScreenWidth, nScreenHeight, x, 2 + y, out.str(), FG_CYAN | BG_BLACK);
+          }
+        }
+      }
+
       if (m_editing && m_renderCursor)
       {
         __int64 x = GetXCoord(m_cursorPosition, m_cursor);
@@ -859,6 +1071,7 @@ namespace SimpleXTree
         {
           hexChar = hex2;
         }
+        HasCoord(x, y, hexChar);
         DrawString(m_bufScreen, nScreenWidth, nScreenHeight, x, 2 + y, hexChar, FG_RED | BG_WHITE);
       }
     }
@@ -894,6 +1107,16 @@ namespace SimpleXTree
         line++;
         DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                                                                         ◄─┘ ok ", FG_GREY | BG_BLACK);
         DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                                                                         ◄─┘    ", FG_CYAN | BG_BLACK);
+      }
+      else if (m_saving)
+      {
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L" Save modifications to disk ?                                                   ", FG_GREY | BG_BLACK);
+        line++;
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                                                                                ", FG_GREY | BG_BLACK);
+        line++;
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                                                   Yes  No  F1 help  ESC cancel ", FG_GREY | BG_BLACK);
+        DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                                                   Y    N   F1       ESC        ", FG_CYAN | BG_BLACK);
+        line++;
       }
       else if (m_editing)
       {

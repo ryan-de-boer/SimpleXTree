@@ -11,6 +11,8 @@
 
 namespace SimpleXTree
 {
+  enum eCursor : int;
+
   class Search
   {
   public:
@@ -30,6 +32,9 @@ namespace SimpleXTree
     void ThreadFn();
     void Search3(std::wstring theSearchHex);
     std::thread m_member_thread;
+    __int64 GetYCoord(__int64 cursorPosition1, eCursor cur);
+    __int64 GetXCoord(__int64 cursorPosition1, eCursor cur);
+    bool Search::HasCoord(__int64 x, __int64 y, std::wstring& hexChar);
     bool m_exitThread;
     bool m_threadReadyToSearch;
     std::wstring m_theSearchHex;
@@ -39,6 +44,7 @@ namespace SimpleXTree
     void Search::RenderNow();
   public:
     bool m_editing;
+    bool m_saving;
     bool m_activated;
     __int64 m_startBeforeSearch;
     int m_numFoundBeforeSearch;
