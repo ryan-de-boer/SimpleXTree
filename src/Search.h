@@ -46,6 +46,7 @@ namespace SimpleXTree
     void Search::InsertHexChar(char ch);
   public:
     bool m_editing;
+    bool m_editingAscii;
     bool m_saving;
     bool m_activated;
     __int64 m_startBeforeSearch;

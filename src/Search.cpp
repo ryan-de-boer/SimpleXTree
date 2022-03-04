@@ -264,7 +264,8 @@ namespace SimpleXTree
   eCursor m_cursor = CUR_ONE;
 
   Search::Search() :  m_exitThread(false),
-    m_threadReadyToSearch(false), m_startBeforeSearch(0), m_numFoundBeforeSearch(0), m_theSearchPosBeforeSearch(0), m_editing(false), m_saving(false), 
+    m_threadReadyToSearch(false), m_startBeforeSearch(0), m_numFoundBeforeSearch(0), m_theSearchPosBeforeSearch(0), m_editing(false), 
+    m_editingAscii(false), m_saving(false),
     m_activated(false), m_timePassed(0), m_timeSet(false), m_renderCursor(true), m_hasFocus(false)
   {
     //https://softwareengineering.stackexchange.com/questions/382195/is-it-okay-to-start-a-thread-from-within-a-constructor-of-a-class
@@ -504,7 +505,15 @@ namespace SimpleXTree
   {
     bool control = (0x8000 & GetAsyncKeyState((unsigned char)(VK_CONTROL))) != 0;
 
-    if (!searchMode && !m_editing && ch == 'e')
+    if (ch == '\t' || ch=='\r')
+    {
+      ; // skip tab and enter
+    }
+    else if (searchMode)
+    {
+      ; // skip if search mode
+    }
+    else if (!m_editing && ch == 'e')
     {
       m_editing = true;
       m_cursorPosition = 0;
@@ -515,6 +524,7 @@ namespace SimpleXTree
     {
       m_saving = false;
       m_editing = false;
+      m_editingAscii = false;
       // save edits:
 
       std::map<__int64, AnEdit>::iterator it;
@@ -549,9 +559,34 @@ namespace SimpleXTree
     else if (m_saving && ch == 'n')
     {
       m_editing = false;
+      m_editingAscii = false;
       m_saving = false;
       m_edits.clear();
       m_orderOfEdits.clear();
+    }
+    else if ((m_editingAscii || m_editing) && ch == '\b')
+    {
+      VK(VK_LEFT);
+    }
+    else if (m_editingAscii && control && ch == 22) //ctrl-v
+    {
+      std::wstring clipboard = GetClipboardText();
+      for (std::wstring::size_type i = 0; i < clipboard.size(); ++i)
+      {
+        std::wstring str = GetHex(clipboard[i]);
+        m_cursor = CUR_ONE;
+        InsertHexChar(str[0]);
+        m_cursor = CUR_TWO;
+        InsertHexChar(str[1]);
+      }
+    }
+    else if (m_editingAscii)
+    {
+      std::wstring str = GetHex(ch);
+      m_cursor = CUR_ONE;
+      InsertHexChar(str[0]);
+      m_cursor = CUR_TWO;
+      InsertHexChar(str[1]);
     }
     else if (m_editing && ((ch>='a' && ch<='f')|| (ch >= 'A' && ch <= 'F') || (ch >= '0' && ch <= '9')))
     {
@@ -562,7 +597,8 @@ namespace SimpleXTree
     else if (m_editing && control && ch == 22) //ctrl-v
     {
       std::wstring clipboard = GetClipboardText();
-      for (std::wstring::size_type i = 0; i < clipboard.size(); ++i) {
+      for (std::wstring::size_type i = 0; i < clipboard.size(); ++i)
+      {
         InsertHexChar(clipboard[i]);
       }
     }
@@ -620,6 +656,7 @@ namespace SimpleXTree
     if (vk == VK_ESCAPE)
     {
       m_editing = false;
+      m_editingAscii = false;
       m_saving = false;
       m_edits.clear();
       m_orderOfEdits.clear();
@@ -628,6 +665,17 @@ namespace SimpleXTree
     {
       m_edits.clear();
       m_orderOfEdits.clear();
+    }
+    else if (m_editingAscii && vk == VK_TAB)
+    {
+      m_editingAscii = false;
+      m_cursor = CUR_ONE;
+      RenderNow();
+    }
+    else if (m_editing && vk == VK_TAB)
+    {
+      m_editingAscii = true;
+      RenderNow();
     }
     else if (vk == VK_RIGHT)
     {
@@ -676,6 +724,11 @@ namespace SimpleXTree
     else if (vk == VK_LEFT)
     {
       RenderNow();
+      if (m_editingAscii)
+      {
+        // Want to go back one if editing ascii.
+        m_cursor = CUR_ONE;
+      }
       if (m_cursor == CUR_TWO)
       {
         m_cursor = CUR_ONE;
@@ -750,6 +803,7 @@ namespace SimpleXTree
       {
         // No edits to save.
         m_editing = false;
+        m_editingAscii = false;
         m_saving = false;
       }
       else
@@ -1131,7 +1185,29 @@ namespace SimpleXTree
         DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 63 + x2, 2 + y2, finalStr, FG_CYAN | BG_BLACK);
       }
 
-      if (m_editing && m_renderCursor && HasFocus())
+      if (m_editingAscii && m_renderCursor && HasFocus())
+      {
+        __int64 x2 = m_cursorPosition % 16 + 63;
+        __int64 y2 = m_cursorPosition / 16 + 2;
+        std::wstring ch = GetChar(memblock2[m_cursorPosition]);
+
+        __int64 xc1 = GetXCoord(m_cursorPosition, CUR_ONE);
+        __int64 yc1 = GetYCoord(m_cursorPosition, CUR_ONE);
+        __int64 xc2 = GetXCoord(m_cursorPosition, CUR_TWO);
+        __int64 yc2 = GetYCoord(m_cursorPosition, CUR_TWO);
+        std::wstring hex = GetHex(memblock2[m_cursorPosition]);
+        std::wstring hex1 = hex.substr(0, 1);
+        std::wstring hex2 = hex.substr(1, 1);
+        m_cursor = CUR_ONE;
+        HasCoord(xc1, yc1, hex1);
+        m_cursor = CUR_TWO;
+        HasCoord(xc2, yc2, hex2);
+        hex = hex1 + hex2;
+        ch = GetChar((char)HexToInt2(hex));
+
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, x2, y2, ch, FG_RED | BG_WHITE);
+      }
+      else if (m_editing && m_renderCursor && HasFocus())
       {
         __int64 x = GetXCoord(m_cursorPosition, m_cursor);
         __int64 y = GetYCoord(m_cursorPosition, m_cursor);
