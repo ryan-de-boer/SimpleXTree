@@ -488,7 +488,7 @@ namespace SimpleXTree
   {
     bool control = (0x8000 & GetAsyncKeyState((unsigned char)(VK_CONTROL))) != 0;
 
-    if (!m_editing && ch == 'e')
+    if (!searchMode && !m_editing && ch == 'e')
     {
       m_editing = true;
       m_cursorPosition = 0;
