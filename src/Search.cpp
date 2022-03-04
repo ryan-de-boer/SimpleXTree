@@ -297,11 +297,26 @@ namespace SimpleXTree
       std::wstringstream hex;
       hex << *pos;
       ++pos;
-      hex << *pos;
+      if (pos == theSearchHex.end())
+      {
+        std::wstringstream hex2;
+        hex2 << L"0";
+        hex2 << hex.str();
+        hex.str(L"");
+        hex << hex2.str();
+      }
+      else
+      {
+        hex << *pos;
+      }
 
       int num = HexToInt2(hex.str());
       chSearch.push_back((char)num);
       chFound.push_back(false);
+      if (pos == theSearchHex.end())
+      {
+        break;
+      }
     }
     byte* aSearch = (byte*)&chSearch[0];
 
