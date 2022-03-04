@@ -41,7 +41,9 @@ namespace SimpleXTree
     long long m_timePassed;
     bool m_timeSet;
     bool m_renderCursor;
+    bool m_hasFocus;
     void Search::RenderNow();
+    void Search::InsertHexChar(char ch);
   public:
     bool m_editing;
     bool m_saving;

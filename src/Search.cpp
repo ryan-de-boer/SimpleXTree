@@ -58,6 +58,8 @@ extern char* memblock2;
 void DrawStringSkipSpace(CHAR_INFO *m_bufScreen, int nScreenWidth, int nScreenHeight, int x, int y, std::wstring c, short col = 0x000F);
 extern bool searchMode;
 extern std::wstring searchHex;
+std::wstring GetClipboardText();
+bool HasFocus();
 
 namespace SimpleXTree
 {
@@ -261,7 +263,7 @@ namespace SimpleXTree
 
   Search::Search() :  m_exitThread(false),
     m_threadReadyToSearch(false), m_startBeforeSearch(0), m_numFoundBeforeSearch(0), m_theSearchPosBeforeSearch(0), m_editing(false), m_saving(false), 
-    m_activated(false), m_timePassed(0), m_timeSet(false), m_renderCursor(true)
+    m_activated(false), m_timePassed(0), m_timeSet(false), m_renderCursor(true), m_hasFocus(false)
   {
     //https://softwareengineering.stackexchange.com/questions/382195/is-it-okay-to-start-a-thread-from-within-a-constructor-of-a-class
     m_member_thread = std::thread(&Search::ThreadFn, this);
@@ -483,6 +485,8 @@ namespace SimpleXTree
 
   void Search::KeyEvent(WCHAR ch)
   {
+    bool control = (0x8000 & GetAsyncKeyState((unsigned char)(VK_CONTROL))) != 0;
+
     if (!m_editing && ch == 'e')
     {
       m_editing = true;
@@ -534,45 +538,63 @@ namespace SimpleXTree
     }
     else if (m_editing && ((ch>='a' && ch<='f')|| (ch >= 'A' && ch <= 'F') || (ch >= '0' && ch <= '9')))
     {
-      ch = std::toupper(ch);
-      if (m_cursor == CUR_ONE)
-      {
-        std::map<__int64, AnEdit>::iterator it = m_edits.find(thestart + m_cursorPosition);
-        if (it != m_edits.end())
-        {
-          it->second.One = ch;
-          it->second.OneSet = true;
-        }
-        else
-        {
-          AnEdit edit;
-          edit.One = ch;
-          edit.OneSet = true;
-          m_edits[thestart + m_cursorPosition] = edit;
-        }
-        m_orderOfEdits.push_back(thestart + m_cursorPosition);
-        VK(VK_RIGHT);
-      }
-      else if (m_cursor == CUR_TWO)
-      {
-        std::map<__int64, AnEdit>::iterator it = m_edits.find(thestart + m_cursorPosition);
-        if (it != m_edits.end())
-        {
-          it->second.Two = ch;
-          it->second.TwoSet = true;
-        }
-        else
-        {
-          AnEdit edit;
-          edit.Two = ch;
-          edit.TwoSet = true;
-          m_edits[thestart + m_cursorPosition] = edit;
-        }
-        m_orderOfEdits.push_back(thestart + m_cursorPosition);
-        VK(VK_RIGHT);
-      }
+      InsertHexChar(ch);
       int a = 1;
       a++;
+    }
+    else if (m_editing && control && ch == 22) //ctrl-v
+    {
+      std::wstring clipboard = GetClipboardText();
+      for (std::wstring::size_type i = 0; i < clipboard.size(); ++i) {
+        InsertHexChar(clipboard[i]);
+      }
+    }
+  }
+
+  void Search::InsertHexChar(char ch)
+  {
+    bool isValid = (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F') || (ch >= '0' && ch <= '9');
+    if (!isValid)
+    {
+      return;
+    }
+
+    ch = std::toupper(ch);
+    if (m_cursor == CUR_ONE)
+    {
+      std::map<__int64, AnEdit>::iterator it = m_edits.find(thestart + m_cursorPosition);
+      if (it != m_edits.end())
+      {
+        it->second.One = ch;
+        it->second.OneSet = true;
+      }
+      else
+      {
+        AnEdit edit;
+        edit.One = ch;
+        edit.OneSet = true;
+        m_edits[thestart + m_cursorPosition] = edit;
+      }
+      m_orderOfEdits.push_back(thestart + m_cursorPosition);
+      VK(VK_RIGHT);
+    }
+    else if (m_cursor == CUR_TWO)
+    {
+      std::map<__int64, AnEdit>::iterator it = m_edits.find(thestart + m_cursorPosition);
+      if (it != m_edits.end())
+      {
+        it->second.Two = ch;
+        it->second.TwoSet = true;
+      }
+      else
+      {
+        AnEdit edit;
+        edit.Two = ch;
+        edit.TwoSet = true;
+        m_edits[thestart + m_cursorPosition] = edit;
+      }
+      m_orderOfEdits.push_back(thestart + m_cursorPosition);
+      VK(VK_RIGHT);
     }
   }
 
@@ -582,6 +604,11 @@ namespace SimpleXTree
     {
       m_editing = false;
       m_saving = false;
+      m_edits.clear();
+      m_orderOfEdits.clear();
+    }
+    else if (m_editing && vk == VK_F8)
+    {
       m_edits.clear();
       m_orderOfEdits.clear();
     }
@@ -1007,6 +1034,12 @@ namespace SimpleXTree
     DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"═══════════════════════════════════════════════════════════════─────────────────", FG_GREY | BG_BLACK);
     line++;
 
+    if (!m_hasFocus && HasFocus())
+    {
+      RenderNow();
+    }
+    m_hasFocus = HasFocus();
+
     {
       //https://www.delftstack.com/howto/cpp/how-to-get-time-in-milliseconds-cpp/
       if (!m_timeSet)
@@ -1055,7 +1088,7 @@ namespace SimpleXTree
         }
       }
 
-      if (m_editing && m_renderCursor)
+      if (m_editing && m_renderCursor && HasFocus())
       {
         __int64 x = GetXCoord(m_cursorPosition, m_cursor);
         __int64 y = GetYCoord(m_cursorPosition, m_cursor);
@@ -1074,6 +1107,12 @@ namespace SimpleXTree
         HasCoord(x, y, hexChar);
         DrawString(m_bufScreen, nScreenWidth, nScreenHeight, x, 2 + y, hexChar, FG_RED | BG_WHITE);
       }
+    }
+
+    if (m_editing)
+    {
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 63, 0, L"Byte:            ", FG_GREY | BG_BLACK);
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 63, 0, L"Byte: "+GetHexPadded8(thestart+m_cursorPosition), FG_GREY | BG_BLACK);
     }
 
     if (searchMode)
