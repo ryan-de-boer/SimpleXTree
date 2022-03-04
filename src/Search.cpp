@@ -60,6 +60,7 @@ extern bool searchMode;
 extern std::wstring searchHex;
 std::wstring GetClipboardText();
 bool HasFocus();
+std::wstring GetAppPath();
 
 namespace SimpleXTree
 {
@@ -739,6 +740,12 @@ namespace SimpleXTree
       {
         m_saving = true;
       }
+    }
+    else if (vk == VK_F1 && m_editing)
+    {
+      std::wstringstream wstr;
+      wstr << " /c " << "\"" << GetAppPath() << "\\help\\HexEdit.html" << "\"";
+      ShellExecute(NULL, L"open", L"C:\\Windows\\System32\\CMD.exe", wstr.str().c_str(), NULL, SW_HIDE);
     }
   }
 
