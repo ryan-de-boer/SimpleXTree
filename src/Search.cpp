@@ -729,7 +729,16 @@ namespace SimpleXTree
     }
     else if (vk == VK_RETURN && m_editing)
     {
-      m_saving = true;
+      if (m_edits.size() == 0)
+      {
+        // No edits to save.
+        m_editing = false;
+        m_saving = false;
+      }
+      else
+      {
+        m_saving = true;
+      }
     }
   }
 
@@ -1149,7 +1158,11 @@ namespace SimpleXTree
       }
       else if (m_saving)
       {
-        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L" Save modifications to disk ?                                                   ", FG_GREY | BG_BLACK);
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L" Save modifications to disk?                                                    ", FG_GREY | BG_BLACK);
+        if (m_renderCursor && HasFocus())
+        {
+          DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 29, line, L" ", FG_WHITE | BG_WHITE);
+        }
         line++;
         DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                                                                                ", FG_GREY | BG_BLACK);
         line++;
