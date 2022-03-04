@@ -53,6 +53,7 @@ extern int nScreenWidth;			// Console Screen Size X (columns)
 extern int nScreenHeight;			// Console Screen Size Y (rows)
 std::wstring GetHex(char o);
 std::wstring GetHexPadded8(int num);
+int HexToInt2(std::wstring str);
 std::wstring GetChar(char o);
 extern char* memblock2;
 void DrawStringSkipSpace(CHAR_INFO *m_bufScreen, int nScreenWidth, int nScreenHeight, int x, int y, std::wstring c, short col = 0x000F);
@@ -1091,32 +1092,43 @@ namespace SimpleXTree
       std::map<__int64, AnEdit>::iterator it;
       for (it = m_edits.begin(); it != m_edits.end(); it++)
       {
+        __int64 address = it->first;
+        __int64 offset = address - thestart;
+        char ch = memblock2[offset];
+        std::wstring str = GetHex(ch);
+        std::wstring str1 = str.substr(0, 1);
+        std::wstring str2 = str.substr(1, 1);
         if (it->second.OneSet)
         {
-          __int64 address = it->first;
-          __int64 offset = address - thestart;
           if (offset >= 0 && offset <= 703)
           {
             __int64 x = GetXCoord(offset, CUR_ONE);
             __int64 y = GetYCoord(offset, CUR_ONE);
             std::wstringstream out;
             out << it->second.One;
+            str1 = out.str();
             DrawString(m_bufScreen, nScreenWidth, nScreenHeight, x, 2 + y, out.str(), FG_CYAN | BG_BLACK);
           }
         }
         if (it->second.TwoSet)
         {
-          __int64 address = it->first;
-          __int64 offset = address - thestart;
           if (offset >= 0 && offset <= 703)
           {
             __int64 x = GetXCoord(offset, CUR_TWO);
             __int64 y = GetYCoord(offset, CUR_TWO);
             std::wstringstream out;
             out << it->second.Two;
+            str2 = out.str();
             DrawString(m_bufScreen, nScreenWidth, nScreenHeight, x, 2 + y, out.str(), FG_CYAN | BG_BLACK);
           }
         }
+        
+        char finalChar = (char)HexToInt2(str1 + str2);
+        std::wstring finalStr = GetChar(finalChar);
+
+        int y2 = offset / 16;
+        int x2 = offset % 16;
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 63 + x2, 2 + y2, finalStr, FG_CYAN | BG_BLACK);
       }
 
       if (m_editing && m_renderCursor && HasFocus())
