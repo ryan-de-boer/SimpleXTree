@@ -1293,7 +1293,20 @@ namespace SimpleXTree
       }
       else
       {
+        double percent = (double)(thestart+std::streampos(703+1)) / (double)theend * 100.0;
+        int ipercent = (int)percent;
+        std::wstringstream wpercent;
+        if (ipercent < 100)
+        {
+          wpercent << " ";
+        }
+        if (ipercent < 10)
+        {
+          wpercent << " ";
+        }
+        wpercent << ipercent << " %";
         DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"VIEW      ASCII  Dump  Edit  Find  Hex  Mask  Wordwrap  Jump                    ", FG_GREY | BG_BLACK);
+        DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                                                                          " + wpercent.str(), FG_CYAN | BG_BLACK);
         DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"          A      D     E     F     H    M     W         J                       ", FG_CYAN | BG_BLACK);
         line++;
         DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"COMMANDS  0..9 goto bookmark         F9 search  F5 seedos  SPACE search again   ", FG_GREY | BG_BLACK);
