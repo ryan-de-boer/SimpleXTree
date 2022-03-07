@@ -1117,7 +1117,135 @@ namespace SimpleXTree
       line++;
     }
 
-    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"═══════════════════════════════════════════════════════════════─────────────────", FG_GREY | BG_BLACK);
+    //https://mycurvefit.com/
+    //power
+    //y = 60450.23*x^-0.8831565
+    /*
+    consoleapp.csproj
+    {_Myoff=0 _Fpos=2425 _Mystate={_Wchar=0 _Byte=0 _State=0 } }
+    ════════════════════════════════════════════════════════════════════════────────
+    2425 => 72/80, 8, 0.9, 0.1
+
+    program.cs
+    {_Myoff=0 _Fpos=8595 _Mystate={_Wchar=0 _Byte=0 _State=0 } }
+    ══════════════──────────────────────────────────────────────────────────────────
+    8595 => 14/80, 66, 0.175, 0.825
+
+    hookdll.dll
+    {_Myoff=0 _Fpos=32768 _Mystate={_Wchar=0 _Byte=0 _State=0 } }
+    ════════────────────────────────────────────────────────────────────────────────
+    32768 => 8/80, 72, 0.1, 0.9
+
+    hookexe.exe
+    {_Myoff=0 _Fpos=28672 _Mystate={_Wchar=0 _Byte=0 _State=0 } }
+    ═════════───────────────────────────────────────────────────────────────────────
+    28672 => 9/80, 71, 0.1125, 0.8875
+
+    hookdll.cpp
+    {_Myoff=0 _Fpos=2011 _Mystate={_Wchar=0 _Byte=0 _State=0 } }
+    ══════════════════════════════════════════════════════════════════──────────────
+    2011 => 66/80, 14, 0.825, 0.175
+    */
+    double percent = (double)(thestart + std::streampos(703 + 1)) / (double)theend * 100.0;
+    double percents = (double)(thestart) / (double)theend;
+    if (percent >= 100)
+    {
+      percents = 1.0;
+    }
+    double percentp = (double)(thestart) / (double)theend * 100.0;
+    double percentpx = 1.0 - (double)(thestart) / (double)theend;
+    double percentc = (double)(thestart + std::streampos(703 + 1)) / (double)theend;
+    int ipercent = (int)percent;
+    int ipercentp = (int)percentp;
+    int ipercentc = (int)percentc;
+
+
+    //double thepercent = 0.77;
+    double thepercent = (double)(0 + std::streampos(703 + 1)) / (double)theend;
+    int itemsp = (int)(thepercent * 80.0);
+    itemsp *= 2;
+      if (itemsp  >80)
+      {
+        itemsp = 80;
+      }
+      if (itemsp < 1)
+      {
+        itemsp = 1;
+      }
+//    int iy = 1;
+    //if (theend > 0)
+    //{
+    //  double y = 60450.23*pow(theend, -0.8831565);
+    //  itemsp = (int)y;
+    //  int m = 80 - itemsp;
+    //  //if (iy > m)
+    //  //{
+    //  //  iy = m;
+    //  //}
+    //  //if (iy < 1)
+    //  //{
+    //  //  iy = 1;
+    //  //}
+    //  if (itemsp  >80)
+    //  {
+    //    itemsp = 79;
+    //  }
+    //  if (itemsp < 1)
+    //  {
+    //    itemsp = 1;
+    //  }
+    //}
+
+    int itemsleft = 80 - itemsp;
+    int leftSpace = (int)((percents*(double)itemsleft)+0.5);
+    int rightSpace = (int)(((1.0 - percents)*(double)itemsleft)+0.5);
+
+//
+//    if (ipercent==0
+
+    std::wstringstream buf;
+    for (int i = 0; i < leftSpace; ++i)
+    {
+      buf << L"─";
+    }
+    for (int i = 0; i < itemsp; ++i)
+    {
+      buf << L"═";
+    }
+    for (int i = 0; i < rightSpace; ++i)
+    {
+      buf << L"─";
+    }
+    //for (int i = 0; i < itemsp; ++i)
+    //{
+    //  buf << L"─";
+    //}
+    //for (int i = itemsp; i < itemsp+iy; ++i)
+    //{
+    //  buf << L"═";
+    //}
+    //for (int i = itemsp+iy; i < 80; ++i)
+    //{
+    //  buf << L"─";
+    //}
+    //int spare = 80 - iy;
+    //std::wstringstream buf;
+    //for (int i = thestart; i < 703; ++i)
+    //{
+
+    //}
+    //std::wstringstream buf;
+    //for (int i = 0; i < iy; ++i)
+    //{
+    //  buf << L"═";
+    //}
+    //for (int i = iy; i < 80; ++i)
+    //{
+    //  buf << L"─";
+    //}
+
+//    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"═══════════════════════════════════════════════════════════════─────────────────", FG_GREY | BG_BLACK);
+    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, buf.str(), FG_GREY | BG_BLACK);
     line++;
 
     if (!m_hasFocus && HasFocus())
@@ -1293,7 +1421,13 @@ namespace SimpleXTree
       }
       else
       {
-        double percent = (double)(thestart+std::streampos(703+1)) / (double)theend * 100.0;
+        int endit = 703 + 1;
+        if (theend < endit)
+        {
+          endit = theend;
+        }
+
+        double percent = (double)(thestart+std::streampos(endit)) / (double)theend * 100.0;
         int ipercent = (int)percent;
         std::wstringstream wpercent;
         if (ipercent < 100)
