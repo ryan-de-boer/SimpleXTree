@@ -63,6 +63,11 @@ std::wstring GetClipboardText();
 bool HasFocus();
 std::wstring GetAppPath();
 
+int g_itemsp = 0;
+int g_itemsleft = 0;
+int g_leftSpace = 0;
+int g_rightSpace = 0;
+
 namespace SimpleXTree
 {
   const byte * begin(const byte* str) { return str; }
@@ -1196,9 +1201,13 @@ namespace SimpleXTree
     //  }
     //}
 
+      g_itemsp = itemsp;
     int itemsleft = 80 - itemsp;
     int leftSpace = (int)((percents*(double)itemsleft)+0.5);
     int rightSpace = (int)(((1.0 - percents)*(double)itemsleft)+0.5);
+    g_itemsleft = itemsleft;
+    g_leftSpace = leftSpace;
+    g_rightSpace = rightSpace;
 
 //
 //    if (ipercent==0
