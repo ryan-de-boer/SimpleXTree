@@ -1169,9 +1169,9 @@ namespace SimpleXTree
     double thepercent = (double)(0 + std::streampos(703 + 1)) / (double)theend;
     int itemsp = (int)(thepercent * 80.0);
     itemsp *= 2;
-      if (itemsp  >80)
+      if (itemsp  >79)
       {
-        itemsp = 80;
+        itemsp = 79;
       }
       if (itemsp < 1)
       {
