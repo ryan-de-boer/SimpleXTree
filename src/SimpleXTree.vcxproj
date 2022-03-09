@@ -167,6 +167,7 @@
     <ClInclude Include="LogDrive.h" />
     <ClInclude Include="Make.h" />
     <ClInclude Include="OpenWith.h" />
+    <ClInclude Include="RandomAccessBufferedReader.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Search.h" />
     <ClInclude Include="stdafx.h" />
@@ -187,6 +188,7 @@
     <ClCompile Include="HookExample.cpp" />
     <ClCompile Include="LogDrive.cpp" />
     <ClCompile Include="Make.cpp" />
+    <ClCompile Include="RandomAccessBufferedReader.cpp" />
     <ClCompile Include="Search.cpp" />
     <ClCompile Include="SimpleXTree.cpp" />
     <ClCompile Include="OpenWith.cpp" />
