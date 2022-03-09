@@ -64,6 +64,21 @@ namespace SimpleXTree
     else
     {
       m_from = pos - m_size / 2;
+      if (m_from + m_size > m_end)
+      {
+        m_from = pos;
+        m_size = m_end - m_from;
+      }
+      else
+      {
+        m_size = 5000000;
+        m_from = pos - m_size / 2;
+        if (m_from + m_size > m_end)
+        {
+          m_from = pos;
+          m_size = m_end - m_from;
+        }
+      }
       if (m_from < 0)
       {
         m_from = std::streampos(0);
@@ -72,29 +87,42 @@ namespace SimpleXTree
       bool isO = m_source.is_open();
       m_source.seekg(m_from, std::ios::beg);
 //      m_source.read(m_memblock, m_size);
+
       m_source.read(m_memblock, m_size);
-      if (strcmp(m_memblock, "") == 0)
+
+      std::streamsize re = m_source.gcount();
+      if (re != m_size)
       {
-        int a = 1;
-          a++;
-          Close();
-
-          m_source.open(m_pathToFile, std::ios::in | std::ios::binary);
-          m_isOpen = true;
- //         m_size = 5000;
-
-//          m_from = std::streampos(0);
-          m_source.seekg(m_from, std::ios::beg);
-          m_source.read(m_memblock, m_size);
-
+        int c = 1;
+        c++;
       }
+
+//      if (strcmp(m_memblock, "") == 0)
+//      {
+//        int a = 1;
+//          a++;
+//          Close();
+//
+//          m_source.open(m_pathToFile, std::ios::in | std::ios::binary);
+//          m_isOpen = true;
+// //         m_size = 5000;
+//
+////          m_from = std::streampos(0);
+//          m_source.seekg(m_from, std::ios::beg);
+//          m_source.read(m_memblock, m_size);
+//
+//      }
       if (m_from == std::streampos(0))
       {
         memcpy_s(memblock, size, m_memblock, size);
       }
-      else
+      else if (m_from != pos)
       {
         memcpy_s(memblock, size, m_memblock + m_size / 2, size);
+      }
+      else
+      {
+        memcpy_s(memblock, size, m_memblock, size);
       }
     }
   }
