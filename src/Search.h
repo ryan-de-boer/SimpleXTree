@@ -47,10 +47,13 @@ namespace SimpleXTree
   public:
     bool m_editing;
     bool m_editingAscii;
+    bool m_jumping;
+    bool m_jumpingFirstChar;
     bool m_saving;
     bool m_activated;
     __int64 m_startBeforeSearch;
     int m_numFoundBeforeSearch;
     __int64 m_theSearchPosBeforeSearch;
+    std::wstring m_typed;
   };
 }

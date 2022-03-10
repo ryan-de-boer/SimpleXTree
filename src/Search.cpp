@@ -270,8 +270,8 @@ namespace SimpleXTree
 
   Search::Search() :  m_exitThread(false),
     m_threadReadyToSearch(false), m_startBeforeSearch(0), m_numFoundBeforeSearch(0), m_theSearchPosBeforeSearch(0), m_editing(false), 
-    m_editingAscii(false), m_saving(false),
-    m_activated(false), m_timePassed(0), m_timeSet(false), m_renderCursor(true), m_hasFocus(false)
+    m_editingAscii(false), m_jumping(false), m_jumpingFirstChar(false), m_saving(false),
+    m_activated(false), m_timePassed(0), m_timeSet(false), m_renderCursor(true), m_hasFocus(false),  m_typed(L"")
   {
     //https://softwareengineering.stackexchange.com/questions/382195/is-it-okay-to-start-a-thread-from-within-a-constructor-of-a-class
     m_member_thread = std::thread(&Search::ThreadFn, this);
@@ -518,12 +518,41 @@ namespace SimpleXTree
     {
       ; // skip if search mode
     }
-    else if (!m_editing && ch == 'e')
+    else if (!m_editing && !m_jumping && ch == 'e')
     {
       m_editing = true;
       m_cursorPosition = 0;
       m_cursor = CUR_ONE;
       RenderNow();
+    }
+    else if (!m_jumping && ch == 'j')
+    {
+      m_jumping = true;
+      m_jumpingFirstChar = true;
+      RenderNow();
+    }
+    else if (m_jumping)
+    {
+      if (ch == '\r' || ch == '\n' || ch == '\x1b')
+      {
+      }
+      else if (ch == '\b')
+      {
+        m_jumpingFirstChar = false;
+        if (m_typed.length() > 0)
+        {
+          m_typed = m_typed.substr(0, m_typed.length() - 1);
+        }
+      }
+      else
+      {
+        if (m_jumpingFirstChar)
+        {
+          m_typed = L"";
+        }
+        m_typed += ch;
+        m_jumpingFirstChar = false;
+      }
     }
     else if (m_saving && ch == 'y')
     {
@@ -658,7 +687,40 @@ namespace SimpleXTree
 
   void Search::VK(DWORD vk)
   {
-    if (vk == VK_ESCAPE)
+    if (m_jumping)
+    {
+      if (vk == VK_RETURN)
+      {
+        m_jumping = false;
+        std::wstring typed = m_typed;
+        StrUtil::ReplaceAll(typed, L"$", L"");
+        if (typed.find(L"%") != std::wstring::npos)
+        {
+          StrUtil::ReplaceAll(typed, L"%", L"");
+          int p = std::stoi(typed); // convert to int
+          double percent = (double)p / 100.0;
+          thestart = theend*percent;
+          ReadFile();
+        }
+        else
+        {
+          int offset = HexToInt2(typed);
+          thestart = offset;
+          ReadFile();
+        }
+      }
+      else if (vk == VK_ESCAPE)
+      {
+        m_jumping = false;
+      }
+      else if (vk == VK_F1)
+      {
+        std::wstringstream wstr;
+        wstr << " /c " << "\"" << GetAppPath() << "\\help\\Jump.html" << "\"";
+        ShellExecute(NULL, L"open", L"C:\\Windows\\System32\\CMD.exe", wstr.str().c_str(), NULL, SW_HIDE);
+      }
+    }
+    else if (vk == VK_ESCAPE)
     {
       m_editing = false;
       m_editingAscii = false;
@@ -1426,6 +1488,27 @@ namespace SimpleXTree
         line++;
         DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"←↑↓→ position cursor                                        F1 help  ESC cancel ", FG_GREY | BG_BLACK);
         DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                                                            F1       ESC        ", FG_CYAN | BG_BLACK);
+        line++;
+      }
+      else if (m_jumping)
+      {
+        std::wstring beforeCursor = std::wstring(L"Goto address: ") + m_typed;
+
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"Goto address:                                                                   ", FG_GREY | BG_BLACK);
+        DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, std::wstring(L"Goto address: ").length(), line, m_typed, FG_CYAN | BG_BLACK);
+        if (m_renderCursor && HasFocus())
+        {
+          DrawString(m_bufScreen, nScreenWidth, nScreenHeight, beforeCursor.length(), line, L"▄", FG_GREY | BG_BLACK);
+        }
+        else
+        {
+          DrawString(m_bufScreen, nScreenWidth, nScreenHeight, beforeCursor.length(), line, L" ", FG_GREY | BG_BLACK);
+        }
+        line++;
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                                                                                ", FG_GREY | BG_BLACK);
+        line++;
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"Enter location as $ hex % percentage                ◄─┘ ok  F1 help  ESC cancel ", FG_GREY | BG_BLACK);
+        DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                                                    ◄─┘     F1    p  ESC        ", FG_CYAN | BG_BLACK);
         line++;
       }
       else
