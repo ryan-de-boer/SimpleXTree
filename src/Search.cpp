@@ -698,8 +698,39 @@ namespace SimpleXTree
         {
           StrUtil::ReplaceAll(typed, L"%", L"");
           int p = std::stoi(typed); // convert to int
-          double percent = (double)p / 100.0;
-          thestart = theend*percent;
+          if (p == 100)
+          {
+            thestart = theend;
+            if (theend >= std::streampos(688))
+            {
+              thestart = theend - std::streampos(688);
+            }
+            if (thestart >= thestart % 16)
+            {
+              thestart = thestart - thestart % 16;
+
+              if ((thestart + std::streampos(688) + std::streampos(16)) >= (theend))
+              {
+                if (thestart >= 16)
+                {
+                  thestart -= 16;
+                }
+              }
+
+              bool inc = true;
+              if ((thestart + std::streampos(688) + std::streampos(16)) >= (theend))
+                inc = false;
+              if (inc)
+              {
+                thestart += 16;
+              }
+            }
+          }
+          else
+          {
+            double percent = (double)p / 100.0;
+            thestart = theend*percent;
+          }
           ReadFile();
         }
         else
