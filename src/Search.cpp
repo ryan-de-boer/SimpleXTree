@@ -811,14 +811,14 @@ namespace SimpleXTree
         ShellExecute(NULL, L"open", L"C:\\Windows\\System32\\CMD.exe", wstr.str().c_str(), NULL, SW_HIDE);
       }
     }
-    else if (vk == VK_ESCAPE)
-    {
-      m_editing = false;
-      m_editingAscii = false;
-      m_saving = false;
-      m_edits.clear();
-      m_orderOfEdits.clear();
-    }
+    //else if (vk == VK_ESCAPE)
+    //{
+    //  m_editing = false;
+    //  m_editingAscii = false;
+    //  m_saving = false;
+    //  m_edits.clear();
+    //  m_orderOfEdits.clear();
+    //}
     else if (m_editing && vk == VK_F8)
     {
       m_edits.clear();
@@ -975,6 +975,18 @@ namespace SimpleXTree
       wstr << " /c " << "\"" << GetAppPath() << "\\help\\HexEdit.html" << "\"";
       ShellExecute(NULL, L"open", L"C:\\Windows\\System32\\CMD.exe", wstr.str().c_str(), NULL, SW_HIDE);
     }
+  }
+
+  void Search::VKUp(DWORD vk)
+  {
+        if (vk == VK_ESCAPE)
+        {
+          m_editing = false;
+          m_editingAscii = false;
+          m_saving = false;
+          m_edits.clear();
+          m_orderOfEdits.clear();
+        }
   }
 
   bool Search::HasCoord(__int64 x, __int64 y, std::wstring& hexChar)
@@ -1626,8 +1638,8 @@ namespace SimpleXTree
         DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                                                                          " + wpercent.str(), FG_CYAN | BG_BLACK);
         DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"          A      D     E     F     H    M     W         J                       ", FG_CYAN | BG_BLACK);
         line++;
-        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"COMMANDS  0..9 goto bookmark         F9 search  F5 seedos  SPACE search again   ", FG_GREY | BG_BLACK);
-        DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"          0..9                       F9         F5         SPACE                ", FG_CYAN | BG_BLACK);
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"COMMANDS  0..9 goto bookmark         F9 search             SPACE search again   ", FG_GREY | BG_BLACK);
+        DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"          0..9                       F9 s                  SPACE                ", FG_CYAN | BG_BLACK);
         line++;
         DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"←↑↓→ scroll  SHIFT 0..9 set ALT 0..9 clear bookmarks        F1 help  ESC cancel ", FG_GREY | BG_BLACK);
         DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"             SHIFT 0..9     ALT 0..9                        F1       ESC        ", FG_CYAN | BG_BLACK);

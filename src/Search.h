@@ -28,6 +28,7 @@ namespace SimpleXTree
       return m_activated;
     }
     void VK(DWORD vk);
+    void VKUp(DWORD vk);
   private:
     void ThreadFn();
     void Search3(std::wstring theSearchHex);
