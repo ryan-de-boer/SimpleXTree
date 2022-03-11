@@ -268,10 +268,10 @@ namespace SimpleXTree
 
   eCursor m_cursor = CUR_ONE;
 
-  Search::Search() :  m_exitThread(false),
-    m_threadReadyToSearch(false), m_startBeforeSearch(0), m_numFoundBeforeSearch(0), m_theSearchPosBeforeSearch(0), m_editing(false), 
+  Search::Search() : m_exitThread(false),
+    m_threadReadyToSearch(false), m_startBeforeSearch(0), m_numFoundBeforeSearch(0), m_theSearchPosBeforeSearch(0), m_editing(false),
     m_editingAscii(false), m_jumping(false), m_jumpingFirstChar(false), m_saving(false),
-    m_activated(false), m_timePassed(0), m_timeSet(false), m_renderCursor(true), m_hasFocus(false),  m_typed(L"")
+    m_activated(false), m_timePassed(0), m_timeSet(false), m_renderCursor(true), m_hasFocus(false), m_typed(L""), m_renderAscii(false), m_wordwrap(false)
   {
     //https://softwareengineering.stackexchange.com/questions/382195/is-it-okay-to-start-a-thread-from-within-a-constructor-of-a-class
     m_member_thread = std::thread(&Search::ThreadFn, this);
@@ -291,7 +291,7 @@ namespace SimpleXTree
 
   void Search::Search3(std::wstring theSearchHex)
   {
-//    m_startBeforeSearch = thestart;
+    //    m_startBeforeSearch = thestart;
     m_numFoundBeforeSearch = numFound;
     m_theSearchPosBeforeSearch = theSearchPos;
 
@@ -439,7 +439,7 @@ namespace SimpleXTree
         m_threadReadyToSearch = false;
       }
       Sleep(10);
-    }  
+    }
   }
 
   void Search::RenderNow()
@@ -520,7 +520,7 @@ namespace SimpleXTree
 
     int numberKey = IsNumberKey(ch);
 
-    if (ch == '\t' || ch=='\r')
+    if (ch == '\t' || ch == '\r')
     {
       ; // skip tab and enter
     }
@@ -632,7 +632,7 @@ namespace SimpleXTree
       m_cursor = CUR_TWO;
       InsertHexChar(str[1]);
     }
-    else if (m_editing && ((ch>='a' && ch<='f')|| (ch >= 'A' && ch <= 'F') || (ch >= '0' && ch <= '9')))
+    else if (m_editing && ((ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F') || (ch >= '0' && ch <= '9')))
     {
       InsertHexChar(ch);
       int a = 1;
@@ -645,6 +645,20 @@ namespace SimpleXTree
       {
         InsertHexChar(clipboard[i]);
       }
+    }
+    else if (ch == 'a')
+    {
+      m_renderAscii = true;
+      ReadFile();
+    }
+    else if (ch == 'h')
+    {
+      m_renderAscii = false;
+    }
+    else if (ch == 'w')
+    {
+      m_renderAscii = true;
+      m_wordwrap = !m_wordwrap;
     }
     else if (numberKey != -1)
     {
@@ -674,28 +688,28 @@ namespace SimpleXTree
     }
     switch (ch)
     {
-      case '!':
-        return 1;
-      case '@':
-        return 2;
-      case '#':
-        return 3;
-      case '$':
-        return 4;
-      case '%':
-        return 5;
-      case '^':
-        return 6;
-      case '&':
-        return 7;
-      case '*':
-        return 8;
-      case '(':
-        return 9;
-      case ')':
-        return 0;
+    case '!':
+      return 1;
+    case '@':
+      return 2;
+    case '#':
+      return 3;
+    case '$':
+      return 4;
+    case '%':
+      return 5;
+    case '^':
+      return 6;
+    case '&':
+      return 7;
+    case '*':
+      return 8;
+    case '(':
+      return 9;
+    case ')':
+      return 0;
     }
-    return - 1;
+    return -1;
   }
 
   void Search::InsertHexChar(char ch)
@@ -979,14 +993,14 @@ namespace SimpleXTree
 
   void Search::VKUp(DWORD vk)
   {
-        if (vk == VK_ESCAPE)
-        {
-          m_editing = false;
-          m_editingAscii = false;
-          m_saving = false;
-          m_edits.clear();
-          m_orderOfEdits.clear();
-        }
+    if (vk == VK_ESCAPE)
+    {
+      m_editing = false;
+      m_editingAscii = false;
+      m_saving = false;
+      m_edits.clear();
+      m_orderOfEdits.clear();
+    }
   }
 
   bool Search::HasCoord(__int64 x, __int64 y, std::wstring& hexChar)
@@ -1032,8 +1046,106 @@ namespace SimpleXTree
     return false;
   }
 
+  void Search::RenderAscii()
+  {
+    std::wstring file = StrUtil::s2ws(theFile);
+    std::wstringstream ss;
+    ss << file;// << L"_" << lastChar;
+    file = ss.str();
+    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, 0, L"File:                                                          ASCII (no mask)  ", FG_GREY | BG_BLACK);
+    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 6, 0, file, FG_GREY | BG_BLACK);
+    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, 1, L"────────────────────────────────────────────────────────────────────────────────", FG_GREY | BG_BLACK);
+
+    std::wstringstream side;
+    int line = 2;
+    for (int i = 0; i < theend && line<46; ++i)
+    {
+      if (memblock2[i] == 0x0D)
+      {
+        // skip \r
+      }
+      else if (memblock2[i] == 0x0A)
+      {
+        // parse \n as new line, render the current lineint 
+        for (int j = side.str().length(); j < 80; ++j)
+        {
+          side << ' ';
+        }
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, side.str(), FG_CYAN | BG_BLACK);
+        line++;
+        side.str(L"");
+      }
+      else
+      {
+        // keep on printing chars
+        // no point printing beyond 80
+        if (side.str().length() < 79)
+        {
+          side << GetChar(memblock2[i]);
+        }
+        else if (m_wordwrap)
+        {
+          side << GetChar(memblock2[i]);
+          DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, side.str(), FG_CYAN | BG_BLACK);
+          line++;
+          side.str(L"");
+        }
+      }
+    }
+
+    side.str(L"");
+    for (int j = 0; j < 80; ++j)
+    {
+      side << ' ';
+    }
+
+    for (int i = line; i < 46; ++i)
+    {
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, side.str(), FG_CYAN | BG_BLACK);
+      line++;
+    }
+
+    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"═══════════════════════════════════════════════════════════════─────────────────", FG_GREY | BG_BLACK);
+    line++;
+
+    int endit = 703 + 1;
+ //   if (theend < endit)
+    {
+      endit = theend;
+    }
+
+    double percent = (double)(thestart + std::streampos(endit)) / (double)theend * 100.0;
+    int ipercent = (int)percent;
+    std::wstringstream wpercent;
+    if (ipercent < 100)
+    {
+      wpercent << " ";
+    }
+    if (ipercent < 10)
+    {
+      wpercent << " ";
+    }
+    wpercent << ipercent << " %";
+    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"VIEW      ASCII  Dump  Edit  Find  Hex  Mask  Wordwrap  Jump  Indent            ", FG_GREY | BG_BLACK);
+    DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                                                                          " + wpercent.str(), FG_CYAN | BG_BLACK);
+    DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"          A      D     E     F     H    M     W         J     I                 ", FG_CYAN | BG_BLACK);
+    line++;
+    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"COMMANDS  0..9 goto bookmark         F9 search             SPACE search again   ", FG_GREY | BG_BLACK);
+    DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"          0..9                       F9 s                  SPACE                ", FG_CYAN | BG_BLACK);
+    line++;
+    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"←↑↓→ scroll  SHIFT 0..9 set ALT 0..9 clear bookmarks        F1 help  ESC cancel ", FG_GREY | BG_BLACK);
+    DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"             SHIFT 0..9     ALT 0..9                        F1       ESC        ", FG_CYAN | BG_BLACK);
+    line++;
+  }
+
   void Search::Render()
   {
+    if (m_renderAscii)
+    {
+      RenderAscii();
+      return;
+    }
+
     std::wstring file = StrUtil::s2ws(theFile);
     std::wstringstream ss;
     ss << file;// << L"_" << lastChar;

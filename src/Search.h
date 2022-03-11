@@ -22,6 +22,7 @@ namespace SimpleXTree
     void StartSearch(std::wstring const& theSearchHex, __int64 startBeforeSearch);
     bool Searching() const;
     void Render();
+    void RenderAscii();
     void KeyEvent(WCHAR ch);
     bool IsActivated() const
     {
@@ -43,6 +44,10 @@ namespace SimpleXTree
     bool m_timeSet;
     bool m_renderCursor;
     bool m_hasFocus;
+  public:
+    bool m_renderAscii;
+    bool m_wordwrap;
+  private:
     void Search::RenderNow();
     void Search::InsertHexChar(char ch);
   public:
