@@ -275,6 +275,12 @@ namespace SimpleXTree
   {
     //https://softwareengineering.stackexchange.com/questions/382195/is-it-okay-to-start-a-thread-from-within-a-constructor-of-a-class
     m_member_thread = std::thread(&Search::ThreadFn, this);
+
+    for (int i = 0; i < 9; ++i)
+    {
+      m_bookmarks[i] = 0;
+      m_bookmarksSet[i] = false;
+    }
   }
 
   Search::~Search()
@@ -509,6 +515,10 @@ namespace SimpleXTree
   void Search::KeyEvent(WCHAR ch)
   {
     bool control = (0x8000 & GetAsyncKeyState((unsigned char)(VK_CONTROL))) != 0;
+    bool shift = (0x8000 & GetAsyncKeyState((unsigned char)(VK_SHIFT))) != 0;
+    bool alt = (0x8000 & GetAsyncKeyState((unsigned char)(VK_MENU))) != 0;
+
+    int numberKey = IsNumberKey(ch);
 
     if (ch == '\t' || ch=='\r')
     {
@@ -636,6 +646,56 @@ namespace SimpleXTree
         InsertHexChar(clipboard[i]);
       }
     }
+    else if (numberKey != -1)
+    {
+      if (shift)
+      {
+        m_bookmarks[numberKey] = thestart;
+        m_bookmarksSet[numberKey] = true;
+      }
+      else if (alt)
+      {
+        m_bookmarks[numberKey] = 0;
+        m_bookmarksSet[numberKey] = false;
+      }
+      else if (m_bookmarksSet[numberKey])
+      {
+        thestart = m_bookmarks[numberKey];
+        ReadFile();
+      }
+    }
+  }
+
+  int Search::IsNumberKey(char ch) const
+  {
+    if (ch >= '0' && ch <= '9')
+    {
+      return ch - '0';
+    }
+    switch (ch)
+    {
+      case '!':
+        return 1;
+      case '@':
+        return 2;
+      case '#':
+        return 3;
+      case '$':
+        return 4;
+      case '%':
+        return 5;
+      case '^':
+        return 6;
+      case '&':
+        return 7;
+      case '*':
+        return 8;
+      case '(':
+        return 9;
+      case ')':
+        return 0;
+    }
+    return - 1;
   }
 
   void Search::InsertHexChar(char ch)

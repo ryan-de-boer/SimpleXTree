@@ -55,5 +55,8 @@ namespace SimpleXTree
     int m_numFoundBeforeSearch;
     __int64 m_theSearchPosBeforeSearch;
     std::wstring m_typed;
+    __int64 m_bookmarks[9];
+    bool m_bookmarksSet[9];
+    int IsNumberKey(char ch) const;
   };
 }
