@@ -1261,6 +1261,87 @@ namespace SimpleXTree
     return line - 2;
   }
 
+  int Search::GetNumChars() const
+  {
+    int numChars = 0;
+    int length = 0;
+    int line = 2;
+    for (int i = 0; i < (std::streampos(numMemBlock2) - thestart) && line <= 45; ++i)
+    {
+      if (memblock2[i] == 0x0D)
+      {
+        // skip \r
+        numChars++;
+      }
+      else if (memblock2[i] == 0x0A)
+      {
+        numChars++;
+        // parse \n as new line, render the current lineint 
+        for (int j = length; j < 80; ++j)
+        {
+          length++;
+//          numChars++;
+        }
+        line++;
+        length = 0;
+      }
+      else
+      {
+        // keep on printing chars
+        // no point printing beyond 80
+        if (m_wordwrap && memblock2[i] == ' ' && length > 63)
+        {
+          length++;
+          numChars++;
+          // fill in spaces
+          for (int j = length; j < 80; ++j)
+          {
+            length++;
+//            numChars++;
+          }
+          line++;
+          length = 0;
+        }
+        else if (length < 79 && m_wordwrap && i < numMemBlock2)
+        {
+          length++;
+          numChars++;
+          if (i + 1 >= (std::streampos(numMemBlock2) - thestart))
+          {
+            // Last char needs to write current line.
+
+            // fill in spaces
+            for (int j = length; j < 80; ++j)
+            {
+//              numChars++;
+            }
+            line++;
+            length = 0;
+
+            return numChars;
+          }
+        }
+        else if (length < 79)
+        {
+          length++;
+          numChars++;
+        }
+        else if (length < 79 && m_wordwrap)
+        {
+          // fill in spaces
+          for (int j = length; j < 80; ++j)
+          {
+            length++;
+//            numChars++;
+          }
+          line++;
+          length = 0;
+        }
+      }
+    }
+    return numChars;
+  }
+
   void Search::RenderAscii()
   {
     std::wstring file = StrUtil::s2ws(theFile);
@@ -1387,8 +1468,9 @@ namespace SimpleXTree
     DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"═══════════════════════════════════════════════════════════════─────────────────", FG_GREY | BG_BLACK);
     line++;
 
-    int endit = 703 + 1;
- //   if (theend < endit)
+//    int endit = 703 + 1;
+    int endit = GetNumChars();
+    if (theend < endit)
     {
       endit = theend;
     }

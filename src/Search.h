@@ -48,6 +48,7 @@ namespace SimpleXTree
     bool m_renderAscii;
     bool m_wordwrap;
     int Search::GetNumLines() const;
+    int Search::GetNumChars() const;
   private:
     void Search::RenderNow();
     void Search::InsertHexChar(char ch);
