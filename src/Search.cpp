@@ -1059,7 +1059,7 @@ namespace SimpleXTree
 
     std::wstringstream side;
     int line = 2;
-    for (int i = 0; i < theend && line<46; ++i)
+    for (int i = 0; i < (std::streampos(numMemBlock2)-thestart) && line<=45; ++i)
     {
       if (memblock2[i] == 0x0D)
       {
@@ -1071,6 +1071,11 @@ namespace SimpleXTree
         for (int j = side.str().length(); j < 80; ++j)
         {
           side << ' ';
+        }
+        if (side.str().find(L"ye whole") != std::wstring::npos)
+        {
+          int a = 1;
+          a++;
         }
         DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, side.str(), FG_CYAN | BG_BLACK);
         line++;
@@ -1088,24 +1093,68 @@ namespace SimpleXTree
           {
             side << ' ';
           }
+          if (side.str().find(L"ye whole") != std::wstring::npos)
+          {
+            int a = 1;
+            a++;
+          }
           DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, side.str(), FG_CYAN | BG_BLACK);
           line++;
           side.str(L"");
+        }
+        else if (side.str().length() < 79 && m_wordwrap && i < numMemBlock2)
+        {
+          side << GetChar(memblock2[i]);
+          if (i+1 >= (std::streampos(numMemBlock2)-thestart))
+          {
+            // Last char needs to write current line.
+
+            // fill in spaces
+            for (int j = side.str().length(); j < 80; ++j)
+            {
+              side << ' ';
+            }
+            if (side.str().find(L"ye whole") != std::wstring::npos)
+            {
+              int a = 1;
+              a++;
+            }
+            DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, side.str(), FG_CYAN | BG_BLACK);
+            line++;
+            side.str(L"");
+          }
         }
         else if (side.str().length() < 79)
         {
           side << GetChar(memblock2[i]);
         }
-        else if (m_wordwrap)
+        else if (side.str().length() < 79 && m_wordwrap)
         {
-          side << GetChar(memblock2[i]);
+          // fill in spaces
+          for (int j = side.str().length(); j < 80; ++j)
+          {
+            side << ' ';
+          }
+          if (side.str().find(L"ye whole") != std::wstring::npos)
+          {
+            int a = 1;
+            a++;
+          }
           DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, side.str(), FG_CYAN | BG_BLACK);
           line++;
           side.str(L"");
         }
+        //else if (m_wordwrap)
+        //{
+        //  side << GetChar(memblock2[i]);
+        //  DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, side.str(), FG_CYAN | BG_BLACK);
+        //  line++;
+        //  side.str(L"");
+        //}
       }
     }
 
+    
     side.str(L"");
     for (int j = 0; j < 80; ++j)
     {
@@ -1149,6 +1198,8 @@ namespace SimpleXTree
     DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"←↑↓→ scroll  SHIFT 0..9 set ALT 0..9 clear bookmarks        F1 help  ESC cancel ", FG_GREY | BG_BLACK);
     DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"             SHIFT 0..9     ALT 0..9                        F1       ESC        ", FG_CYAN | BG_BLACK);
     line++;
+
+    
   }
 
   void Search::Render()
