@@ -659,6 +659,7 @@ namespace SimpleXTree
     {
       m_renderAscii = true;
       m_wordwrap = !m_wordwrap;
+      ReadFile();
     }
     else if (numberKey != -1)
     {
@@ -1079,7 +1080,19 @@ namespace SimpleXTree
       {
         // keep on printing chars
         // no point printing beyond 80
-        if (side.str().length() < 79)
+        if (m_wordwrap && memblock2[i] == ' ' && side.str().length() > 63)
+        {
+          side << GetChar(memblock2[i]);
+          // fill in spaces
+          for (int j = side.str().length(); j < 80; ++j)
+          {
+            side << ' ';
+          }
+          DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, side.str(), FG_CYAN | BG_BLACK);
+          line++;
+          side.str(L"");
+        }
+        else if (side.str().length() < 79)
         {
           side << GetChar(memblock2[i]);
         }
