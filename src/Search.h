@@ -58,6 +58,7 @@ namespace SimpleXTree
     bool m_jumpingFirstChar;
     bool m_saving;
     bool m_activated;
+    bool m_showingLastLine;
     __int64 m_startBeforeSearch;
     int m_numFoundBeforeSearch;
     __int64 m_theSearchPosBeforeSearch;
@@ -65,5 +66,6 @@ namespace SimpleXTree
     __int64 m_bookmarks[9];
     bool m_bookmarksSet[9];
     int IsNumberKey(char ch) const;
+    void Down();
   };
 }

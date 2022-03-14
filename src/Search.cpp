@@ -271,7 +271,7 @@ namespace SimpleXTree
   Search::Search() : m_exitThread(false),
     m_threadReadyToSearch(false), m_startBeforeSearch(0), m_numFoundBeforeSearch(0), m_theSearchPosBeforeSearch(0), m_editing(false),
     m_editingAscii(false), m_jumping(false), m_jumpingFirstChar(false), m_saving(false),
-    m_activated(false), m_timePassed(0), m_timeSet(false), m_renderCursor(true), m_hasFocus(false), m_typed(L""), m_renderAscii(false), m_wordwrap(false)
+    m_activated(false), m_timePassed(0), m_timeSet(false), m_renderCursor(true), m_hasFocus(false), m_typed(L""), m_renderAscii(false), m_wordwrap(false), m_showingLastLine(false)
   {
     //https://softwareengineering.stackexchange.com/questions/382195/is-it-okay-to-start-a-thread-from-within-a-constructor-of-a-class
     m_member_thread = std::thread(&Search::ThreadFn, this);
@@ -760,6 +760,46 @@ namespace SimpleXTree
     }
   }
 
+  void Search::Down()
+  {
+    bool inc = true;
+    int numLines = GetNumLines();
+    if (numLines == -1)
+    {
+      int b = 1;
+      b++;
+      inc = false;
+    }
+
+    if (inc)
+    {
+      bool foundNewLine = false;
+      for (int j = 0; j < theend - thestart && !foundNewLine; ++j)
+      {
+        if (m_wordwrap && memblock2[j] == ' ' && j > 63)
+        {
+          foundNewLine = true;
+          if (thestart + std::streampos(j + 1) < theend)
+          {
+            thestart += j + 1;
+            ReadFile();
+          }
+          break;
+        }
+        else if (memblock2[j] == 0x0A)
+        {
+          foundNewLine = true;
+          if (thestart + std::streampos(j + 1) < theend)
+          {
+            thestart += j + 1;
+            ReadFile();
+          }
+          break;
+        }
+      }
+    }
+  }
+
   void Search::VK(DWORD vk)
   {
     if (m_jumping)
@@ -1168,6 +1208,7 @@ namespace SimpleXTree
     DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 6, 0, file, FG_GREY | BG_BLACK);
     DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, 1, L"────────────────────────────────────────────────────────────────────────────────", FG_GREY | BG_BLACK);
 
+    m_showingLastLine = false;
     std::wstringstream side;
     int line = 2;
     for (int i = 0; i < (std::streampos(numMemBlock2)-thestart) && line<=45; ++i)
@@ -1233,6 +1274,8 @@ namespace SimpleXTree
             DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, side.str(), FG_CYAN | BG_BLACK);
             line++;
             side.str(L"");
+
+            m_showingLastLine = true;
           }
         }
         else if (side.str().length() < 79)
