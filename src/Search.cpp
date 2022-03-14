@@ -922,40 +922,48 @@ namespace SimpleXTree
     }
     else if (vk == VK_DOWN)
     {
-      RenderNow();
-      m_cursorPosition += 16;
-      if (m_cursorPosition > 703)
+      if (!m_renderAscii)
       {
-        m_cursorPosition -= 16;
-        bool inc = true;
-        if ((thestart + std::streampos(688) + std::streampos(16)) >= (theend))
-          inc = false;
-
-        if (inc)
+        RenderNow();
+        m_cursorPosition += 16;
+        if (m_cursorPosition > 703)
         {
-          thestart += 16;
-          ReadFile();
+          m_cursorPosition -= 16;
+
+          bool inc = true;
+          if ((thestart + std::streampos(688) + std::streampos(16)) >= (theend))
+            inc = false;
+
+          if (inc)
+          {
+            thestart += 16;
+            ReadFile();
+          }
         }
       }
     }
     else if (vk == VK_UP)
     {
-      RenderNow();
-      if (m_cursorPosition < 16)
+      if (!m_renderAscii)
       {
-        if (thestart < 16)
+        RenderNow();
+
+        if (m_cursorPosition < 16)
         {
-          thestart = 0;
+          if (thestart < 16)
+          {
+            thestart = 0;
+          }
+          else
+          {
+            thestart -= 16;
+          }
+          ReadFile();
         }
-        else
+        else if (m_cursorPosition > 15)
         {
-          thestart -= 16;
+          m_cursorPosition -= 16;
         }
-        ReadFile();
-      }
-      else if (m_cursorPosition > 15)
-      {
-        m_cursorPosition -= 16;
       }
     }
     else if (vk == VK_END)
@@ -1045,6 +1053,109 @@ namespace SimpleXTree
       }
     } //endFor
     return false;
+  }
+
+  int Search::GetNumLines() const
+  {
+    std::wstringstream side;
+    int line = 2;
+    for (int i = 0; i < (std::streampos(numMemBlock2) - thestart) && line <= 45; ++i)
+    {
+      if (memblock2[i] == 0x0D)
+      {
+        // skip \r
+      }
+      else if (memblock2[i] == 0x0A)
+      {
+        // parse \n as new line, render the current lineint 
+        for (int j = side.str().length(); j < 80; ++j)
+        {
+          side << ' ';
+        }
+        if (side.str().find(L"ye whole") != std::wstring::npos)
+        {
+          int a = 1;
+          a++;
+        }
+//        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, side.str(), FG_CYAN | BG_BLACK);
+        line++;
+        side.str(L"");
+      }
+      else
+      {
+        // keep on printing chars
+        // no point printing beyond 80
+        if (m_wordwrap && memblock2[i] == ' ' && side.str().length() > 63)
+        {
+          side << GetChar(memblock2[i]);
+          // fill in spaces
+          for (int j = side.str().length(); j < 80; ++j)
+          {
+            side << ' ';
+          }
+          if (side.str().find(L"ye whole") != std::wstring::npos)
+          {
+            int a = 1;
+            a++;
+          }
+//          DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, side.str(), FG_CYAN | BG_BLACK);
+          line++;
+          side.str(L"");
+        }
+        else if (side.str().length() < 79 && m_wordwrap && i < numMemBlock2)
+        {
+          side << GetChar(memblock2[i]);
+          if (i + 1 >= (std::streampos(numMemBlock2) - thestart))
+          {
+            // Last char needs to write current line.
+
+            // fill in spaces
+            for (int j = side.str().length(); j < 80; ++j)
+            {
+              side << ' ';
+            }
+            if (side.str().find(L"ye whole") != std::wstring::npos)
+            {
+              int a = 1;
+              a++;
+            }
+//            DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, side.str(), FG_CYAN | BG_BLACK);
+            line++;
+            side.str(L"");
+
+            return -1;
+          }
+        }
+        else if (side.str().length() < 79)
+        {
+          side << GetChar(memblock2[i]);
+        }
+        else if (side.str().length() < 79 && m_wordwrap)
+        {
+          // fill in spaces
+          for (int j = side.str().length(); j < 80; ++j)
+          {
+            side << ' ';
+          }
+          if (side.str().find(L"ye whole") != std::wstring::npos)
+          {
+            int a = 1;
+            a++;
+          }
+//          DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, side.str(), FG_CYAN | BG_BLACK);
+          line++;
+          side.str(L"");
+        }
+        //else if (m_wordwrap)
+        //{
+        //  side << GetChar(memblock2[i]);
+        //  DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, side.str(), FG_CYAN | BG_BLACK);
+        //  line++;
+        //  side.str(L"");
+        //}
+      }
+    }
+    return line - 2;
   }
 
   void Search::RenderAscii()
