@@ -67,6 +67,7 @@ namespace SimpleXTree
     __int64 m_bookmarks[9];
     bool m_bookmarksSet[9];
     int IsNumberKey(char ch) const;
-    void Down();
+    int Down();
+    void Up();
   };
 }

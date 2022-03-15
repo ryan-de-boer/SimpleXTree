@@ -760,7 +760,7 @@ namespace SimpleXTree
     }
   }
 
-  void Search::Down()
+  int Search::Down()
   {
     bool inc = true;
     int numLines = GetNumLines();
@@ -769,6 +769,7 @@ namespace SimpleXTree
       int b = 1;
       b++;
       inc = false;
+      return -1;
     }
 
     if (inc)
@@ -798,6 +799,149 @@ namespace SimpleXTree
         }
       }
     }
+    return numLines;
+  }
+
+  void Search::Up()
+  {
+    double sec2 = 0.0;
+    double sec3 = 0.0;
+    win32::Stopwatch sw;
+    sw.Start();
+    int oldStart = thestart;
+    bool oneMore = false;
+    bool atStart = false;
+    if (thestart > 0)
+    {
+
+      while (memblock2[0] != 0x0A && thestart>0)
+      {
+        thestart -= 1;
+        ReadFile();
+      }
+      if (thestart == std::streampos(0))
+      {
+        atStart = true;
+      }
+      sw.Stop();
+      double sec = sw.ElapsedSeconds();
+      sw.Start();
+
+      if (memblock2[0] == 0x0A)
+      {
+        thestart -= 1;
+        ReadFile();
+        if (memblock2[0] == 0x0D)
+        {
+          thestart -= 1;
+          ReadFile();
+        }
+
+        if (memblock2[0] == 0x0A)
+        {
+          thestart -= 1;
+          ReadFile();
+          //                   oneMore = true;
+
+          if (memblock2[0] == 0x0D)
+          {
+            thestart -= 1;
+            ReadFile();
+            oneMore = true;
+          }
+        }
+        if (!oneMore)
+        {
+          while (memblock2[0] != 0x0A && thestart>0)
+          {
+            thestart -= 1;
+            ReadFile();
+          }
+        }
+      }
+
+
+      int newStart = oldStart;
+      //                while (newStart - thestart >80)
+      //while (thestart < newStart-80)
+      //{
+      //  searchObj.Down();
+      //}
+      //                if (!atStart)
+      {
+        //while (thestart < oldStart)
+        //{
+        //  searchObj.Down();
+        //}
+      }
+
+      sw.Stop();
+      sw.Start();
+      sec3 = 0.0;
+
+      int oldStart2 = oldStart;
+      newStart = thestart;
+      while (oldStart > std::streampos(newStart))
+      {
+        oldStart2 = thestart;
+        win32::Stopwatch sw2;
+        sw2.Start();
+        if (Down() == -1)
+        {
+          break;
+        }
+        //if (searchObj.m_showingLastLine)
+        //{
+        //  break;
+        //}
+        sw2.Stop();
+        sec3 += sw2.ElapsedSeconds();
+        newStart = thestart;
+      }
+
+      thestart = oldStart2;
+      ReadFile();
+
+      sec2 = sw.ElapsedSeconds();
+
+      //                if (oneMore && oldStart > thestart+std::streampos(80))
+      //if (oneMore)
+      //{
+      //  searchObj.Down();
+      //}
+      int c = 1;
+      c++;
+
+      //72 was 64
+      //for (int j = 0; j <= 64; ++j)
+      //{
+      //  if ((memblock2[0] != 0x0D || j <= 64) && thestart > 0)
+      //  {
+      //    thestart -= 1;
+      //    ReadFile();
+      //  }
+      //  //if ((memblock2[0] == 0x0A || j<63) && thestart>0)
+      //  //{
+      //  //  bool end = false;
+      //  //  if (memblock2[0] == 0x0A)
+      //  //    end = true;
+      //  //  thestart -= 1;
+      //  //  ReadFile();
+      //  //  if (end)
+      //  //    break;
+      //  //}
+      //}
+    }
+    /*             if (memblock2[0] == ' ')
+    {
+    thestart += 1;
+    ReadFile();
+    }*/
+
+    sw.Stop();
+    double sec = sw.ElapsedSeconds();
+    int z = 1;
+    z++;
   }
 
   void Search::VK(DWORD vk)
