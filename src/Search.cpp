@@ -46,6 +46,7 @@ extern std::string pathToFile;
 extern std::string theFile;
 extern int numMemBlock2;
 extern int numFound;
+extern int m_lastI;
 
 void DrawString(CHAR_INFO *m_bufScreen, int nScreenWidth, int nScreenHeight, int x, int y, std::wstring c, short col = 0x000F);
 extern CHAR_INFO *m_bufScreen;
@@ -62,6 +63,7 @@ extern std::wstring searchHex;
 std::wstring GetClipboardText();
 bool HasFocus();
 std::wstring GetAppPath();
+void ClearFileCache();
 
 int g_itemsp = 0;
 int g_itemsleft = 0;
@@ -271,7 +273,7 @@ namespace SimpleXTree
   Search::Search() : m_exitThread(false),
     m_threadReadyToSearch(false), m_startBeforeSearch(0), m_numFoundBeforeSearch(0), m_theSearchPosBeforeSearch(0), m_editing(false),
     m_editingAscii(false), m_jumping(false), m_jumpingFirstChar(false), m_saving(false),
-    m_activated(false), m_timePassed(0), m_timeSet(false), m_renderCursor(true), m_hasFocus(false), m_typed(L""), m_renderAscii(false), m_wordwrap(false), m_showingLastLine(false)
+    m_activated(false), m_timePassed(0), m_timeSet(false), m_renderCursor(true), m_hasFocus(false), m_typed(L""), m_renderAscii(false), m_wordwrap(false), m_newline(true), m_showingLastLine(false)
   {
     //https://softwareengineering.stackexchange.com/questions/382195/is-it-okay-to-start-a-thread-from-within-a-constructor-of-a-class
     m_member_thread = std::thread(&Search::ThreadFn, this);
@@ -512,6 +514,8 @@ namespace SimpleXTree
     }
   }
 
+  int g_15 = -506;
+
   void Search::KeyEvent(WCHAR ch)
   {
     bool control = (0x8000 & GetAsyncKeyState((unsigned char)(VK_CONTROL))) != 0;
@@ -598,6 +602,7 @@ namespace SimpleXTree
 
       m_edits.clear();
       m_orderOfEdits.clear();
+      ClearFileCache();
       ReadFile();
     }
     else if (m_saving && ch == 'n')
@@ -661,6 +666,106 @@ namespace SimpleXTree
       m_wordwrap = !m_wordwrap;
       ReadFile();
     }
+    else if (ch == 'm')
+    {
+      thestart -= std::streampos(1);
+      ReadFile();
+      RenderNow();
+    }
+    else if (ch == 'b')
+    {
+      thestart += std::streampos(1);
+      ReadFile();
+      RenderNow();
+    }
+    else if (ch == 'n')
+    {
+      m_newline = !m_newline;
+      /*
+      thestart = theend - std::streampos((44 * 80));
+      ReadFile();
+      RenderNow();
+      */
+
+      if (m_newline && false)
+      {
+        /*
+        std::streampos estimateEnd = thestart + std::streampos((44 * 80));
+        int col = 0;
+//        int row = -2;
+        int row = 0;
+        std::streampos count = 0;
+        for (std::streampos pointer = thestart; pointer < theend; pointer=pointer+std::streampos(1))
+        {
+          col++;
+          if (col>80)
+          {
+            col = 0;
+            row++;
+            if (row >= 44)
+              break;
+          }
+          else
+          {
+            count+=1;
+          }
+          if (memblock2[pointer-thestart] == 0x0A)
+          {
+            col = 0;
+            row++;
+            if (row >= 44)
+              break;
+          }
+        }
+        thestart = theend - std::streampos(row * 80)+(80-col-1) + g_15;
+
+        thestart = 371874;
+        */
+
+        int col = 0;
+        int row = 0;
+        std::streampos pointer = theend;
+        for (pointer = theend; row<44; pointer = pointer - std::streampos(1))
+        {
+          col++;
+          if (col>80)
+          {
+            col = 0;
+            row++;
+            if (row >= 44)
+            {
+              pointer += row;
+              break;
+            }
+          }
+          if (memblock2[pointer-thestart] == 0x0A)
+          {
+            col = 0;
+            row++;
+            if (row >= 44)
+            {
+              pointer += row;
+              break;
+            }
+          }
+        }
+
+//        thestart = theend - std::streampos(row * 80);// +(80 - col);
+//        thestart = theend - std::streampos(row * 80) + 200;
+        thestart = pointer;
+
+        //now go to end?
+        Down();
+        while (Down() != -1)
+        {
+          int a = 1;
+          a++;
+        }
+
+        ReadFile();
+        RenderNow();
+      }
+    }
     else if (numberKey != -1)
     {
       if (shift)
@@ -713,6 +818,56 @@ namespace SimpleXTree
     return -1;
   }
 
+  void Search::End()
+  {
+    thestart = theend - std::streampos((44 * 80));
+    ReadFile();
+
+    int col = 0;
+    int row = 0;
+    std::streampos pointer = theend;
+    for (pointer = theend; row<44; pointer = pointer - std::streampos(1))
+    {
+      col++;
+      if (col>80)
+      {
+        col = 0;
+        row++;
+        if (row >= 44)
+        {
+          pointer += row;
+          break;
+        }
+      }
+      if (memblock2[pointer - thestart] == 0x0A)
+      {
+        col = 0;
+        row++;
+        if (row >= 44)
+        {
+          pointer += row;
+          break;
+        }
+      }
+    }
+
+    thestart = pointer;
+    ReadFile();
+
+    Up();
+
+    //now go to end?
+    Down();
+    while (Down() != -1)
+    {
+      int a = 1;
+      a++;
+    }
+
+    ReadFile();
+    RenderNow();
+  }
+
   void Search::InsertHexChar(char ch)
   {
     bool isValid = (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F') || (ch >= '0' && ch <= '9');
@@ -762,9 +917,12 @@ namespace SimpleXTree
 
   int Search::Down()
   {
+    if (DontRenderAscii())
+      return -1;
+
     bool inc = true;
     int numLines = GetNumLines();
-    if (numLines == -1)
+    if (numLines == -1 || numLines==0)
     {
       int b = 1;
       b++;
@@ -788,6 +946,16 @@ namespace SimpleXTree
           break;
         }
         else if (memblock2[j] == 0x0A)
+        {
+          foundNewLine = true;
+          if (thestart + std::streampos(j + 1) < theend)
+          {
+            thestart += j + 1;
+            ReadFile();
+          }
+          break;
+        }
+        else if (j>79)
         {
           foundNewLine = true;
           if (thestart + std::streampos(j + 1) < theend)
@@ -1346,8 +1514,15 @@ namespace SimpleXTree
   {
     int length = 0;
     int line = 2;
-    for (int i = 0; i < (std::streampos(numMemBlock2) - thestart) && line <= 45; ++i)
+//    for (int i = 0; i < (std::streampos(numMemBlock2) - thestart) && line <= 45; ++i)
+    for (int i = 0; i < std::streampos(numMemBlock2) && line <= 45; ++i)
     {
+      if (i + 1 >= std::streampos(numMemBlock2))
+      {
+        // Last char needs to write current line.
+        return line-2;
+      }
+
       if (memblock2[i] == 0x0D)
       {
         // skip \r
@@ -1380,7 +1555,8 @@ namespace SimpleXTree
         else if (length < 79 && m_wordwrap && i < numMemBlock2)
         {
           length++;
-          if (i + 1 >= (std::streampos(numMemBlock2) - thestart))
+//          if (i + 1 >= (std::streampos(numMemBlock2) - thestart))
+          if (i + 1 >= std::streampos(numMemBlock2))
           {
             // Last char needs to write current line.
             return -1;
@@ -1390,7 +1566,7 @@ namespace SimpleXTree
         {
           length++;
         }
-        else if (length < 79 && m_wordwrap)
+        else if (length > 79/* && m_wordwrap*/)
         {
           // fill in spaces
           for (int j = length; j < 80; ++j)
@@ -1410,7 +1586,8 @@ namespace SimpleXTree
     int numChars = 0;
     int length = 0;
     int line = 2;
-    for (int i = 0; i < (std::streampos(numMemBlock2) - thestart) && line <= 45; ++i)
+//    for (int i = 0; i < (std::streampos(numMemBlock2) - thestart) && line <= 45; ++i)
+    for (int i = 0; i < std::streampos(numMemBlock2) && line <= 45; ++i)
     {
       if (memblock2[i] == 0x0D)
       {
@@ -1450,7 +1627,8 @@ namespace SimpleXTree
         {
           length++;
           numChars++;
-          if (i + 1 >= (std::streampos(numMemBlock2) - thestart))
+//          if (i + 1 >= (std::streampos(numMemBlock2) - thestart))
+          if (i + 1 >= std::streampos(numMemBlock2))
           {
             // Last char needs to write current line.
 
@@ -1492,34 +1670,71 @@ namespace SimpleXTree
     std::wstringstream ss;
     ss << file;// << L"_" << lastChar;
     file = ss.str();
-    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, 0, L"File:                                                          ASCII (no mask)  ", FG_GREY | BG_BLACK);
+    if (m_wordwrap)
+    {
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, 0, L"File:                                                          WRAP  (no mask)  ", FG_GREY | BG_BLACK);
+      if (m_newline)
+      {
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, 0, L"File:                                                          WRAPN (no mask)  ", FG_GREY | BG_BLACK);
+      }
+    }
+    else
+    {
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, 0, L"File:                                                          ASCII (no mask)  ", FG_GREY | BG_BLACK);
+      if (m_newline)
+      {
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, 0, L"File:                                                          ASCIIN(no mask)  ", FG_GREY | BG_BLACK);
+      }
+    }
     DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 6, 0, file, FG_GREY | BG_BLACK);
     DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, 1, L"────────────────────────────────────────────────────────────────────────────────", FG_GREY | BG_BLACK);
 
     m_showingLastLine = false;
     std::wstringstream side;
     int line = 2;
-    for (int i = 0; i < (std::streampos(numMemBlock2)-thestart) && line<=45; ++i)
+//    for (int i = 0; i < (std::streampos(numMemBlock2)-thestart) && line<=45; ++i)
+//    for (int i = 0; i < std::streampos(numMemBlock2) && line<=45; ++i)
+//    for (int i = 0; i < std::streampos(numMemBlock2) && line<=45; ++i)
+//    for (int i = 0; i < std::streampos(numMemBlock2) && line<=47; ++i)
+    for (int i = 0; i < std::streampos(numMemBlock2) && line<=45; ++i)
     {
+      m_lastI = i;
+
+      if (i + 1 >= (std::streampos(numMemBlock2)))
+      {
+        m_showingLastLine = true;
+      }
+
       if (memblock2[i] == 0x0D)
       {
         // skip \r
+        if (!m_newline)
+        {
+          side << GetChar(memblock2[i]);
+        }
       }
       else if (memblock2[i] == 0x0A)
       {
-        // parse \n as new line, render the current lineint 
-        for (int j = side.str().length(); j < 80; ++j)
+        if (m_newline)
         {
-          side << ' ';
+          // parse \n as new line, render the current lineint 
+          for (int j = side.str().length(); j < 80; ++j)
+          {
+            side << ' ';
+          }
+          if (side.str().find(L"ye whole") != std::wstring::npos)
+          {
+            int a = 1;
+            a++;
+          }
+          DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, side.str(), FG_CYAN | BG_BLACK);
+          line++;
+          side.str(L"");
         }
-        if (side.str().find(L"ye whole") != std::wstring::npos)
+        else
         {
-          int a = 1;
-          a++;
+          side << GetChar(memblock2[i]);
         }
-        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, side.str(), FG_CYAN | BG_BLACK);
-        line++;
-        side.str(L"");
       }
       else
       {
@@ -1545,7 +1760,7 @@ namespace SimpleXTree
         else if (side.str().length() < 79 && m_wordwrap && i < numMemBlock2)
         {
           side << GetChar(memblock2[i]);
-          if (i+1 >= (std::streampos(numMemBlock2)-thestart))
+          if (i+1 >= (std::streampos(numMemBlock2)))
           {
             // Last char needs to write current line.
 
@@ -1586,6 +1801,28 @@ namespace SimpleXTree
           line++;
           side.str(L"");
         }
+        else
+        {
+          side << GetChar(memblock2[i]);
+          if (side.str().length() > 79 && m_wordwrap)
+          {
+            DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, side.str(), FG_CYAN | BG_BLACK);
+            line++;
+            side.str(L"");
+          }
+          else if (side.str().length() > 79)
+          {
+            DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, side.str(), FG_CYAN | BG_BLACK);
+            line++;
+            side.str(L"");
+          }
+          else if (side.str().length() > 1024)
+          {
+            DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, side.str(), FG_CYAN | BG_BLACK);
+            line++;
+            side.str(L"");
+          }
+        }
         //else if (m_wordwrap)
         //{
         //  side << GetChar(memblock2[i]);
@@ -1596,7 +1833,16 @@ namespace SimpleXTree
       }
     }
 
-    
+    if (side.str().length() > 0)
+    {
+      for (int j = side.str().length(); j < 80; ++j)
+      {
+        side << ' ';
+      }
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, side.str(), FG_CYAN | BG_BLACK);
+      line++;
+    }
+
     side.str(L"");
     for (int j = 0; j < 80; ++j)
     {
@@ -1643,6 +1889,142 @@ namespace SimpleXTree
     line++;
 
     
+  }
+
+
+  bool Search::DontRenderAscii()
+  {
+    bool showingLastLine = false;
+    int length = 0;
+    int line = 2;
+    for (int i = 0; i < std::streampos(numMemBlock2) && line <= 45; ++i)
+    {
+      if (i + 1 >= (std::streampos(numMemBlock2)))
+      {
+        showingLastLine = true;
+        return showingLastLine;
+      }
+
+      if (memblock2[i] == 0x0D)
+      {
+        // skip \r
+        if (!m_newline)
+        {
+          length++;
+        }
+      }
+      else if (memblock2[i] == 0x0A)
+      {
+        if (m_newline)
+        {
+          // parse \n as new line, render the current lineint 
+          for (int j = length; j < 80; ++j)
+          {
+            length++;
+          }
+          line++;
+          length = 0;
+        }
+        else
+        {
+          length++;
+        }
+      }
+      else
+      {
+        // keep on printing chars
+        // no point printing beyond 80
+        if (m_wordwrap && memblock2[i] == ' ' && length > 63)
+        {
+          length++;
+          // fill in spaces
+          for (int j = length; j < 80; ++j)
+          {
+            length++;
+          }
+          line++;
+          length = 0;
+        }
+        else if (length < 79 && m_wordwrap && i < numMemBlock2)
+        {
+          length++;
+          if (i + 1 >= (std::streampos(numMemBlock2)))
+          {
+            // Last char needs to write current line.
+
+            // fill in spaces
+            for (int j = length; j < 80; ++j)
+            {
+              length++;
+            }
+            line++;
+            length = 0;
+
+            showingLastLine = true;
+            return showingLastLine;
+          }
+        }
+        else if (length < 79)
+        {
+          length++;
+        }
+        else if (length < 79 && m_wordwrap)
+        {
+          // fill in spaces
+          for (int j = length; j < 80; ++j)
+          {
+            length++;
+          }
+          line++;
+          length = 0;
+        }
+        else
+        {
+          length++;
+          if (length > 79 && m_wordwrap)
+          {
+            line++;
+            length = 0;
+          }
+          else if (length > 79)
+          {
+
+            line++;
+            length = 0;
+          }
+          else if (length > 1024)
+          {
+
+            line++;
+            length = 0;
+          }
+        }
+      }
+    }
+
+    if (length > 0)
+    {
+      for (int j = length; j < 80; ++j)
+      {
+        length++;
+      }
+
+      line++;
+    }
+
+    length = 0;
+    for (int j = 0; j < 80; ++j)
+    {
+      length++;
+    }
+
+    for (int i = line; i < 46; ++i)
+    {
+
+      line++;
+    }
+
+    return showingLastLine;
   }
 
   void Search::Render()

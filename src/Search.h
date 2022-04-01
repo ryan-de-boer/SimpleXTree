@@ -23,6 +23,7 @@ namespace SimpleXTree
     bool Searching() const;
     void Render();
     void RenderAscii();
+    bool Search::DontRenderAscii();
     void KeyEvent(WCHAR ch);
     bool IsActivated() const
     {
@@ -47,12 +48,14 @@ namespace SimpleXTree
   public:
     bool m_renderAscii;
     bool m_wordwrap;
+    bool m_newline;
     int Search::GetNumLines() const;
     int Search::GetNumChars() const;
   private:
     void Search::RenderNow();
     void Search::InsertHexChar(char ch);
   public:
+    void End();
     bool m_editing;
     bool m_editingAscii;
     bool m_jumping;

@@ -5,7 +5,7 @@
 namespace SimpleXTree
 {
 
-  RandomAccessBufferedReader::RandomAccessBufferedReader() : m_isOpen(false)
+  RandomAccessBufferedReader::RandomAccessBufferedReader() : m_isOpen(false), m_memblock(NULL)
   {
   }
 
@@ -33,6 +33,10 @@ namespace SimpleXTree
 //    m_size = 5000;
     m_size = 5000000;
 //    m_size = 15000000;
+    if (m_memblock != NULL)
+    {
+      delete[] m_memblock;
+    }
     m_memblock = new char[m_size];
 
     m_from = std::streampos(0);
@@ -57,6 +61,12 @@ namespace SimpleXTree
 
   void RandomAccessBufferedReader::SeekAndRead(std::streampos pos, char* memblock, std::streamsize size)
   {
+    if (pos + size > m_end)
+    {
+      int a = 1;
+      a++;
+    }
+
     if (pos >= m_from && pos+size < m_from+m_size)
     {
       memcpy_s(memblock, size, m_memblock+pos-m_from, size);
