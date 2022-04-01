@@ -854,17 +854,20 @@ namespace SimpleXTree
     thestart = pointer;
     ReadFile();
 
-    Up();
-
-    //now go to end?
-    Down();
-    while (Down() != -1)
+    if (GetNumLines() > 5)
     {
-      int a = 1;
-      a++;
-    }
+      Up();
 
-    ReadFile();
+      //now go to end?
+      Down();
+      while (Down() != -1)
+      {
+        int a = 1;
+        a++;
+      }
+
+      ReadFile();
+    }
     RenderNow();
   }
 
@@ -981,10 +984,11 @@ namespace SimpleXTree
     bool atStart = false;
     if (thestart > 0)
     {
-
-      while (memblock2[0] != 0x0A && thestart>0)
+      int upTo80 = 0;
+      while (memblock2[0] != 0x0A && thestart>0 && upTo80<80)
       {
         thestart -= 1;
+        upTo80++;
         ReadFile();
       }
       if (thestart == std::streampos(0))
