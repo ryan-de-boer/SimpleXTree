@@ -273,7 +273,7 @@ namespace SimpleXTree
   Search::Search() : m_exitThread(false),
     m_threadReadyToSearch(false), m_startBeforeSearch(0), m_numFoundBeforeSearch(0), m_theSearchPosBeforeSearch(0), m_editing(false),
     m_editingAscii(false), m_jumping(false), m_jumpingFirstChar(false), m_saving(false),
-    m_activated(false), m_timePassed(0), m_timeSet(false), m_renderCursor(true), m_hasFocus(false), m_typed(L""), m_renderAscii(false), m_wordwrap(false), m_newline(true), m_showingLastLine(false)
+    m_activated(false), m_timePassed(0), m_timeSet(false), m_renderCursor(true), m_hasFocus(false), m_typed(L""), m_renderAscii(false), m_renderDump(false), m_wordwrap(false), m_newline(true), m_showingLastLine(false)
   {
     //https://softwareengineering.stackexchange.com/questions/382195/is-it-okay-to-start-a-thread-from-within-a-constructor-of-a-class
     m_member_thread = std::thread(&Search::ThreadFn, this);
@@ -654,23 +654,35 @@ namespace SimpleXTree
     else if (ch == 'a')
     {
       m_renderAscii = true;
+      m_renderDump = false;
       ReadFile();
     }
     else if (ch == 'h')
     {
       m_renderAscii = false;
+      m_renderDump = false;
     }
     else if (ch == 'w')
     {
       m_renderAscii = true;
+      m_renderDump = false;
       m_wordwrap = !m_wordwrap;
+      ReadFile();
+    }
+    else if (ch == 'd')
+    {
+      m_renderDump = true;
+      m_renderAscii = false;
       ReadFile();
     }
     else if (ch == 'm')
     {
-      thestart -= std::streampos(1);
-      ReadFile();
-      RenderNow();
+      if (thestart >= 1)
+      {
+        thestart -= std::streampos(1);
+        ReadFile();
+        RenderNow();
+      }
     }
     else if (ch == 'b')
     {
@@ -2038,6 +2050,11 @@ namespace SimpleXTree
       RenderAscii();
       return;
     }
+    if (m_renderDump)
+    {
+      RenderDump();
+      return;
+    }
 
     std::wstring file = StrUtil::s2ws(theFile);
     std::wstringstream ss;
@@ -2653,4 +2670,441 @@ namespace SimpleXTree
     }
 
   }
+
+  void Search::RenderDump()
+  {
+    //upto
+
+    std::wstring file = StrUtil::s2ws(theFile);
+    std::wstringstream ss;
+    ss << file;// << L"_" << lastChar;
+    file = ss.str();
+    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, 0, L"File:                                                          DUMP  (no mask)  ", FG_GREY | BG_BLACK);
+    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 6, 0, file, FG_GREY | BG_BLACK);
+    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, 1, L"────────────────────────────────────────────────────────────────────────────────", FG_GREY | BG_BLACK);
+
+    __int64 start = thestart;
+    int lNumFound = numFound;
+    __int64 lTheSearchPos = theSearchPos;
+
+    if (Searching())
+    {
+      start = m_startBeforeSearch;
+      lNumFound = m_numFoundBeforeSearch;
+      //      lTheSearchPos = 0;// searchObj.m_theSearchPosBeforeSearch;
+      lTheSearchPos = m_theSearchPosBeforeSearch;
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, 1, L"Searching...────────────────────────────────────────────────────────────────────", FG_BLACK | BG_CYAN);
+    }
+
+    //			  DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, 2, L"00000000  DA C4 C4 C4  C4 5B 20 42  49 45 57 20  56 65 72 73   ┌────[ BIEW Vers", FG_CYAN | BG_BLACK);
+    //			  DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, 3, L"00000010  69 6F 6E 20  36 2E 31 2E  30 20 5D C4  C4 C4 C4 C4   ion 6.1.0 ]─────", FG_CYAN | BG_BLACK);
+
+    int line = 2;
+    __int64 index = 0;
+    __int64 endy = start + 2752;
+    if (endy > theend)
+      endy = theend;
+
+    __int64 printed = 0;
+    __int64 off = 0;
+    bool isFirst = false;
+    //        for (int i = start; i <= endy; i += 16)
+    bool isPrinted = false;
+    bool startedPrinting = false;
+    for (__int64 i = start; i <= endy;)
+    {
+      std::wstringstream buf;
+
+      if (endy != 0)
+      {
+        buf << GetHexPadded8(i) << L"  ";
+      }
+      else
+      {
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                                                                                ", FG_GREY | BG_BLACK);
+      }
+
+      for (int j = 0; j < 64; ++j)
+      {
+        if (index + j + start < theend)
+        {
+          buf << GetChar(memblock2[index + j]);
+        }
+        ++i;
+      }
+      index += 64;
+      buf << L"     ";
+
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, buf.str(), FG_CYAN | BG_BLACK);
+      line++;
+    }
+
+    for (int i = line; i <= 45; ++i)
+    {
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                                                                                ", FG_GREY | BG_BLACK);
+      line++;
+    }
+
+    //https://mycurvefit.com/
+    //power
+    //y = 60450.23*x^-0.8831565
+    /*
+    consoleapp.csproj
+    {_Myoff=0 _Fpos=2425 _Mystate={_Wchar=0 _Byte=0 _State=0 } }
+    ════════════════════════════════════════════════════════════════════════────────
+    2425 => 72/80, 8, 0.9, 0.1
+
+    program.cs
+    {_Myoff=0 _Fpos=8595 _Mystate={_Wchar=0 _Byte=0 _State=0 } }
+    ══════════════──────────────────────────────────────────────────────────────────
+    8595 => 14/80, 66, 0.175, 0.825
+
+    hookdll.dll
+    {_Myoff=0 _Fpos=32768 _Mystate={_Wchar=0 _Byte=0 _State=0 } }
+    ════════────────────────────────────────────────────────────────────────────────
+    32768 => 8/80, 72, 0.1, 0.9
+
+    hookexe.exe
+    {_Myoff=0 _Fpos=28672 _Mystate={_Wchar=0 _Byte=0 _State=0 } }
+    ═════════───────────────────────────────────────────────────────────────────────
+    28672 => 9/80, 71, 0.1125, 0.8875
+
+    hookdll.cpp
+    {_Myoff=0 _Fpos=2011 _Mystate={_Wchar=0 _Byte=0 _State=0 } }
+    ══════════════════════════════════════════════════════════════════──────────────
+    2011 => 66/80, 14, 0.825, 0.175
+    */
+    double percent = (double)(thestart + std::streampos(703 + 1)) / (double)theend * 100.0;
+    double percents = (double)(thestart) / (double)theend;
+    if (percent >= 100)
+    {
+      percents = 1.0;
+    }
+    double percentp = (double)(thestart) / (double)theend * 100.0;
+    double percentpx = 1.0 - (double)(thestart) / (double)theend;
+    double percentc = (double)(thestart + std::streampos(703 + 1)) / (double)theend;
+    int ipercent = (int)percent;
+    int ipercentp = (int)percentp;
+    int ipercentc = (int)percentc;
+
+
+    //double thepercent = 0.77;
+    double thepercent = (double)(0 + std::streampos(703 + 1)) / (double)theend;
+    int itemsp = (int)(thepercent * 80.0);
+    itemsp *= 2;
+    if (itemsp  >79)
+    {
+      itemsp = 79;
+    }
+    if (itemsp < 1)
+    {
+      itemsp = 1;
+    }
+    //    int iy = 1;
+    //if (theend > 0)
+    //{
+    //  double y = 60450.23*pow(theend, -0.8831565);
+    //  itemsp = (int)y;
+    //  int m = 80 - itemsp;
+    //  //if (iy > m)
+    //  //{
+    //  //  iy = m;
+    //  //}
+    //  //if (iy < 1)
+    //  //{
+    //  //  iy = 1;
+    //  //}
+    //  if (itemsp  >80)
+    //  {
+    //    itemsp = 79;
+    //  }
+    //  if (itemsp < 1)
+    //  {
+    //    itemsp = 1;
+    //  }
+    //}
+
+    g_itemsp = itemsp;
+    int itemsleft = 80 - itemsp;
+    int leftSpace = (int)((percents*(double)itemsleft) + 0.5);
+    int rightSpace = (int)(((1.0 - percents)*(double)itemsleft) + 0.5);
+    g_itemsleft = itemsleft;
+    g_leftSpace = leftSpace;
+    g_rightSpace = rightSpace;
+
+    //
+    //    if (ipercent==0
+
+    std::wstringstream buf;
+    for (int i = 0; i < leftSpace; ++i)
+    {
+      buf << L"─";
+    }
+    for (int i = 0; i < itemsp; ++i)
+    {
+      buf << L"═";
+    }
+    for (int i = 0; i < rightSpace; ++i)
+    {
+      buf << L"─";
+    }
+    //for (int i = 0; i < itemsp; ++i)
+    //{
+    //  buf << L"─";
+    //}
+    //for (int i = itemsp; i < itemsp+iy; ++i)
+    //{
+    //  buf << L"═";
+    //}
+    //for (int i = itemsp+iy; i < 80; ++i)
+    //{
+    //  buf << L"─";
+    //}
+    //int spare = 80 - iy;
+    //std::wstringstream buf;
+    //for (int i = thestart; i < 703; ++i)
+    //{
+
+    //}
+    //std::wstringstream buf;
+    //for (int i = 0; i < iy; ++i)
+    //{
+    //  buf << L"═";
+    //}
+    //for (int i = iy; i < 80; ++i)
+    //{
+    //  buf << L"─";
+    //}
+
+    //    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"═══════════════════════════════════════════════════════════════─────────────────", FG_GREY | BG_BLACK);
+    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, buf.str(), FG_GREY | BG_BLACK);
+    line++;
+
+    if (!m_hasFocus && HasFocus())
+    {
+      RenderNow();
+    }
+    m_hasFocus = HasFocus();
+
+    {
+      //https://www.delftstack.com/howto/cpp/how-to-get-time-in-milliseconds-cpp/
+      if (!m_timeSet)
+      {
+        auto millisec_since_epoch = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+        m_timePassed = millisec_since_epoch;
+        m_timeSet = true;
+      }
+
+      auto currentMillisec_since_epoch = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+      if (currentMillisec_since_epoch - m_timePassed > 500)
+      {
+        m_timePassed = currentMillisec_since_epoch;
+        m_timeSet = true;
+        m_renderCursor = !m_renderCursor;
+      }
+
+      std::map<__int64, AnEdit>::iterator it;
+      for (it = m_edits.begin(); it != m_edits.end(); it++)
+      {
+        __int64 address = it->first;
+        __int64 offset = address - thestart;
+        char ch = memblock2[offset];
+        std::wstring str = GetHex(ch);
+        std::wstring str1 = str.substr(0, 1);
+        std::wstring str2 = str.substr(1, 1);
+        if (it->second.OneSet)
+        {
+          if (offset >= 0 && offset <= 703)
+          {
+            __int64 x = GetXCoord(offset, CUR_ONE);
+            __int64 y = GetYCoord(offset, CUR_ONE);
+            std::wstringstream out;
+            out << it->second.One;
+            str1 = out.str();
+            DrawString(m_bufScreen, nScreenWidth, nScreenHeight, x, 2 + y, out.str(), FG_CYAN | BG_BLACK);
+          }
+        }
+        if (it->second.TwoSet)
+        {
+          if (offset >= 0 && offset <= 703)
+          {
+            __int64 x = GetXCoord(offset, CUR_TWO);
+            __int64 y = GetYCoord(offset, CUR_TWO);
+            std::wstringstream out;
+            out << it->second.Two;
+            str2 = out.str();
+            DrawString(m_bufScreen, nScreenWidth, nScreenHeight, x, 2 + y, out.str(), FG_CYAN | BG_BLACK);
+          }
+        }
+
+        char finalChar = (char)HexToInt2(str1 + str2);
+        std::wstring finalStr = GetChar(finalChar);
+
+        int y2 = offset / 16;
+        int x2 = offset % 16;
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 63 + x2, 2 + y2, finalStr, FG_CYAN | BG_BLACK);
+      }
+
+      if (m_editingAscii && m_renderCursor && HasFocus())
+      {
+        __int64 x2 = m_cursorPosition % 16 + 63;
+        __int64 y2 = m_cursorPosition / 16 + 2;
+        std::wstring ch = GetChar(memblock2[m_cursorPosition]);
+
+        __int64 xc1 = GetXCoord(m_cursorPosition, CUR_ONE);
+        __int64 yc1 = GetYCoord(m_cursorPosition, CUR_ONE);
+        __int64 xc2 = GetXCoord(m_cursorPosition, CUR_TWO);
+        __int64 yc2 = GetYCoord(m_cursorPosition, CUR_TWO);
+        std::wstring hex = GetHex(memblock2[m_cursorPosition]);
+        std::wstring hex1 = hex.substr(0, 1);
+        std::wstring hex2 = hex.substr(1, 1);
+        m_cursor = CUR_ONE;
+        HasCoord(xc1, yc1, hex1);
+        m_cursor = CUR_TWO;
+        HasCoord(xc2, yc2, hex2);
+        hex = hex1 + hex2;
+        ch = GetChar((char)HexToInt2(hex));
+
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, x2, y2, ch, FG_RED | BG_WHITE);
+      }
+      else if (m_editing && m_renderCursor && HasFocus())
+      {
+        __int64 x = GetXCoord(m_cursorPosition, m_cursor);
+        __int64 y = GetYCoord(m_cursorPosition, m_cursor);
+        std::wstring hex = GetHex(memblock2[m_cursorPosition]);
+        std::wstring hex1 = hex.substr(0, 1);
+        std::wstring hex2 = hex.substr(1, 1);
+        std::wstring hexChar = L"";
+        if (m_cursor == CUR_ONE)
+        {
+          hexChar = hex1;
+        }
+        else if (m_cursor == CUR_TWO)
+        {
+          hexChar = hex2;
+        }
+        HasCoord(x, y, hexChar);
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, x, 2 + y, hexChar, FG_RED | BG_WHITE);
+      }
+    }
+
+    if (m_editing)
+    {
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 63, 0, L"Byte:            ", FG_GREY | BG_BLACK);
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 63, 0, L"Byte: " + GetHexPadded8(thestart + m_cursorPosition), FG_GREY | BG_BLACK);
+    }
+
+    if (searchMode)
+    {
+      if (endOfSearch)
+      {
+        int a = 1;
+        a++;
+      }
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                                                                                ", FG_GREY | BG_BLACK);
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"Search for text:", FG_GREY | BG_BLACK);
+      std::wstringstream sb;
+      sb << L"                 " << searchHex;
+      //          DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                 CC 39 38", FG_CYAN | BG_BLACK);
+      DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, sb.str(), FG_CYAN | BG_BLACK);
+      line++;
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                               F2 case sensitive (no )  F4 search for (hex    ) ", FG_GREY | BG_BLACK);
+      DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                               F2                       F4                     ", FG_CYAN | BG_BLACK);
+      line++;
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"Enter search string                                 ◄─┘ ok  F1 help  ESC cancel ", FG_GREY | BG_BLACK);
+      DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                                                    ◄─┘     F1       ESC        ", FG_CYAN | BG_BLACK);
+      line++;
+    }
+    else
+    {
+      if (searchHex != L"" && endOfSearch)
+      {
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"End of Search                                                                   ", FG_GREY | BG_BLACK);
+        line++;
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                                                                                ", FG_GREY | BG_BLACK);
+        line++;
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                                                                         ◄─┘ ok ", FG_GREY | BG_BLACK);
+        DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                                                                         ◄─┘    ", FG_CYAN | BG_BLACK);
+      }
+      else if (m_saving)
+      {
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L" Save modifications to disk?                                                    ", FG_GREY | BG_BLACK);
+        if (m_renderCursor && HasFocus())
+        {
+          DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 29, line, L" ", FG_WHITE | BG_WHITE);
+        }
+        line++;
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                                                                                ", FG_GREY | BG_BLACK);
+        line++;
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                                                   Yes  No  F1 help  ESC cancel ", FG_GREY | BG_BLACK);
+        DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                                                   Y    N   F1       ESC        ", FG_CYAN | BG_BLACK);
+        line++;
+      }
+      else if (m_editing)
+      {
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"HEX EDIT  ◄─┘ save and exit  F8 undo  TAB hex/ascii  CTRL V paste               ", FG_GREY | BG_BLACK);
+        DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"          ◄─┘                F8       TAB            CTRL V                     ", FG_CYAN | BG_BLACK);
+        line++;
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"COMMANDS                                                                        ", FG_GREY | BG_BLACK);
+        line++;
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"←↑↓→ position cursor                                        F1 help  ESC cancel ", FG_GREY | BG_BLACK);
+        DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                                                            F1       ESC        ", FG_CYAN | BG_BLACK);
+        line++;
+      }
+      else if (m_jumping)
+      {
+        std::wstring beforeCursor = std::wstring(L"Goto address: ") + m_typed;
+
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"Goto address:                                                                   ", FG_GREY | BG_BLACK);
+        DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, std::wstring(L"Goto address: ").length(), line, m_typed, FG_CYAN | BG_BLACK);
+        if (m_renderCursor && HasFocus())
+        {
+          DrawString(m_bufScreen, nScreenWidth, nScreenHeight, beforeCursor.length(), line, L"▄", FG_GREY | BG_BLACK);
+        }
+        else
+        {
+          DrawString(m_bufScreen, nScreenWidth, nScreenHeight, beforeCursor.length(), line, L" ", FG_GREY | BG_BLACK);
+        }
+        line++;
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                                                                                ", FG_GREY | BG_BLACK);
+        line++;
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"Enter location as $ hex % percentage                ◄─┘ ok  F1 help  ESC cancel ", FG_GREY | BG_BLACK);
+        DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                                                    ◄─┘     F1    p  ESC        ", FG_CYAN | BG_BLACK);
+        line++;
+      }
+      else
+      {
+        int endit = 703 + 1;
+        if (theend < endit)
+        {
+          endit = theend;
+        }
+
+        double percent = (double)(thestart + std::streampos(endit)) / (double)theend * 100.0;
+        int ipercent = (int)percent;
+        std::wstringstream wpercent;
+        if (ipercent < 100)
+        {
+          wpercent << " ";
+        }
+        if (ipercent < 10)
+        {
+          wpercent << " ";
+        }
+        wpercent << ipercent << " %";
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"VIEW      ASCII  Dump  Edit  Find  Hex  Mask  Wordwrap  Jump                    ", FG_GREY | BG_BLACK);
+        DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                                                                          " + wpercent.str(), FG_CYAN | BG_BLACK);
+        DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"          A      D     E     F     H    M     W         J                       ", FG_CYAN | BG_BLACK);
+        line++;
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"COMMANDS  0..9 goto bookmark         F9 search             SPACE search again   ", FG_GREY | BG_BLACK);
+        DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"          0..9                       F9 s                  SPACE                ", FG_CYAN | BG_BLACK);
+        line++;
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"←↑↓→ scroll  SHIFT 0..9 set ALT 0..9 clear bookmarks        F1 help  ESC cancel ", FG_GREY | BG_BLACK);
+        DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"             SHIFT 0..9     ALT 0..9                        F1       ESC        ", FG_CYAN | BG_BLACK);
+        line++;
+      }
+    }
+
+  }
+
 }

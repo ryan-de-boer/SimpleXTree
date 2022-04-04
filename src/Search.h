@@ -23,6 +23,7 @@ namespace SimpleXTree
     bool Searching() const;
     void Render();
     void RenderAscii();
+    void Search::RenderDump();
     bool Search::DontRenderAscii();
     void KeyEvent(WCHAR ch);
     bool IsActivated() const
@@ -47,6 +48,7 @@ namespace SimpleXTree
     bool m_hasFocus;
   public:
     bool m_renderAscii;
+    bool m_renderDump;
     bool m_wordwrap;
     bool m_newline;
     int Search::GetNumLines() const;
