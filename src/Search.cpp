@@ -122,6 +122,11 @@ namespace SimpleXTree
     return cursorPosition1 / 16;
   }
 
+  __int64 Search::GetDumpYCoord(__int64 cursorPosition1, eCursor cur)
+  {
+    return cursorPosition1 / 64;
+  }
+
   __int64 Search::GetXCoord(__int64 cursorPosition1, eCursor cur)
   {
     __int64 cursorPosition = cursorPosition1 % 16;
@@ -264,6 +269,12 @@ namespace SimpleXTree
     return 0;
   }
 
+  __int64 Search::GetDumpXCoord(__int64 cursorPosition1, eCursor cur)
+  {
+    __int64 cursorPosition = 10 + cursorPosition1 % 64;
+    return cursorPosition;
+  }
+
   __int64 m_cursorPosition = 1;
 
 
@@ -272,7 +283,7 @@ namespace SimpleXTree
 
   Search::Search() : m_exitThread(false),
     m_threadReadyToSearch(false), m_startBeforeSearch(0), m_numFoundBeforeSearch(0), m_theSearchPosBeforeSearch(0), m_editing(false),
-    m_editingAscii(false), m_jumping(false), m_jumpingFirstChar(false), m_saving(false),
+    m_editingAscii(false), m_editingDump(false), m_jumping(false), m_jumpingFirstChar(false), m_saving(false),
     m_activated(false), m_timePassed(0), m_timeSet(false), m_renderCursor(true), m_hasFocus(false), m_typed(L""), m_renderAscii(false), m_renderDump(false), m_wordwrap(false), m_newline(true), m_showingLastLine(false)
   {
     //https://softwareengineering.stackexchange.com/questions/382195/is-it-okay-to-start-a-thread-from-within-a-constructor-of-a-class
@@ -535,6 +546,10 @@ namespace SimpleXTree
     else if (!m_editing && !m_jumping && ch == 'e')
     {
       m_editing = true;
+      if (m_renderDump)
+      {
+        m_editingDump = true;
+      }
       m_cursorPosition = 0;
       m_cursor = CUR_ONE;
       RenderNow();
@@ -573,6 +588,7 @@ namespace SimpleXTree
       m_saving = false;
       m_editing = false;
       m_editingAscii = false;
+      m_editingDump = false;
       // save edits:
 
       std::map<__int64, AnEdit>::iterator it;
@@ -609,6 +625,7 @@ namespace SimpleXTree
     {
       m_editing = false;
       m_editingAscii = false;
+      m_editingDump = false;
       m_saving = false;
       m_edits.clear();
       m_orderOfEdits.clear();
@@ -629,7 +646,7 @@ namespace SimpleXTree
         InsertHexChar(str[1]);
       }
     }
-    else if (m_editingAscii)
+    else if (m_editingAscii || m_editingDump)
     {
       std::wstring str = GetHex(ch);
       m_cursor = CUR_ONE;
@@ -1225,7 +1242,31 @@ namespace SimpleXTree
       {
         m_cursor = CUR_TWO;
       }
-      else if (m_cursor == CUR_TWO)
+      else if (m_renderDump && m_cursor == CUR_TWO)
+      {
+        if (m_cursorPosition >= (64*44-1))
+        {
+          bool inc = true;
+          if ((thestart + std::streampos(64 * 43) + std::streampos(64)) >= (theend))
+            inc = false;
+
+          if (inc)
+          {
+            m_cursorPosition++;
+            m_cursor = CUR_ONE;
+
+            m_cursorPosition -= 64;
+            thestart += 64;
+            ReadFile();
+          }
+        }
+        else
+        {
+          m_cursorPosition++;
+          m_cursor = CUR_ONE;
+        }
+      }
+      else if (!m_renderDump && m_cursor == CUR_TWO)
       {
         //        m_cursorPosition++;
         //        if (m_cursorPosition > 15)
@@ -1265,7 +1306,7 @@ namespace SimpleXTree
     else if (vk == VK_LEFT)
     {
       RenderNow();
-      if (m_editingAscii)
+      if (m_editingAscii || m_editingDump)
       {
         // Want to go back one if editing ascii.
         m_cursor = CUR_ONE;
@@ -1290,7 +1331,26 @@ namespace SimpleXTree
     }
     else if (vk == VK_DOWN)
     {
-      if (!m_renderAscii)
+      if (m_renderDump)
+      {
+        RenderNow();
+        m_cursorPosition += 64;
+        if (m_cursorPosition > (64*44-1))
+        {
+          m_cursorPosition -= 64;
+
+          bool inc = true;
+          if ((thestart + std::streampos(64 * 43) + std::streampos(64)) >= (theend))
+            inc = false;
+
+          if (inc)
+          {
+            thestart += 64;
+            ReadFile();
+          }
+        }
+      }
+      else if (!m_renderAscii)
       {
         RenderNow();
         m_cursorPosition += 16;
@@ -1312,7 +1372,28 @@ namespace SimpleXTree
     }
     else if (vk == VK_UP)
     {
-      if (!m_renderAscii)
+      if (m_renderDump)
+      {
+        RenderNow();
+
+        if (m_cursorPosition < 64)
+        {
+          if (thestart < 64)
+          {
+            thestart = 0;
+          }
+          else
+          {
+            thestart -= 64;
+          }
+          ReadFile();
+        }
+        else if (m_cursorPosition > 63)
+        {
+          m_cursorPosition -= 64;
+        }
+      }
+      else if (!m_renderAscii)
       {
         RenderNow();
 
@@ -1353,6 +1434,7 @@ namespace SimpleXTree
         // No edits to save.
         m_editing = false;
         m_editingAscii = false;
+        m_editingDump = false;
         m_saving = false;
       }
       else
@@ -1374,6 +1456,7 @@ namespace SimpleXTree
     {
       m_editing = false;
       m_editingAscii = false;
+      m_editingDump = false;
       m_saving = false;
       m_edits.clear();
       m_orderOfEdits.clear();
@@ -1410,6 +1493,49 @@ namespace SimpleXTree
         {
           __int64 ox = GetXCoord(offset, CUR_TWO);
           __int64 oy = GetYCoord(offset, CUR_TWO);
+          if (ox == x && oy == y)
+          {
+            std::wstringstream out;
+            out << it->second.Two;
+            hexChar = out.str();
+            return true;
+          }
+        }
+      }
+    } //endFor
+    return false;
+  }
+
+  bool Search::HasCoordDump(__int64 x, __int64 y, std::wstring& hexChar)
+  {
+    std::map<__int64, AnEdit>::iterator it;
+    for (it = m_edits.begin(); it != m_edits.end(); it++)
+    {
+      if (m_cursor == CUR_ONE && it->second.OneSet)
+      {
+        __int64 address = it->first;
+        __int64 offset = address - thestart;
+        if (offset >= 0 && offset <= 64*44)
+        {
+          __int64 ox = GetDumpXCoord(offset, CUR_ONE);
+          __int64 oy = GetDumpYCoord(offset, CUR_ONE);
+          if (ox == x && oy == y)
+          {
+            std::wstringstream out;
+            out << it->second.One;
+            hexChar = out.str();
+            return true;
+          }
+        }
+      }
+      else if (m_cursor == CUR_TWO && it->second.TwoSet)
+      {
+        __int64 address = it->first;
+        __int64 offset = address - thestart;
+        if (offset >= 0 && offset <= 64*44)
+        {
+          __int64 ox = GetDumpXCoord(offset, CUR_TWO);
+          __int64 oy = GetDumpYCoord(offset, CUR_TWO);
           if (ox == x && oy == y)
           {
             std::wstringstream out;
@@ -2673,8 +2799,6 @@ namespace SimpleXTree
 
   void Search::RenderDump()
   {
-    //upto
-
     std::wstring file = StrUtil::s2ws(theFile);
     std::wstringstream ss;
     ss << file;// << L"_" << lastChar;
@@ -2918,10 +3042,10 @@ namespace SimpleXTree
         std::wstring str2 = str.substr(1, 1);
         if (it->second.OneSet)
         {
-          if (offset >= 0 && offset <= 703)
+          if (offset >= 0 && offset <= (44*64-1))
           {
-            __int64 x = GetXCoord(offset, CUR_ONE);
-            __int64 y = GetYCoord(offset, CUR_ONE);
+            __int64 x = GetDumpXCoord(offset, CUR_ONE);
+            __int64 y = GetDumpYCoord(offset, CUR_ONE);
             std::wstringstream out;
             out << it->second.One;
             str1 = out.str();
@@ -2930,10 +3054,10 @@ namespace SimpleXTree
         }
         if (it->second.TwoSet)
         {
-          if (offset >= 0 && offset <= 703)
+          if (offset >= 0 && offset <= (44 * 64 - 1))
           {
-            __int64 x = GetXCoord(offset, CUR_TWO);
-            __int64 y = GetYCoord(offset, CUR_TWO);
+            __int64 x = GetDumpXCoord(offset, CUR_TWO);
+            __int64 y = GetDumpYCoord(offset, CUR_TWO);
             std::wstringstream out;
             out << it->second.Two;
             str2 = out.str();
@@ -2944,55 +3068,56 @@ namespace SimpleXTree
         char finalChar = (char)HexToInt2(str1 + str2);
         std::wstring finalStr = GetChar(finalChar);
 
-        int y2 = offset / 16;
-        int x2 = offset % 16;
-        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 63 + x2, 2 + y2, finalStr, FG_CYAN | BG_BLACK);
+        int y2 = offset / 64;
+        int x2 = offset % 64;
+//        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 10 + x2, 2 + y2, finalStr, FG_CYAN | BG_BLACK);
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 10 + x2, 2 + y2, finalStr, FG_CYAN | BG_BLACK);
       }
 
-      if (m_editingAscii && m_renderCursor && HasFocus())
+      if (m_editingDump && m_renderCursor && HasFocus())
       {
-        __int64 x2 = m_cursorPosition % 16 + 63;
-        __int64 y2 = m_cursorPosition / 16 + 2;
+        __int64 x2 = m_cursorPosition % 64 + 10;
+        __int64 y2 = m_cursorPosition / 64 + 2;
         std::wstring ch = GetChar(memblock2[m_cursorPosition]);
 
-        __int64 xc1 = GetXCoord(m_cursorPosition, CUR_ONE);
-        __int64 yc1 = GetYCoord(m_cursorPosition, CUR_ONE);
-        __int64 xc2 = GetXCoord(m_cursorPosition, CUR_TWO);
-        __int64 yc2 = GetYCoord(m_cursorPosition, CUR_TWO);
+        __int64 xc1 = GetDumpXCoord(m_cursorPosition, CUR_ONE);
+        __int64 yc1 = GetDumpYCoord(m_cursorPosition, CUR_ONE);
+        __int64 xc2 = GetDumpXCoord(m_cursorPosition, CUR_TWO);
+        __int64 yc2 = GetDumpYCoord(m_cursorPosition, CUR_TWO);
         std::wstring hex = GetHex(memblock2[m_cursorPosition]);
         std::wstring hex1 = hex.substr(0, 1);
         std::wstring hex2 = hex.substr(1, 1);
         m_cursor = CUR_ONE;
-        HasCoord(xc1, yc1, hex1);
+        HasCoordDump(xc1, yc1, hex1);
         m_cursor = CUR_TWO;
-        HasCoord(xc2, yc2, hex2);
+        HasCoordDump(xc2, yc2, hex2);
         hex = hex1 + hex2;
         ch = GetChar((char)HexToInt2(hex));
 
         DrawString(m_bufScreen, nScreenWidth, nScreenHeight, x2, y2, ch, FG_RED | BG_WHITE);
       }
-      else if (m_editing && m_renderCursor && HasFocus())
-      {
-        __int64 x = GetXCoord(m_cursorPosition, m_cursor);
-        __int64 y = GetYCoord(m_cursorPosition, m_cursor);
-        std::wstring hex = GetHex(memblock2[m_cursorPosition]);
-        std::wstring hex1 = hex.substr(0, 1);
-        std::wstring hex2 = hex.substr(1, 1);
-        std::wstring hexChar = L"";
-        if (m_cursor == CUR_ONE)
-        {
-          hexChar = hex1;
-        }
-        else if (m_cursor == CUR_TWO)
-        {
-          hexChar = hex2;
-        }
-        HasCoord(x, y, hexChar);
-        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, x, 2 + y, hexChar, FG_RED | BG_WHITE);
-      }
+      //else if (m_editingDump && m_renderCursor && HasFocus())
+      //{
+      //  __int64 x = GetDumpXCoord(m_cursorPosition, m_cursor);
+      //  __int64 y = GetDumpYCoord(m_cursorPosition, m_cursor);
+      //  std::wstring hex = GetHex(memblock2[m_cursorPosition]);
+      //  std::wstring hex1 = hex.substr(0, 1);
+      //  std::wstring hex2 = hex.substr(1, 1);
+      //  std::wstring hexChar = L"";
+      //  if (m_cursor == CUR_ONE)
+      //  {
+      //    hexChar = hex1;
+      //  }
+      //  else if (m_cursor == CUR_TWO)
+      //  {
+      //    hexChar = hex2;
+      //  }
+      //  HasCoord(x, y, hexChar);
+      //  DrawString(m_bufScreen, nScreenWidth, nScreenHeight, x, 2 + y, hexChar, FG_RED | BG_WHITE);
+      //}
     }
 
-    if (m_editing)
+    if (m_editingDump)
     {
       DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 63, 0, L"Byte:            ", FG_GREY | BG_BLACK);
       DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 63, 0, L"Byte: " + GetHexPadded8(thestart + m_cursorPosition), FG_GREY | BG_BLACK);

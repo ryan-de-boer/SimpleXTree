@@ -38,7 +38,10 @@ namespace SimpleXTree
     std::thread m_member_thread;
     __int64 GetYCoord(__int64 cursorPosition1, eCursor cur);
     __int64 GetXCoord(__int64 cursorPosition1, eCursor cur);
+    __int64 GetDumpYCoord(__int64 cursorPosition1, eCursor cur);
+    __int64 GetDumpXCoord(__int64 cursorPosition1, eCursor cur);
     bool Search::HasCoord(__int64 x, __int64 y, std::wstring& hexChar);
+    bool Search::HasCoordDump(__int64 x, __int64 y, std::wstring& hexChar);
     bool m_exitThread;
     bool m_threadReadyToSearch;
     std::wstring m_theSearchHex;
@@ -60,6 +63,7 @@ namespace SimpleXTree
     void End();
     bool m_editing;
     bool m_editingAscii;
+    bool m_editingDump;
     bool m_jumping;
     bool m_jumpingFirstChar;
     bool m_saving;
