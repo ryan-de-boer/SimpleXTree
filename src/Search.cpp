@@ -2715,7 +2715,7 @@ namespace SimpleXTree
     {
       std::wstringstream buf;
 
-      if (endy != 0)
+      if (endy != 0 && (index + start < theend))
       {
         buf << GetHexPadded8(i) << L"  ";
       }
@@ -2729,6 +2729,10 @@ namespace SimpleXTree
         if (index + j + start < theend)
         {
           buf << GetChar(memblock2[index + j]);
+        }
+        else
+        {
+          buf << L" ";
         }
         ++i;
       }
