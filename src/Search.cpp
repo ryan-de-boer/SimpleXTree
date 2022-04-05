@@ -634,7 +634,7 @@ namespace SimpleXTree
     {
       VK(VK_LEFT);
     }
-    else if (m_editingAscii && control && ch == 22) //ctrl-v
+    else if (m_editingAscii||m_editingDump && control && ch == 22) //ctrl-v
     {
       std::wstring clipboard = GetClipboardText();
       for (std::wstring::size_type i = 0; i < clipboard.size(); ++i)
