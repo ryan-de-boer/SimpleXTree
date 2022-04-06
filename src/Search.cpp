@@ -117,6 +117,12 @@ namespace SimpleXTree
     CUR_TWO
   };
 
+  enum eSearchType
+  {
+    S_HEX,
+    S_TEXT
+  };
+
   __int64 Search::GetYCoord(__int64 cursorPosition1, eCursor cur)
   {
     return cursorPosition1 / 16;
@@ -284,7 +290,8 @@ namespace SimpleXTree
   Search::Search() : m_exitThread(false),
     m_threadReadyToSearch(false), m_startBeforeSearch(0), m_numFoundBeforeSearch(0), m_theSearchPosBeforeSearch(0), m_editing(false),
     m_editingAscii(false), m_editingDump(false), m_jumping(false), m_jumpingFirstChar(false), m_saving(false),
-    m_activated(false), m_timePassed(0), m_timeSet(false), m_renderCursor(true), m_hasFocus(false), m_typed(L""), m_renderAscii(false), m_renderDump(false), m_wordwrap(false), m_newline(true), m_showingLastLine(false)
+    m_activated(false), m_timePassed(0), m_timeSet(false), m_renderCursor(true), m_hasFocus(false), m_typed(L""), m_renderAscii(false), 
+    m_renderDump(false), m_wordwrap(false), m_newline(true), m_showingLastLine(false), m_searchType(S_HEX)
   {
     //https://softwareengineering.stackexchange.com/questions/382195/is-it-okay-to-start-a-thread-from-within-a-constructor-of-a-class
     m_member_thread = std::thread(&Search::ThreadFn, this);
@@ -307,6 +314,20 @@ namespace SimpleXTree
     //    m_startBeforeSearch = thestart;
     m_numFoundBeforeSearch = numFound;
     m_theSearchPosBeforeSearch = theSearchPos;
+
+    if (m_searchType == S_TEXT)
+    {
+      std::wstringstream hex;
+      for (std::wstring::size_type i = 0; i < theSearchHex.size(); ++i)
+      {
+        hex << GetHex(theSearchHex[i]);
+        if (i < theSearchHex.size() - 1)
+        {
+          hex << L" ";
+        }
+      }
+      theSearchHex = hex.str();
+    }
 
     win32::Stopwatch starta;
     starta.Start();
@@ -422,6 +443,20 @@ namespace SimpleXTree
   void Search::StartSearch(std::wstring const& theSearchHex)
   {
     m_theSearchHex = theSearchHex;
+    //if (m_searchType == S_TEXT)
+    //{
+    //  std::wstringstream hex;
+    //  for (std::wstring::size_type i = 0; i < theSearchHex.size(); ++i)
+    //  {
+    //    hex << GetHex(theSearchHex[i]);
+    //    if (i < theSearchHex.size() - 1)
+    //    {
+    //      hex << L" ";
+    //    }
+    //  }
+    //  m_theSearchHex = hex.str();
+    //}
+
     m_startBeforeSearch = thestart;
     m_threadReadyToSearch = true;
   }
@@ -1219,6 +1254,18 @@ namespace SimpleXTree
     //  m_edits.clear();
     //  m_orderOfEdits.clear();
     //}
+    else if (searchMode && vk == VK_F4)
+    {
+      if (m_searchType == S_HEX)
+      {
+        m_searchType = S_TEXT;
+      }
+      else if (m_searchType == S_TEXT)
+      {
+        m_searchType = S_HEX;
+      }
+      RenderNow();
+    }
     else if (m_editing && vk == VK_F8)
     {
       m_edits.clear();
@@ -2699,6 +2746,10 @@ namespace SimpleXTree
       DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, sb.str(), FG_CYAN | BG_BLACK);
       line++;
       DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                               F2 case sensitive (no )  F4 search for (hex    ) ", FG_GREY | BG_BLACK);
+      if (m_searchType == S_TEXT)
+      {
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                               F2 case sensitive (no )  F4 search for (text   ) ", FG_GREY | BG_BLACK);
+      }
       DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                               F2                       F4                     ", FG_CYAN | BG_BLACK);
       line++;
       DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"Enter search string                                 ◄─┘ ok  F1 help  ESC cancel ", FG_GREY | BG_BLACK);
@@ -2807,6 +2858,7 @@ namespace SimpleXTree
     DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 6, 0, file, FG_GREY | BG_BLACK);
     DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, 1, L"────────────────────────────────────────────────────────────────────────────────", FG_GREY | BG_BLACK);
 
+    ss.str(L"");
     __int64 start = thestart;
     int lNumFound = numFound;
     __int64 lTheSearchPos = theSearchPos;
@@ -2830,7 +2882,7 @@ namespace SimpleXTree
       endy = theend;
 
     __int64 printed = 0;
-    __int64 off = 0;
+    __int64 off = 10;
     bool isFirst = false;
     //        for (int i = start; i <= endy; i += 16)
     bool isPrinted = false;
@@ -2850,6 +2902,18 @@ namespace SimpleXTree
 
       for (int j = 0; j < 64; ++j)
       {
+        if (i >= lTheSearchPos && i <= lTheSearchPos + std::streampos(lNumFound) && printed < lNumFound)
+        {
+          ss << GetChar(memblock2[index + j]);
+          isPrinted = true;
+          startedPrinting = true;
+          printed++;
+          if (printed != lNumFound)
+          {
+//            ss << L" ";
+          }
+        }
+
         if (index + j + start < theend)
         {
           buf << GetChar(memblock2[index + j]);
@@ -2864,6 +2928,19 @@ namespace SimpleXTree
       buf << L"     ";
 
       DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, buf.str(), FG_CYAN | BG_BLACK);
+
+      if (lNumFound > 0 && ss.str().length()>=1)
+      {
+        std::wstring oneLess = ss.str();
+        ss.str(L"");
+
+        if (oneLess.length()>0 && oneLess[oneLess.length() - 1] == 32)
+        {
+          oneLess = oneLess.substr(0, oneLess.length() - 1);
+        }
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, off, line, oneLess, FG_BLACK | BG_GREY);
+      }
+
       line++;
     }
 
@@ -3138,6 +3215,10 @@ namespace SimpleXTree
       DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, sb.str(), FG_CYAN | BG_BLACK);
       line++;
       DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                               F2 case sensitive (no )  F4 search for (hex    ) ", FG_GREY | BG_BLACK);
+      if (m_searchType == S_TEXT)
+      {
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                               F2 case sensitive (no )  F4 search for (text   ) ", FG_GREY | BG_BLACK);
+      }
       DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                               F2                       F4                     ", FG_CYAN | BG_BLACK);
       line++;
       DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"Enter search string                                 ◄─┘ ok  F1 help  ESC cancel ", FG_GREY | BG_BLACK);

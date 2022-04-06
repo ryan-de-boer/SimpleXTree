@@ -12,6 +12,7 @@
 namespace SimpleXTree
 {
   enum eCursor : int;
+  enum eSearchType : int;
 
   class Search
   {
@@ -78,5 +79,6 @@ namespace SimpleXTree
     int IsNumberKey(char ch) const;
     int Down();
     void Up();
+    eSearchType m_searchType;
   };
 }
