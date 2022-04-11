@@ -47,6 +47,8 @@ void DrawStringSkipSpace(CHAR_INFO *m_bufScreen, int nScreenWidth, int nScreenHe
 bool IsDirectory(std::wstring path);
 void Refresh();
 
+extern int fSelectedPath;
+
 namespace SimpleXTree
 {
 	enum COLOUR
@@ -96,19 +98,33 @@ namespace SimpleXTree
     //    Sleep(1000);
     std::wstringstream buf;
     buf << this->DestPath << L"\\" << GetName(this->Path);
+    if (this->DestName != L"")
+    {
+      buf.str(L"");
+      buf << this->DestPath << L"\\" << this->DestName;
+    }
     std::wstring dFile = buf.str();
     if (!std::experimental::filesystem::exists(dFile))
     {
       // skip existing files for now, prefer to ask to overwrite though
-      std::experimental::filesystem::copy(this->Path, this->DestPath);
+      std::wstringstream destPath;
+      if (this->DestName != L"")
+      {
+        destPath << this->DestPath << L"\\" << this->DestName;
+      }
+      else
+      {
+        destPath << this->DestPath;
+      }
+      std::experimental::filesystem::copy(this->Path, destPath.str());
     }
   }
 
 	Copy::Copy() : m_dirObject("", NULL), m_activated(false), m_checkingForKeys(true), m_lPressed(0), m_escPressed(false), m_show(false), m_lastShown(false), 
 		m_timeSet(false), m_timePassed(0), m_renderCursor(true), m_waitForKeyLetGo(-1), m_showAvail(false), m_percent(0.0), m_exitThread(false), 
 		m_threadReadyToCopy(false), m_currentName(L""), m_timeSecondsLeft(0.0), m_calculating(true), m_numLeft(0), m_numItems(0), m_bytesLeft(0), 
-		m_selectStep(false), m_fileSpec(L""), m_toStep(false), m_destinationFolder(L""), m_createDirStep(false), m_copyStep(false), m_browse(false), 
-		m_selected(NULL), m_refreshDest(false), m_enterPressed(false), m_numEnterPress(0), m_shownCopyScreen(false)
+		m_selectStep(false), m_singleSelectStep(false), m_singleFile(L""), m_singleFileName(L""), m_fileSpec(L""), m_toStep(false), m_singleToStep(false), m_destinationFolder(L""), m_createDirStep(false), m_copyStep(false), m_browse(false),
+		m_selected(NULL), m_refreshDest(false), m_enterPressed(false), m_numEnterPress(0), m_shownCopyScreen(false), m_multiFileCopy(true)
 	{
     //https://softwareengineering.stackexchange.com/questions/382195/is-it-okay-to-start-a-thread-from-within-a-constructor-of-a-class
     m_member_thread = std::thread(&Copy::ThreadFn, this);
@@ -137,7 +153,82 @@ namespace SimpleXTree
 		if (!m_activated || !m_show)
 			return;
 
-    if (m_selectStep)
+    //https://www.delftstack.com/howto/cpp/how-to-get-time-in-milliseconds-cpp/
+    if (!m_timeSet)
+    {
+      auto millisec_since_epoch = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+      m_timePassed = millisec_since_epoch;
+      m_timeSet = true;
+    }
+
+    auto currentMillisec_since_epoch = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+    if (currentMillisec_since_epoch - m_timePassed > 500)
+    {
+      m_timePassed = currentMillisec_since_epoch;
+      m_timeSet = true;
+      m_renderCursor = !m_renderCursor;
+    }
+
+    if (m_singleSelectStep)
+    {
+      std::wstringstream copyLine;
+      copyLine << "COPY file: " << m_singleFileName << " as                                                        ";
+
+      std::wstringstream copyLineCursor;
+      copyLineCursor << "COPY file: " << m_singleFileName << " as ";
+
+      std::wstringstream copyLineCyan;
+      copyLineCyan << "           " << m_singleFileName << "    " << m_typed;
+
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start, copyLine.str(), FG_GREY | BG_BLACK);
+      DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, start, copyLineCyan.str(), FG_CYAN | BG_BLACK);
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 1, L"                                                                                ", FG_GREY | BG_BLACK);
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"Enter file spec or strike enter          ↑ history  ◄─┘ ok  F1 help  ESC cancel ", FG_GREY | BG_BLACK);
+      DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"                                         ↑          ◄─┘     F1       ESC        ", FG_CYAN | BG_BLACK);
+
+      std::wstring beforeCursor = copyLineCursor.str() + m_typed;
+      if (m_renderCursor)
+      {
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, beforeCursor.length(), start, L"▄", FG_GREY | BG_BLACK);
+      }
+      else
+      {
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, beforeCursor.length(), start, L" ", FG_GREY | BG_BLACK);
+      }
+      return;
+    }
+    else if (m_singleToStep)
+    {
+      std::wstringstream copyLine;
+      copyLine << "COPY file: " << m_singleFileName << " as                                                        ";
+
+      std::wstringstream copyLineCursor;
+      copyLineCursor << "COPY file: " << m_singleFileName << " as ";
+
+      std::wstringstream copyLineCyan;
+      copyLineCyan << "           " << m_singleFileName << "    " << m_typed;
+
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start, copyLine.str(), FG_GREY | BG_BLACK);
+      DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, start, copyLineCyan.str(), FG_CYAN | BG_BLACK);
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 1,          L"       to:                                                                      ", FG_GREY | BG_BLACK);
+      DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 1, L"           "+ m_typed2, FG_CYAN | BG_BLACK);
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"Enter destination path      F2 F4 point  ↑ history  ◄─┘ ok  F1 help  ESC cancel ", FG_GREY | BG_BLACK);
+      DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"                            F2 F4        ↑          ◄─┘     F1       ESC        ", FG_CYAN | BG_BLACK);
+
+      std::wstring beforeCursor = std::wstring(L"       to: ") + m_typed2;
+      if (m_showAvail)
+      {
+      }
+      else if (m_renderCursor)
+      {
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, beforeCursor.length(), start + 1, L"▄", FG_GREY | BG_BLACK);
+      }
+      else
+      {
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, beforeCursor.length(), start + 1, L" ", FG_GREY | BG_BLACK);
+      }
+    }
+    else if (m_selectStep)
     {
       DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start, L"COPY all tagged files as:                                                         ", FG_GREY | BG_BLACK);
 //      DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, std::wstring(L"COPY all tagged files as: ").length(), start, m_fileSpec, FG_CYAN | BG_BLACK);
@@ -414,18 +505,54 @@ namespace SimpleXTree
 
 	void Copy::KeyEvent(WCHAR ch)
 	{
-		if (ch == '\r' || ch == '\n')
+    if (ch == '\x1b')
+    {
+      m_escPressed = true;
+      m_show = false;
+//      m_activated = false; // do later to keep files screen open
+      m_showAvail = false;
+      m_timePressed.clear();
+
+      m_singleSelectStep = false;
+      m_singleToStep = false;
+      m_toStep = false;
+      m_selectStep = false;
+
+    }
+    if (ch == '\t')
+    {
+      if (m_singleSelectStep && m_typed == L"")
+      {
+        m_typed = m_singleFileName;
+      }
+    }
+		else if (ch == '\r' || ch == '\n')
 		{
       if (m_selectStep && m_typed==L"")
       {
         m_typed = L"*.*";
         m_selectStep = false;
         m_toStep = true;
+        m_multiFileCopy = true;
+      }
+      if (m_singleSelectStep && m_typed == L"")
+      {
+        m_typed = m_singleFileName;
+        m_singleSelectStep = false;
+        m_singleToStep = true;
+        m_multiFileCopy = false;
+      }
+      if (m_singleSelectStep && m_typed.length()>0)
+      {
+        m_singleSelectStep = false;
+        m_singleToStep = true;
+        m_multiFileCopy = false;
       }
 	    else if (m_toStep)
 	    {
 		   m_destinationFolder = m_typed2;
 		   m_toStep = false;
+       m_multiFileCopy = true;
 		   if (!std::experimental::filesystem::exists(m_destinationFolder))
 		   {
 			    m_createDirStep = true;
@@ -436,17 +563,32 @@ namespace SimpleXTree
          StartCopy();
        }
 	    }
+      else if (m_singleToStep)
+      {
+        m_destinationFolder = m_typed2;
+        m_singleToStep = false;
+        m_multiFileCopy = false;
+        if (!std::experimental::filesystem::exists(m_destinationFolder))
+        {
+          m_createDirStep = true;
+        }
+        else //if (!m_browse)
+        {
+          m_copyStep = true;
+          StartCopy();
+        }
+      }
 		}
 		else if (ch == '\b')
 		{
-      if (m_selectStep)
+      if (m_selectStep || m_singleSelectStep)
       {
         if (m_typed.length() > 0)
         {
           m_typed = m_typed.substr(0, m_typed.length() - 1);
         }
       }
-      else if (m_toStep)
+      else if (m_toStep || m_singleToStep)
       {
         if (m_typed2.length() > 0)
         {
@@ -454,7 +596,7 @@ namespace SimpleXTree
         }
       }
 		}
-    else if (m_toStep)
+    else if (m_toStep || m_singleToStep)
     {
       m_typed2 += ch;
     }
@@ -472,10 +614,14 @@ namespace SimpleXTree
 	{
 		m_escPressed = true;
 		m_show = false;
-		m_activated = false;
+//		m_activated = false;
 		m_showAvail = false;
 		m_timePressed.clear();
 	}
+  else if (m_singleSelectStep)
+  {
+    m_typed += ch;
+  }
     else
 		{
 			m_typed += ch;
@@ -569,15 +715,29 @@ namespace SimpleXTree
 
     m_percent = 0.0;
 
-    std::vector<std::wstring> taggedFiles = m_dirObject.GetTaggedFiles();
-    for (int i = 0; i < taggedFiles.size(); ++i)
+    if (m_multiFileCopy)
+    {
+      std::vector<std::wstring> taggedFiles = m_dirObject.GetTaggedFiles();
+      for (int i = 0; i < taggedFiles.size(); ++i)
+      {
+        CopyItem item = CopyItem();
+        item.Path = taggedFiles[i];
+        item.Name = GetName(item.Path);
+        //https://stackoverflow.com/questions/5840148/how-can-i-get-a-files-size-in-c
+        item.SizeInBytes = std::experimental::filesystem::file_size(item.Path);
+        item.DestPath = m_typed2;
+        m_copyItems.push_back(item);
+      }
+    }
+    else
     {
       CopyItem item = CopyItem();
-      item.Path = taggedFiles[i];
+      item.Path = m_singleFile;
       item.Name = GetName(item.Path);
       //https://stackoverflow.com/questions/5840148/how-can-i-get-a-files-size-in-c
       item.SizeInBytes = std::experimental::filesystem::file_size(item.Path);
       item.DestPath = m_typed2;
+      item.DestName = m_typed;
       m_copyItems.push_back(item);
     }
 
@@ -597,7 +757,7 @@ namespace SimpleXTree
 
 	void Copy::CheckKeys(DirObject* dirObject, bool filesScreen)
 	{
-    if (!m_browse && !m_toStep && !m_copyStep && !m_createDirStep)
+    if (!m_browse && !m_toStep && !m_singleToStep && !m_copyStep && !m_createDirStep)
     {
       m_dirObject = *dirObject;
     }
@@ -618,6 +778,12 @@ namespace SimpleXTree
         if (control)
         {
           m_selectStep = true;
+        }
+        else
+        {
+          m_singleSelectStep = true;
+          m_singleFile = m_dirObject.FileSpecFiles[fSelectedPath];
+          m_singleFileName = m_dirObject.GetFileNameFileSpecW(fSelectedPath);
         }
 			}
 			else
@@ -736,6 +902,16 @@ namespace SimpleXTree
 		StartCopy();
 		*/
 		m_selectStep = false;
-		m_toStep = true;
+    m_singleSelectStep = false;
+
+    if (m_multiFileCopy)
+    {
+      m_toStep = true;
+    }
+    else
+    {
+      m_singleToStep = true;
+    }
+
 	}
 }

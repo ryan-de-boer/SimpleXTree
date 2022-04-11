@@ -22,6 +22,7 @@ namespace SimpleXTree
     std::wstring Name;
     std::wstring Path;
     std::wstring DestPath;
+    std::wstring DestName;
     long long SizeInBytes;
   };
 
@@ -56,8 +57,11 @@ namespace SimpleXTree
 		void SelectDir(DirObject* dirObject);
 	private:
 		bool m_checkingForKeys;
+  public:
 		bool m_activated;
+  private:
 		bool m_lPressed;
+  public:
 		bool m_escPressed;
 	public:
 		bool m_enterPressed;
@@ -98,7 +102,12 @@ namespace SimpleXTree
     std::wstring m_currentName;
     void StartCopy();
     bool m_selectStep;
+    bool m_singleSelectStep;
+    std::wstring m_singleFile;
+    std::wstring m_singleFileName;
     bool m_toStep;
+    bool m_singleToStep;
+    bool m_multiFileCopy;
 	bool m_createDirStep;
 	public:
 	bool m_copyStep;
