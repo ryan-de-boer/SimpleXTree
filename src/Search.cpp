@@ -2925,7 +2925,7 @@ namespace SimpleXTree
         ++i;
       }
       index += 64;
-      buf << L"     ";
+      buf << L"      ";
 
       DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, buf.str(), FG_CYAN | BG_BLACK);
 
