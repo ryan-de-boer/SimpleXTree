@@ -48,6 +48,7 @@ bool IsDirectory(std::wstring path);
 void Refresh();
 
 extern int fSelectedPath;
+extern HANDLE ghConsole;
 
 namespace SimpleXTree
 {
@@ -124,7 +125,7 @@ namespace SimpleXTree
 		m_timeSet(false), m_timePassed(0), m_renderCursor(true), m_waitForKeyLetGo(-1), m_showAvail(false), m_percent(0.0), m_exitThread(false), 
 		m_threadReadyToCopy(false), m_currentName(L""), m_timeSecondsLeft(0.0), m_calculating(true), m_numLeft(0), m_numItems(0), m_bytesLeft(0), 
 		m_selectStep(false), m_singleSelectStep(false), m_singleFile(L""), m_singleFileName(L""), m_fileSpec(L""), m_toStep(false), m_singleToStep(false), m_destinationFolder(L""), m_createDirStep(false), m_copyStep(false), m_browse(false),
-		m_selected(NULL), m_refreshDest(false), m_enterPressed(false), m_numEnterPress(0), m_shownCopyScreen(false), m_multiFileCopy(true)
+		m_selected(NULL), m_refreshDest(false), m_enterPressed(false), m_numEnterPress(0), m_shownCopyScreen(false), m_multiFileCopy(true), m_cursor(0)
 	{
     //https://softwareengineering.stackexchange.com/questions/382195/is-it-okay-to-start-a-thread-from-within-a-constructor-of-a-class
     m_member_thread = std::thread(&Copy::ThreadFn, this);
@@ -150,8 +151,14 @@ namespace SimpleXTree
 
 	void Copy::Render(int start)
 	{
-		if (!m_activated || !m_show)
-			return;
+    if (!m_activated || !m_show)
+    {
+      CONSOLE_CURSOR_INFO     cursorInfo;
+      GetConsoleCursorInfo(ghConsole, &cursorInfo);
+        cursorInfo.bVisible = false; // set the cursor visibility
+      SetConsoleCursorInfo(ghConsole, &cursorInfo);
+      return;
+    }
 
     //https://www.delftstack.com/howto/cpp/how-to-get-time-in-milliseconds-cpp/
     if (!m_timeSet)
@@ -179,6 +186,7 @@ namespace SimpleXTree
 
       std::wstringstream copyLineCyan;
       copyLineCyan << "           " << m_singleFileName << "    " << m_typed;
+//      copyLineCyan << "           " << m_singleFileName << "    " << m_typed.substr(0, m_cursor) << " " << m_typed.substr(m_cursor, m_typed.length() - m_cursor);
 
       DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start, copyLine.str(), FG_GREY | BG_BLACK);
       DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, start, copyLineCyan.str(), FG_CYAN | BG_BLACK);
@@ -189,12 +197,35 @@ namespace SimpleXTree
       std::wstring beforeCursor = copyLineCursor.str() + m_typed;
       if (m_renderCursor)
       {
-        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, beforeCursor.length(), start, L"▄", FG_GREY | BG_BLACK);
+//        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, copyLineCursor.str().length() + m_cursor, start, L"▄", FG_GREY | BG_BLACK);
       }
       else
       {
-        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, beforeCursor.length(), start, L" ", FG_GREY | BG_BLACK);
+//        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, copyLineCursor.str().length() + m_cursor, start, L" ", FG_GREY | BG_BLACK);
       }
+
+
+
+
+      //HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE); 
+      CONSOLE_CURSOR_INFO     cursorInfo;
+      GetConsoleCursorInfo(ghConsole, &cursorInfo);
+      if (m_renderCursor)
+      cursorInfo.bVisible = true; // set the cursor visibility
+      else
+        cursorInfo.bVisible = false; // set the cursor visibility
+
+      SetConsoleCursorInfo(ghConsole, &cursorInfo);
+
+      //COORD pos = { 3, 6 }; SetConsoleCursorPosition(hConsole, pos);
+      //WriteConsole(hConsole, "Hello", 5, NULL, NULL);
+
+      COORD coord;
+      coord.X = copyLineCursor.str().length() + m_cursor;
+      coord.Y = start;
+      SetConsoleCursorPosition(ghConsole, coord);
+
+
       return;
     }
     else if (m_singleToStep)
@@ -215,18 +246,36 @@ namespace SimpleXTree
       DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"Enter destination path      F2 F4 point  ↑ history  ◄─┘ ok  F1 help  ESC cancel ", FG_GREY | BG_BLACK);
       DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, start + 2, L"                            F2 F4        ↑          ◄─┘     F1       ESC        ", FG_CYAN | BG_BLACK);
 
-      std::wstring beforeCursor = std::wstring(L"       to: ") + m_typed2;
-      if (m_showAvail)
-      {
-      }
-      else if (m_renderCursor)
-      {
-        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, beforeCursor.length(), start + 1, L"▄", FG_GREY | BG_BLACK);
-      }
+      CONSOLE_CURSOR_INFO     cursorInfo;
+      GetConsoleCursorInfo(ghConsole, &cursorInfo);
+      if (m_renderCursor)
+        cursorInfo.bVisible = true; // set the cursor visibility
       else
+        cursorInfo.bVisible = false; // set the cursor visibility
+
+      if (m_browse)
       {
-        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, beforeCursor.length(), start + 1, L" ", FG_GREY | BG_BLACK);
+        cursorInfo.bVisible = false; // set the cursor visibility
       }
+
+      SetConsoleCursorInfo(ghConsole, &cursorInfo);
+      COORD coord;
+      coord.X = std::wstring(L"       to: ").length() + m_cursor;
+      coord.Y = start+1;
+      SetConsoleCursorPosition(ghConsole, coord);
+
+      //std::wstring beforeCursor = std::wstring(L"       to: ") + m_typed2;
+      //if (m_showAvail)
+      //{
+      //}
+      //else if (m_renderCursor)
+      //{
+      //  DrawString(m_bufScreen, nScreenWidth, nScreenHeight, beforeCursor.length(), start + 1, L"▄", FG_GREY | BG_BLACK);
+      //}
+      //else
+      //{
+      //  DrawString(m_bufScreen, nScreenWidth, nScreenHeight, beforeCursor.length(), start + 1, L" ", FG_GREY | BG_BLACK);
+      //}
     }
     else if (m_selectStep)
     {
@@ -524,6 +573,7 @@ namespace SimpleXTree
       if (m_singleSelectStep && m_typed == L"")
       {
         m_typed = m_singleFileName;
+        m_cursor = m_singleFileName.length();
       }
     }
 		else if (ch == '\r' || ch == '\n')
@@ -533,19 +583,22 @@ namespace SimpleXTree
         m_typed = L"*.*";
         m_selectStep = false;
         m_toStep = true;
+        m_cursor = 0;
         m_multiFileCopy = true;
       }
-      if (m_singleSelectStep && m_typed == L"")
+      else if (m_singleSelectStep && m_typed == L"")
       {
         m_typed = m_singleFileName;
         m_singleSelectStep = false;
         m_singleToStep = true;
+        m_cursor = 0;
         m_multiFileCopy = false;
       }
-      if (m_singleSelectStep && m_typed.length()>0)
+      else if (m_singleSelectStep && m_typed.length()>0)
       {
         m_singleSelectStep = false;
         m_singleToStep = true;
+        m_cursor = 0;
         m_multiFileCopy = false;
       }
 	    else if (m_toStep)
@@ -585,20 +638,41 @@ namespace SimpleXTree
       {
         if (m_typed.length() > 0)
         {
-          m_typed = m_typed.substr(0, m_typed.length() - 1);
+          if (m_cursor > 0)
+          {
+            m_typed = m_typed.substr(0, m_cursor-1) + m_typed.substr(m_cursor, m_typed.length() - 1);
+            m_cursor--;
+            if (m_cursor < 0)
+            {
+              m_cursor = 0;
+            }
+          }
         }
       }
       else if (m_toStep || m_singleToStep)
       {
         if (m_typed2.length() > 0)
         {
-          m_typed2 = m_typed2.substr(0, m_typed2.length() - 1);
+          if (m_cursor > 0)
+          {
+            m_typed2 = m_typed2.substr(0, m_cursor - 1) + m_typed2.substr(m_cursor, m_typed2.length() - 1);
+            m_cursor--;
+            if (m_cursor < 0)
+            {
+              m_cursor = 0;
+            }
+          }
         }
       }
 		}
     else if (m_toStep || m_singleToStep)
     {
-      m_typed2 += ch;
+      m_typed2 = (m_typed2.substr(0, m_cursor) + ch + m_typed2.substr(m_cursor, m_typed2.length()));
+      m_cursor++;
+      if (m_cursor >= m_typed2.length())
+      {
+        m_cursor = m_typed2.length();
+      }
     }
 	else if (m_createDirStep && ch == 'y')
 	{
@@ -620,11 +694,24 @@ namespace SimpleXTree
 	}
   else if (m_singleSelectStep)
   {
-    m_typed += ch;
+
+    m_typed = (m_typed.substr(0, m_cursor) + ch + m_typed.substr(m_cursor, m_typed.length()));
+    m_cursor++;
+    if (m_cursor >= m_typed.length())
+    {
+      m_cursor = m_typed.length();
+    }
+
+//    m_typed += ch;
   }
     else
 		{
-			m_typed += ch;
+      m_typed = (m_typed.substr(0, m_cursor) + ch + m_typed.substr(m_cursor, m_typed.length()));
+      m_cursor++;
+      if (m_cursor >= m_typed.length())
+      {
+        m_cursor = m_typed.length();
+      }
 		}
 	}
 
@@ -778,10 +865,12 @@ namespace SimpleXTree
         if (control)
         {
           m_selectStep = true;
+          m_cursor = 0;
         }
         else
         {
           m_singleSelectStep = true;
+          m_cursor = 0;
           m_singleFile = m_dirObject.FileSpecFiles[fSelectedPath];
           m_singleFileName = m_dirObject.GetFileNameFileSpecW(fSelectedPath);
         }
@@ -885,6 +974,26 @@ namespace SimpleXTree
 		{
 			m_browse = true;
 		}
+    else if (vk == VK_LEFT && (m_selectStep||m_singleSelectStep||m_toStep||m_singleToStep))
+    {
+      m_cursor--;
+      if (m_cursor < 0)
+      {
+        m_cursor = 0;
+      }
+    }
+    else if (vk == VK_RIGHT && (m_selectStep || m_singleSelectStep || m_toStep || m_singleToStep))
+    {
+      m_cursor++;
+      if ((m_selectStep || m_singleSelectStep) && m_cursor >= m_typed.length())
+      {
+        m_cursor = m_typed.length();
+      }
+      else if ((m_toStep || m_singleToStep) && m_cursor >= m_typed2.length())
+      {
+        m_cursor = m_typed2.length();
+      }
+    }
 	}
 
 	void Copy::SelectDir(DirObject* dirObject)
@@ -907,10 +1016,12 @@ namespace SimpleXTree
     if (m_multiFileCopy)
     {
       m_toStep = true;
+      m_cursor = 0;
     }
     else
     {
       m_singleToStep = true;
+      m_cursor = 0;
     }
 
 	}

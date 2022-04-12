@@ -79,6 +79,7 @@ namespace SimpleXTree
 //    DirObject* m_dirObject;
     DirObject m_dirObject;
     std::wstring m_typed;
+    int m_cursor;
 	public:
     std::wstring m_typed2;
 	std::wstring m_destinationFolder;
