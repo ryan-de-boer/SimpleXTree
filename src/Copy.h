@@ -76,8 +76,8 @@ namespace SimpleXTree
 		bool m_showAvail;
 		std::wstring m_avail;
 		std::wstring m_drive;
-//    DirObject* m_dirObject;
-    DirObject m_dirObject;
+    DirObject* m_dirObject;
+//    DirObject m_dirObject;
     std::wstring m_typed;
     int m_cursor;
 	public:

@@ -121,7 +121,7 @@ namespace SimpleXTree
     }
   }
 
-	Copy::Copy() : m_dirObject("", NULL), m_activated(false), m_checkingForKeys(true), m_lPressed(0), m_escPressed(false), m_show(false), m_lastShown(false), 
+	Copy::Copy() : m_dirObject(NULL), m_activated(false), m_checkingForKeys(true), m_lPressed(0), m_escPressed(false), m_show(false), m_lastShown(false), 
 		m_timeSet(false), m_timePassed(0), m_renderCursor(true), m_waitForKeyLetGo(-1), m_showAvail(false), m_percent(0.0), m_exitThread(false), 
 		m_threadReadyToCopy(false), m_currentName(L""), m_timeSecondsLeft(0.0), m_calculating(true), m_numLeft(0), m_numItems(0), m_bytesLeft(0), 
 		m_selectStep(false), m_singleSelectStep(false), m_singleFile(L""), m_singleFileName(L""), m_fileSpec(L""), m_toStep(false), m_singleToStep(false), m_destinationFolder(L""), m_createDirStep(false), m_copyStep(false), m_browse(false),
@@ -153,10 +153,10 @@ namespace SimpleXTree
 	{
     if (!m_activated || !m_show)
     {
-      CONSOLE_CURSOR_INFO     cursorInfo;
-      GetConsoleCursorInfo(ghConsole, &cursorInfo);
-        cursorInfo.bVisible = false; // set the cursor visibility
-      SetConsoleCursorInfo(ghConsole, &cursorInfo);
+      //CONSOLE_CURSOR_INFO     cursorInfo;
+      //GetConsoleCursorInfo(ghConsole, &cursorInfo);
+      //  cursorInfo.bVisible = false; // set the cursor visibility
+      //SetConsoleCursorInfo(ghConsole, &cursorInfo);
       return;
     }
 
@@ -796,15 +796,15 @@ namespace SimpleXTree
 	  m_shownCopyScreen = false;
 //    m_from = L"research_new2_12345678";
 //    m_to = L"research_new2_12345678";
-
-    m_from = m_dirObject.GetNameW();
+    
+    m_from = m_dirObject->GetNameW();
     m_to = GetName(m_typed2);
 
     m_percent = 0.0;
 
     if (m_multiFileCopy)
     {
-      std::vector<std::wstring> taggedFiles = m_dirObject.GetTaggedFiles();
+      std::vector<std::wstring> taggedFiles = m_dirObject->GetTaggedFiles();
       for (int i = 0; i < taggedFiles.size(); ++i)
       {
         CopyItem item = CopyItem();
@@ -846,7 +846,7 @@ namespace SimpleXTree
 	{
     if (!m_browse && !m_toStep && !m_singleToStep && !m_copyStep && !m_createDirStep)
     {
-      m_dirObject = *dirObject;
+      m_dirObject = dirObject;
     }
 		if (!m_checkingForKeys)// || !filesScreen)
 			return;
@@ -871,8 +871,8 @@ namespace SimpleXTree
         {
           m_singleSelectStep = true;
           m_cursor = 0;
-          m_singleFile = m_dirObject.FileSpecFiles[fSelectedPath];
-          m_singleFileName = m_dirObject.GetFileNameFileSpecW(fSelectedPath);
+          m_singleFile = m_dirObject->FileSpecFiles[fSelectedPath];
+          m_singleFileName = m_dirObject->GetFileNameFileSpecW(fSelectedPath);
         }
 			}
 			else

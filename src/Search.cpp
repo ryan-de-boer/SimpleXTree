@@ -21,6 +21,8 @@
 #include <thread>
 #include "FreeDiskSpace.h"
 #include "Stopwatch.h"
+//#include "rope.hpp"
+#include "076_gapbuf.h"
 
 #include <chrono>
 #include <iostream>
@@ -57,6 +59,10 @@ std::wstring GetHexPadded8(int num);
 int HexToInt2(std::wstring str);
 std::wstring GetChar(char o);
 extern char* memblock2;
+extern char* rmemblock2;
+extern int rnumMemBlock2;
+extern std::streampos rtheend;
+void rReadFile();
 void DrawStringSkipSpace(CHAR_INFO *m_bufScreen, int nScreenWidth, int nScreenHeight, int x, int y, std::wstring c, short col = 0x000F);
 extern bool searchMode;
 extern std::wstring searchHex;
@@ -69,6 +75,8 @@ int g_itemsp = 0;
 int g_itemsleft = 0;
 int g_leftSpace = 0;
 int g_rightSpace = 0;
+extern HANDLE ghConsole;
+GapBuf* gbuf;
 
 namespace SimpleXTree
 {
@@ -289,7 +297,7 @@ namespace SimpleXTree
 
   Search::Search() : m_exitThread(false),
     m_threadReadyToSearch(false), m_startBeforeSearch(0), m_numFoundBeforeSearch(0), m_theSearchPosBeforeSearch(0), m_editing(false),
-    m_editingAscii(false), m_editingDump(false), m_jumping(false), m_jumpingFirstChar(false), m_saving(false),
+    m_editingAscii(false), m_editingDump(false), m_editingText(false), m_jumping(false), m_jumpingFirstChar(false), m_saving(false),
     m_activated(false), m_timePassed(0), m_timeSet(false), m_renderCursor(true), m_hasFocus(false), m_typed(L""), m_renderAscii(false), 
     m_renderDump(false), m_wordwrap(false), m_newline(true), m_showingLastLine(false), m_searchType(S_HEX)
   {
@@ -480,6 +488,7 @@ namespace SimpleXTree
 
     while (!m_exitThread)
     {
+      RenderCursor();
 
       if (m_threadReadyToSearch)
       {
@@ -585,10 +594,27 @@ namespace SimpleXTree
       {
         m_editingDump = true;
       }
+      if (m_renderAscii)
+      {
+        m_editingText = true;
+      }
       m_cursorPosition = 0;
       m_cursor = CUR_ONE;
       RenderNow();
     }
+    //else if (m_editing && !m_jumping && ch == 'e')
+    //{
+    //  m_editing = false;
+    //  if (m_renderDump)
+    //  {
+    //    m_editingDump = false;
+    //  }
+    //  if (m_renderAscii)
+    //  {
+    //    m_editingText = false;
+    //  }
+    //  RenderNow();
+    //}
     else if (!m_jumping && ch == 'j')
     {
       m_jumping = true;
@@ -665,7 +691,7 @@ namespace SimpleXTree
       m_edits.clear();
       m_orderOfEdits.clear();
     }
-    else if ((m_editingAscii || m_editing) && ch == '\b')
+    else if (!m_editingText && (m_editingAscii || m_editing) && ch == '\b')
     {
       VK(VK_LEFT);
     }
@@ -688,6 +714,26 @@ namespace SimpleXTree
       InsertHexChar(str[0]);
       m_cursor = CUR_TWO;
       InsertHexChar(str[1]);
+    }
+    else if (m_editingText)
+    {
+      if (ch == '\r' || ch == '\n' || ch == '\x1b')
+      {
+      }
+      else if (ch == '\b')
+      {
+        backspace(gbuf);
+      }
+      else
+      {
+        insert_character(gbuf, ch);
+        m_cursorPosition++;
+      }
+    }
+    else if (m_editingText)
+    {
+      int a = 1;
+      a++;
     }
     else if (m_editing && ((ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F') || (ch >= '0' && ch <= '9')))
     {
@@ -1285,6 +1331,51 @@ namespace SimpleXTree
     else if (vk == VK_RIGHT)
     {
       RenderNow();
+
+      if (m_renderAscii)
+      {
+        if (m_cursorPosition < rtheend)
+        {
+////          char* fr = extractFront(gbuf);
+//          char* bk = extractBack(gbuf);
+//          if (bk[0] != '\r' && bk[0] != '\n')
+//          {
+// //           free(fr);
+//            m_cursorPosition++;
+//            cursor_right(gbuf);
+//          }
+//          while (bk[0] == '\r' || bk[0] == '\n')
+//          {
+// //           free(fr);
+//            m_cursorPosition++;
+//            cursor_right(gbuf);
+//            bk = extractBack(gbuf);
+//          }
+
+
+          char* bk = extractBack(gbuf);
+          if (bk[0] != '\r' && bk[0] != '\n')
+          {
+            m_cursorPosition++;
+            cursor_right(gbuf);
+            return;
+          }
+          if (bk[0] == '\r')
+          {
+            m_cursorPosition++;
+            cursor_right(gbuf);
+          }
+          bk = extractBack(gbuf);
+          if (bk[0] == '\n')
+          {
+            m_cursorPosition++;
+            cursor_right(gbuf);
+          }
+
+        }
+        return;
+      }
+
       if (m_cursor == CUR_ONE)
       {
         m_cursor = CUR_TWO;
@@ -1348,6 +1439,33 @@ namespace SimpleXTree
           m_cursor = CUR_ONE;
         }
 
+      }
+    }
+    else if (vk == VK_LEFT && m_renderAscii)
+    {
+      if (m_cursorPosition > 0)
+      {
+
+        char* fr = extractFront(gbuf);
+        char* bk = extractBack(gbuf);
+
+        if (fr[strlen(fr) - 2] != '\n' && fr[strlen(fr) - 2] != '\r')
+        {
+          m_cursorPosition--;
+          cursor_left(gbuf);
+          return;
+        }
+        if (fr[strlen(fr) - 2] == '\n')
+        {
+          m_cursorPosition--;
+          cursor_left(gbuf);
+        }
+        fr = extractFront(gbuf);
+        if (fr[strlen(fr) - 2] == '\r')
+        {
+          m_cursorPosition--;
+          cursor_left(gbuf);
+        }
       }
     }
     else if (vk == VK_LEFT)
@@ -1416,6 +1534,10 @@ namespace SimpleXTree
           }
         }
       }
+      else if (m_renderAscii)
+      {
+        FindNextLine();
+      }
     }
     else if (vk == VK_UP)
     {
@@ -1461,6 +1583,10 @@ namespace SimpleXTree
           m_cursorPosition -= 16;
         }
       }
+      else if (m_renderAscii)
+      {
+        FindPrevLine();
+      }
     }
     else if (vk == VK_END)
     {
@@ -1504,6 +1630,7 @@ namespace SimpleXTree
       m_editing = false;
       m_editingAscii = false;
       m_editingDump = false;
+      m_editingText = false;
       m_saving = false;
       m_edits.clear();
       m_orderOfEdits.clear();
@@ -1852,9 +1979,1011 @@ namespace SimpleXTree
     }
     return numChars;
   }
+//  proj::rope rope;
+
+  //how much from cursor to end of line?
+  int Search::GetCursorToEndOfLine()
+  {
+    std::wstringstream buff;
+    char* extf = extractFront(gbuf);
+    char* extb = extractBack(gbuf);
+    int line = 2;
+    for (int i = 0; i < gb_front(gbuf); ++i)
+    {
+      if (extf[i] == 0x0D)
+      {
+        buff.str(L"");
+      }
+      else if (extf[i] == 0x0A)
+      {
+        buff.str(L"");
+        line++;
+      }
+      else if (m_wordwrap && extf[i] == ' ' && buff.str().length() > 63)
+      {
+        buff.str(L"");
+        line++;
+      }
+      else if (m_wordwrap && extf[i] == ' ' && buff.str().length() > 64)
+      {
+        buff.str(L"");
+        line++;
+      }
+      else
+      {
+        buff << GetChar(extf[i]);
+      }
+    }
+    int cursorX = buff.str().length();
+    int cursorY = line;
+    buff << L"X"; // cursor
+    for (int i = 0; i < gb_back(gbuf); ++i)
+    {
+      if (extb[i] == 0x0D)
+      {
+        //skip
+      }
+      else if (extb[i] == 0x0A)
+      {
+        if (i > 0)
+        {
+          return i - 1;
+        }
+        else
+        {
+          return i;
+        }
+      }
+      else if (line != cursorY && m_wordwrap && extb[i] == ' ' && buff.str().length() > 63)
+      {
+        return i;
+      }
+      else if (line == cursorY && m_wordwrap && extb[i] == ' ' && buff.str().length() > 64)
+      {
+        return i;
+      }
+      else
+      {
+        buff << GetChar(extb[i]);
+      }
+    }
+    return 0;
+  }
+
+  //how much next line to cursorX index or end of line or end of file
+  int Search::GetNextLineToCursor()
+  {
+    std::wstringstream buff;
+    char* extf = extractFront(gbuf);
+    char* extb = extractBack(gbuf);
+    int line = 2;
+    for (int i = 0; i < gb_front(gbuf); ++i)
+    {
+      if (extf[i] == 0x0D)
+      {
+        buff.str(L"");
+      }
+      else if (extf[i] == 0x0A)
+      {
+        buff.str(L"");
+        line++;
+      }
+      else if (m_wordwrap && extf[i] == ' ' && buff.str().length() > 63)
+      {
+        buff.str(L"");
+        line++;
+      }
+      else if (m_wordwrap && extf[i] == ' ' && buff.str().length() > 64)
+      {
+        buff.str(L"");
+        line++;
+      }
+      else
+      {
+        buff << GetChar(extf[i]);
+      }
+    }
+    int cursorX = buff.str().length();
+    int cursorY = line;
+    buff << L"X"; // cursor
+    bool foundNextLine = false;
+    int indexFound = -1;
+    int i = 0;
+    for (i = 0; i < gb_back(gbuf); ++i)
+    {
+      if (extb[i] == 0x0D)
+      {
+        //skip
+      }
+      else if (line != cursorY && extb[i] == 0x0A)
+      {
+        foundNextLine = true;
+        indexFound = i+1; // one char after \n
+
+        //try return here?
+        if (cursorX >= buff.str().length())
+          return buff.str().length();
+        else
+          return cursorX; //try this?
+        break;
+      }
+      else if (line == cursorY && extb[i] == 0x0A)
+      {
+        buff.str(L"");
+        line++;
+      }
+      else if (line != cursorY && m_wordwrap && extb[i] == ' ' && buff.str().length() > 63)
+      {
+        foundNextLine = true;
+        indexFound = i;
+//        indexFound = i+1; //try one after?
+
+        //try return heer?
+        if (cursorX >= buff.str().length())
+          return buff.str().length();
+        else
+          return cursorX; //try this?
+        break;
+      }
+      else if (line == cursorY && m_wordwrap && extb[i] == ' ' && buff.str().length() > 64)
+      {
+        //same line is not next line?
+//        foundNextLine = true;
+//        indexFound = i;
+//        break;
+        buff.str(L"");
+        line++;
+      }
+      else
+      {
+        buff << GetChar(extb[i]);
+      }
+    }
+
+    if (extb[i] == 'Í')
+    {
+      if (line == cursorY && !foundNextLine)
+        return -1; //work around so does not move cursor (would prefer 0)
+
+      //try return heer?
+      if (cursorX >= buff.str().length())
+        return buff.str().length();
+      else
+        return cursorX; //try this?
+    }
+
+    buff.str(L"");
+    i = indexFound;
+    if (foundNextLine)
+    for (i = indexFound; i < gb_back(gbuf) && (i - indexFound)<cursorX; ++i)
+    {
+      if (extb[i] == 0x0D)
+      {
+        //skip
+      }
+      else if (extb[i] == 0x0A)
+      {
+        int ret = i - indexFound - 1; // one char before \n
+        if (ret > 0)
+        {
+          return ret;
+        }
+        else
+        {
+          return 0;
+        }
+        return ret;
+      }
+      else if (m_wordwrap && extb[i] == ' ' && buff.str().length() > 63)
+      {
+        return i - indexFound;
+        //int ret = i - indexFound - 1; // one char before \n
+        //if (ret > 0)
+        //{
+        //  return ret;
+        //}
+        //else
+        //{
+        //  return 0;
+        //}
+        //return ret;
+      }
+      else if (m_wordwrap && extb[i] == ' ' && buff.str().length() > 64)
+      {
+        return i - indexFound;
+        //int ret = i - indexFound - 1; // one char before \n
+        //if (ret > 0)
+        //{
+        //  return ret;
+        //}
+        //else
+        //{
+        //  return 0;
+        //}
+        //return ret;
+      }
+      else
+      {
+        buff << GetChar(extb[i]);
+
+        //if (extb[i] == 'Í')
+        //{
+        //  return i - indexFound - 1; // one char before end of file
+        //}
+      }
+    }
+    if (extb[i] == 'Í')
+    {
+      int ret = i - indexFound - 1; // one char before end of file
+      if (ret > 0)
+      {
+        return ret;
+      }
+      else
+      {
+        return 0;
+      }
+      return ret;
+    }
+
+    return buff.str().length();
+
+  }
+
+  void Search::FindNextLine()
+  {
+    int a = GetCursorToEndOfLine();
+    int r = GetNextLineToCursor();
+    std::wstringstream rb;
+    rb << L"EOL:" << a << L", NL:" << r;
+//    MessageBox(NULL, rb.str().c_str(), L"Info", MB_OK);
+    //add the 2 to get how many rights
+    int sum = a + r +1;
+//    if (sum > 1)
+    {
+      for (int j = 0; j < sum; ++j)
+      {
+        VK(VK_RIGHT);
+      }
+    }
+    return;
+
+    std::wstringstream buff;
+
+    int eighty = 0;
+    int line = 2;
+    bool lastLineNewLine = false;
+    int lastLineCount = 0;
+
+    char* extf = extractFront(gbuf);
+    char* extb = extractBack(gbuf);
+
+    for (int i = 0; i < gb_front(gbuf) && line <= 45; ++i)
+    {
+      eighty++;
+      lastLineNewLine = false;
+      if (extf[i] == 0x0D)
+      {
+        // skip
+        eighty--;
+      }
+      else if (extf[i] == 0x0A)
+      {
+        if (m_newline && line <= 45)
+        {
+          eighty--;
+          // parse \n as new line, render the current lineint 
+          for (int j = buff.str().length(); j < 80; ++j)
+          {
+            buff << ' ';
+          }
+//          DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, buff.str(), FG_CYAN | BG_BLACK);
+          line++;
+          buff.str(L"");
+          lastLineNewLine = true;
+          lastLineCount = eighty;
+        }
+      }
+      else if (m_wordwrap && extf[i] == ' ' && buff.str().length() > 63)
+      {
+        buff << GetChar(extf[i]);
+        // fill in spaces
+        for (int j = buff.str().length(); j < 80; ++j)
+        {
+          buff << ' ';
+        }
+//        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, buff.str(), FG_CYAN | BG_BLACK);
+        line++;
+        buff.str(L"");
+        lastLineNewLine = true;
+        lastLineCount = eighty;
+        eighty = 0;
+      }
+      else
+      {
+        buff << GetChar(extf[i]);
+        if (eighty >= 80 && line <= 45)
+        {
+//          DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, buff.str(), FG_CYAN | BG_BLACK);
+          line++;
+          buff.str(L"");
+          lastLineNewLine = true;
+          lastLineCount = eighty;
+          eighty = 0;
+        }
+      }
+    }
+
+    //cursor
+    buff << 'X';
+    int cursX = eighty;
+    int cursY = line;
+    bool foundNextLine = false;
+    int offset = 0;
+    std::vector<int> lineCounts;
+
+    int i = 0;
+    for (i = 0; i < gb_back(gbuf) && line <= 45; ++i)
+    {
+      if (lineCounts.size() >= 2 && cursX > lastLineCount)
+      {
+        for (int j = 0; j < (offset + 1); ++j)
+        {
+          VK(VK_RIGHT);
+        }
+        return;
+      }
+      else if (line>cursY && eighty >= cursX)
+      {
+        //if (cursX == 1 || cursX == 65)
+        //  offset -= 1;
+        for (int j = 0; j < (offset + 1); ++j)
+        {
+          VK(VK_RIGHT);
+        }
+        return;
+      }
+
+      //if (lastLineNewLine)// && line>cursY && eighty >= cursX)
+      //{
+      //  //if (cursX > lastLineCount)
+      //  //{
+      //  //  //          int actual = cursX - lastLineCount;
+      //  //  int actual = lineCounts[0] - cursX + lastLineCount - 1;
+      //  //  for (int j = 0; j < (actual); ++j)
+      //  //  {
+      //  //    VK(VK_RIGHT);
+      //  //  }
+      //  //  return;
+      //  //}
+
+
+      //  for (int j = 0; j < (offset+1); ++j)
+      //  {
+      //    VK(VK_RIGHT);
+      //  }
+      //  return;
+      //}
+      //else if (line>cursY && eighty >= cursX)
+      //{
+      //  if (cursX == 0)
+      //    offset -= 2;
+      //  if (cursX == 1 || cursX == 65)
+      //    offset -= 1;
+      //  //if (cursX >= 1 && cursX <= 65)
+      //  //  offset -= 3;
+      //  for (int j = 0; j < offset; ++j)
+      //  {
+      //    VK(VK_RIGHT);
+      //  }
+      //  return;
+      //}
+
+      eighty++;
+      offset++;    
+
+      lastLineNewLine = false;
+      if (extb[i] == 0x0D)
+      {
+        // skip
+        offset--;
+        eighty--;
+      }
+      else if (extb[i] == 0x0A)
+      {
+        if (m_newline && line <= 45)
+        {
+          offset--;
+          eighty--;
+
+          // parse \n as new line, render the current lineint 
+          int sz = buff.str().length();
+          for (int j = sz; j < 80; ++j)
+          {
+            buff << ' ';
+          }
+          std::wstring buffstr = buff.str();
+//          DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, buffstr, FG_CYAN | BG_BLACK);
+          line++;
+          foundNextLine = true;
+          lastLineNewLine = true;
+          lastLineCount = eighty;
+          lineCounts.push_back(eighty);
+          buff.str(L"");
+          eighty = 0;
+        }
+      }
+      else if (line != cursY && m_wordwrap && extb[i] == ' ' && buff.str().length() > 63)
+      {
+        offset--;
+        buff << GetChar(extb[i]);
+        // fill in spaces
+        for (int j = buff.str().length(); j < 80; ++j)
+        {
+          buff << ' ';
+        }
+//        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, buff.str(), FG_CYAN | BG_BLACK);
+        line++;
+        foundNextLine = true;
+        lastLineNewLine = true;
+        lastLineCount = eighty;
+        lineCounts.push_back(eighty);
+        buff.str(L"");
+        eighty = 0;
+      }
+      else if (line == cursY && m_wordwrap && extb[i] == ' ' && buff.str().length() > 64)
+      {
+        offset--;
+        buff << GetChar(extb[i]);
+        // fill in spaces
+        for (int j = buff.str().length(); j < 80; ++j)
+        {
+          buff << ' ';
+        }
+        //        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, buff.str(), FG_CYAN | BG_BLACK);
+        line++;
+        foundNextLine = true;
+        lastLineNewLine = true;
+        lastLineCount = eighty;
+        lineCounts.push_back(eighty);
+        buff.str(L"");
+        eighty = 0;
+      }
+      else
+      {
+        buff << GetChar(extb[i]);
+        if (extb[i] == 'Í')
+        {
+          line++;
+          foundNextLine = true;
+          lastLineNewLine = true;
+          lastLineCount = eighty;
+          lineCounts.push_back(eighty);
+          buff.str(L"");
+          eighty = 0;
+        }
+        else if (eighty >= 80 && line <= 45)
+        {
+//          DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, buff.str(), FG_CYAN | BG_BLACK);
+          line++;
+          foundNextLine = true;
+          lastLineNewLine = true;
+          lastLineCount = eighty;
+          lineCounts.push_back(eighty);
+          buff.str(L"");
+          eighty = 0;
+        }
+      }
+    }
+    if (eighty > 0 && line <= 45)
+    {
+//      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, buff.str(), FG_GREY | BG_BLACK);
+      buff.str(L"");
+      eighty = 0;
+      line++;
+      foundNextLine = true;
+    }
+
+    if (extb[i] == 'Í')
+    {
+      line++;
+      foundNextLine = true;
+      lastLineNewLine = true;
+      lastLineCount = eighty;
+      lineCounts.push_back(eighty);
+      buff.str(L"");
+      eighty = 0;
+
+      //for (int j = 0; j < offset+1; ++j)
+      //{
+      //  VK(VK_RIGHT);
+      //}
+
+      for (int j = 0; j < lineCounts[0]-8; ++j)
+      {
+        VK(VK_RIGHT);
+      }
+    }
+
+  }
+
+
+  void Search::FindPrevLine()
+  {
+
+
+    std::wstringstream buff;
+
+    int eighty = 0;
+    int line = 2;
+    int less = 0;
+    int lastLine = 0;
+
+    char* extf = extractFront(gbuf);
+    char* extb = extractBack(gbuf);
+    std::vector<int> lineCounts;
+
+    for (int i = 0; i < gb_front(gbuf) && line <= 45; ++i)
+    {
+      eighty++;
+      if (extf[i] == 0x0D)
+      {
+        // skip
+      }
+      else if (extf[i] == 0x0A)
+      {
+        if (m_newline && line <= 45)
+        {
+          // parse \n as new line, render the current lineint 
+          for (int j = buff.str().length(); j < 80; ++j)
+          {
+            buff << ' ';
+          }
+          //          DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, buff.str(), FG_CYAN | BG_BLACK);
+          lineCounts.push_back(eighty);
+          line++;
+          buff.str(L"");
+        }
+      }
+      else if (m_wordwrap && extf[i] == ' ' && buff.str().length() > 63)
+      {
+        buff << GetChar(extf[i]);
+        // fill in spaces
+        less = 0;
+        for (int j = buff.str().length(); j < 80; ++j)
+        {
+          buff << ' ';
+          less++;
+        }
+        //        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, buff.str(), FG_CYAN | BG_BLACK);
+        line++;
+        buff.str(L"");
+        lastLine = eighty;
+        lineCounts.push_back(eighty);
+        eighty = 0;
+      }
+      else
+      {
+        buff << GetChar(extf[i]);
+        if (eighty >= 80 && line <= 45)
+        {
+          //          DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, buff.str(), FG_CYAN | BG_BLACK);
+          line++;
+          buff.str(L"");
+          lineCounts.push_back(eighty);
+//          eighty = 0;
+        }
+      }
+    }
+
+    int cursX = eighty;
+    int cursY = line;
+
+    //for (int j = 0; j < 80-less; ++j)
+    //{
+    //  VK(VK_LEFT);
+    //}
+
+    if (cursX > lineCounts[lineCounts.size() - 1])
+    {
+//      lineCounts[lineCounts.size() - 1]
+      for (int j = 0; j < cursX+1; ++j)
+      {
+        VK(VK_LEFT);
+      }
+      return;
+    }
+
+    int diff = cursX - lastLine;
+
+    for (int j = 0; j < 80-less; ++j)
+    {
+      VK(VK_LEFT);
+    }
+    return;
+
+
+    //cursor
+    buff << 'X';
+
+    bool foundPrevLine = false;
+    int offset = 0;
+
+
+    for (int i = gb_front(gbuf); i > 0; --i)
+    {
+
+      eighty--;
+      offset++;
+      if (eighty <= 0)
+      {
+        foundPrevLine = true;
+      }
+      else if (extf[i] == 0x0D)
+      {
+        // skip
+      }
+      else if (extf[i] == 0x0A)
+      {
+        if (m_newline)
+        {
+          // parse \n as new line, render the current lineint 
+          for (int j = buff.str().length(); j < 80; ++j)
+          {
+            buff << ' ';
+//            offset++;
+          }
+          line--;
+          foundPrevLine = true;
+          buff.str(L"");
+        }
+      }
+      else if (m_wordwrap && extf[i] == ' ' && buff.str().length() > 63)
+      {
+        buff << GetChar(extf[i]);
+        // fill in spaces
+        for (int j = buff.str().length(); j < 80; ++j)
+        {
+          buff << ' ';
+//          offset++;
+        }
+        //        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, buff.str(), FG_CYAN | BG_BLACK);
+        line--;
+        foundPrevLine = true;
+        buff.str(L"");
+        eighty = 0;
+      }
+      else
+      {
+        buff << GetChar(extf[i]);
+        if (eighty >= 80 && line <= 45)
+        {
+          //          DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, buff.str(), FG_CYAN | BG_BLACK);
+          line--;
+          foundPrevLine = true;
+          buff.str(L"");
+          eighty = 0;
+        }
+        if (eighty <= -80 && line <= 45)
+        {
+          //          DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, buff.str(), FG_CYAN | BG_BLACK);
+          line--;
+          foundPrevLine = true;
+          buff.str(L"");
+          eighty = 0;
+        }
+      }
+
+      if (foundPrevLine)
+      {
+        for (int j = 0; j < offset; ++j)
+        {
+          VK(VK_LEFT);
+        }
+        return;
+      }
+    }
+
+
+
+
+  }
+
+  void Search::RenderAscii2()
+  {
+    if (rmemblock2 == NULL)
+    {
+      rReadFile();
+
+      gbuf = new_buffer(2);
+
+      for (int i = 0; i < rtheend; ++i)
+      {
+        insert_character(gbuf, rmemblock2[i]);
+      }
+
+      while (gb_front(gbuf)!=0)
+      {
+        cursor_left(gbuf);
+      }
+
+      while (m_cursorPosition < gb_front(gbuf))
+      {
+        cursor_right(gbuf);
+      }
+      //for (int i = 0; i < rtheend; ++i)
+      //{
+      //  std::string s(1, rmemblock2[i]);
+      //  rope.append(s);
+      //}
+      //rope.balance();
+    }
+
+      std::wstringstream buff;
+
+
+      size_t aa = gb_front(gbuf);
+      size_t ab = gb_back(gbuf);
+
+      int eighty = 0;
+      int line = 2;
+      char* ext = extract_text(gbuf);
+
+      char* extf = extractFront(gbuf);
+      char* extb = extractBack(gbuf);
+
+
+      for (int i = 0; i < gb_front(gbuf) && line <= 45; ++i)
+      {
+        //        buff << rmemblock2[i];
+        //        buff << rope.at(i);
+    //    buff << extf[i];
+
+        eighty++;
+        if (extf[i] == 0x0D)
+        {
+          // skip
+        }
+        else if (extf[i] == 0x0A)
+        {
+          if (m_newline && line <= 45)
+          {
+            // parse \n as new line, render the current lineint 
+            for (int j = buff.str().length(); j < 80; ++j)
+            {
+              buff << ' ';
+            }
+            DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, buff.str(), FG_CYAN | BG_BLACK);
+            line++;
+            buff.str(L"");
+            eighty = 0;
+          }
+        }
+        else if (m_wordwrap && extf[i] == ' ' && buff.str().length() > 63)
+        {
+          buff << GetChar(extf[i]);
+          // fill in spaces
+          for (int j = buff.str().length(); j < 80; ++j)
+          {
+            buff << ' ';
+          }
+          DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, buff.str(), FG_CYAN | BG_BLACK);
+          line++;
+          buff.str(L"");
+          eighty = 0;
+        }
+        else
+        {
+          buff << GetChar(extf[i]);
+          if (eighty >= 80 && line <= 45)
+          {
+            DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, buff.str(), FG_CYAN | BG_BLACK);
+            line++;
+            buff.str(L"");
+            eighty = 0;
+          }
+        }
+      }
+      //if (eighty > 0 && line <= 45)
+      //{
+      //  buff << 'X';
+      //  DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, buff.str(), FG_GREY | BG_BLACK);
+      //  buff.str(L"");
+      //  eighty = 0;
+      //  line++;
+      //}
+
+      buff << 'X';
+      int cursX = eighty;
+      int cursY = line;
+
+
+
+      for (int i = 0; i < gb_back(gbuf) && line <= 45; ++i)
+      {
+        //        buff << rmemblock2[i];
+        //        buff << rope.at(i);
+
+
+        eighty++;
+        if (extb[i] == 0x0D)
+        {
+          // skip
+        }
+        else if (extb[i] == 0x0A)
+        {
+          if (m_newline && line <= 45)
+          {
+            // parse \n as new line, render the current lineint 
+            int sz = buff.str().length();
+            for (int j = sz; j < 80; ++j)
+            {
+              buff << ' ';
+            }
+            std::wstring buffstr = buff.str();
+            DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, buffstr, FG_CYAN | BG_BLACK);
+            line++;
+            buff.str(L"");
+            eighty = 0;
+          }
+        }
+        else if (line != cursY && m_wordwrap && extb[i] == ' ' && buff.str().length() > 63)
+        {
+          buff << GetChar(extb[i]);
+          // fill in spaces
+          for (int j = buff.str().length(); j < 80; ++j)
+          {
+            buff << ' ';
+          }
+          DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, buff.str(), FG_CYAN | BG_BLACK);
+          line++;
+          buff.str(L"");
+          eighty = 0;
+        }
+        else if (line == cursY && m_wordwrap && extb[i] == ' ' && buff.str().length() > 64)
+        {
+          buff << GetChar(extb[i]);
+          // fill in spaces
+          for (int j = buff.str().length(); j < 80; ++j)
+          {
+            buff << ' ';
+          }
+          DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, buff.str(), FG_CYAN | BG_BLACK);
+          line++;
+          buff.str(L"");
+          eighty = 0;
+        }
+        else
+        {
+          buff << GetChar(extb[i]);
+          if (eighty >= 80 && line <= 45)
+          {
+            DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, buff.str(), FG_CYAN | BG_BLACK);
+            line++;
+            buff.str(L"");
+            eighty = 0;
+          }
+        }
+    }
+    if (eighty > 0 && line <= 45)
+    {
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, buff.str(), FG_GREY | BG_BLACK);
+      buff.str(L"");
+      eighty = 0;
+      line++;
+    }
+  
+    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, cursX, cursY, L"░", FG_GREY | BG_GREY);
+
+
+
+
+//      for (int i = 0; i < rtheend; ++i)
+//      {
+////        buff << rmemblock2[i];
+////        buff << rope.at(i);
+//        buff << ext[i];
+//
+//        eighty++;
+//        if (eighty >= 80 && line<=45)
+//        {
+//          DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, buff.str(), FG_GREY | BG_BLACK);
+//          line++;
+//          buff.str(L"");
+//          eighty = 0;
+//        }
+//      }
+//      if (eighty > 0 && line<=45)
+//      {
+//        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, buff.str(), FG_GREY | BG_BLACK);
+//        buff.str(L"");
+//        eighty = 0;
+//        line++;
+//      }
+//    }
+
+    std::wstring file = StrUtil::s2ws(theFile);
+    std::wstringstream ss;
+    ss << file;// << L"_" << lastChar;
+    file = ss.str();
+    if (m_wordwrap)
+    {
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, 0, L"File:                                                          WRAP  (no mask)  ", FG_GREY | BG_BLACK);
+      if (m_newline)
+      {
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, 0, L"File:                                                          WRAPN (no mask)  ", FG_GREY | BG_BLACK);
+      }
+    }
+    else
+    {
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, 0, L"File:                                                          ASCII (no mask)  ", FG_GREY | BG_BLACK);
+      if (m_newline)
+      {
+        DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, 0, L"File:                                                          ASCIIN(no mask)  ", FG_GREY | BG_BLACK);
+      }
+    }
+    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 6, 0, file, FG_GREY | BG_BLACK);
+    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, 1, L"────────────────────────────────────────────────────────────────────────────────", FG_GREY | BG_BLACK);
+
+    m_showingLastLine = false;
+    std::wstringstream side;
+//    int line = 2;
+//    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, lines, FG_GREY | BG_BLACK);
+
+    
+  }
 
   void Search::RenderAscii()
   {
+    RenderAscii2();
+      return;
+
+    ////https://www.delftstack.com/howto/cpp/how-to-get-time-in-milliseconds-cpp/
+    //if (!m_timeSet)
+    //{
+    //  auto millisec_since_epoch = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+    //  m_timePassed = millisec_since_epoch;
+    //  m_timeSet = true;
+    //}
+
+    //auto currentMillisec_since_epoch = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+    //if (currentMillisec_since_epoch - m_timePassed > 500)
+    //{
+    //  m_timePassed = currentMillisec_since_epoch;
+    //  m_timeSet = true;
+    //  m_renderCursor = !m_renderCursor;
+    //}
+
+    //if (m_editingText)
+    //{
+    //  CONSOLE_CURSOR_INFO     cursorInfo;
+    //  GetConsoleCursorInfo(ghConsole, &cursorInfo);
+    //  //if (!cursorInfo.bVisible)
+    //  //{
+    //  //  //      if (m_renderCursor)
+    //  //  cursorInfo.bVisible = true; // set the cursor visibility
+    //  //                              //      else
+    //  //                              //        cursorInfo.bVisible = false; // set the cursor visibility
+
+    //  //  SetConsoleCursorInfo(ghConsole, &cursorInfo);
+    //  //}
+    //  if (m_renderCursor)
+    //  {
+    //    cursorInfo.bVisible = true; // set the cursor visibility
+    //  }
+    //  else
+    //  {
+    //    cursorInfo.bVisible = false; // set the cursor visibility
+    //  }
+    //  SetConsoleCursorInfo(ghConsole, &cursorInfo);
+
+    //  COORD coord;
+    //  coord.X = 0 + m_cursor;
+    //  coord.Y = 2;
+    //  SetConsoleCursorPosition(ghConsole, coord);
+    //}
+
+
     std::wstring file = StrUtil::s2ws(theFile);
     std::wstringstream ss;
     ss << file;// << L"_" << lastChar;
@@ -2044,6 +3173,29 @@ namespace SimpleXTree
       line++;
     }
 
+//    if (m_editingText)
+//    {
+//      CONSOLE_CURSOR_INFO     cursorInfo;
+//      GetConsoleCursorInfo(ghConsole, &cursorInfo);
+////      if (m_renderCursor)
+//        cursorInfo.bVisible = true; // set the cursor visibility
+////      else
+////        cursorInfo.bVisible = false; // set the cursor visibility
+//
+//      SetConsoleCursorInfo(ghConsole, &cursorInfo);
+//
+//      COORD coord;
+//      coord.X = 0 + m_cursor;
+//      coord.Y = 2;
+//      SetConsoleCursorPosition(ghConsole, coord);
+//    }
+
+    if (m_editingText)
+    {
+      std::wstring ch = GetChar(memblock2[m_cursorPosition]);
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, 2, ch, FG_RED | BG_WHITE);
+    }
+
     DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"═══════════════════════════════════════════════════════════════─────────────────", FG_GREY | BG_BLACK);
     line++;
 
@@ -2080,6 +3232,27 @@ namespace SimpleXTree
     
   }
 
+  void Search::RenderCursor()
+  {
+    return;
+
+    if (m_editingText)
+    {
+      CONSOLE_CURSOR_INFO     cursorInfo;
+      GetConsoleCursorInfo(ghConsole, &cursorInfo);
+      //      if (m_renderCursor)
+      cursorInfo.bVisible = true; // set the cursor visibility
+                                  //      else
+                                  //        cursorInfo.bVisible = false; // set the cursor visibility
+
+      SetConsoleCursorInfo(ghConsole, &cursorInfo);
+
+      COORD coord;
+      coord.X = 0 + m_cursor;
+      coord.Y = 2;
+      SetConsoleCursorPosition(ghConsole, coord);
+    }
+  }
 
   bool Search::DontRenderAscii()
   {

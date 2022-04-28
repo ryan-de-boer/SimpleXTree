@@ -16,7 +16,9 @@ namespace SimpleXTree
   private:
     std::wstring m_pathToFile;
     std::streampos m_end;
+  public:
     std::ifstream m_source;
+  private:
     bool m_isOpen;
     std::streampos m_from;
     char* m_memblock;

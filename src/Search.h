@@ -24,6 +24,11 @@ namespace SimpleXTree
     bool Searching() const;
     void Render();
     void RenderAscii();
+    void RenderAscii2();
+    void Search::FindNextLine();
+    void Search::FindPrevLine();
+    int GetCursorToEndOfLine();
+    int GetNextLineToCursor();
     void Search::RenderDump();
     bool Search::DontRenderAscii();
     void KeyEvent(WCHAR ch);
@@ -57,6 +62,7 @@ namespace SimpleXTree
     bool m_newline;
     int Search::GetNumLines() const;
     int Search::GetNumChars() const;
+    void RenderCursor();
   private:
     void Search::RenderNow();
     void Search::InsertHexChar(char ch);
@@ -65,6 +71,7 @@ namespace SimpleXTree
     bool m_editing;
     bool m_editingAscii;
     bool m_editingDump;
+    bool m_editingText;
     bool m_jumping;
     bool m_jumpingFirstChar;
     bool m_saving;

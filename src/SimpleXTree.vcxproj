@@ -154,6 +154,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="076_gapbuf.h" />
     <ClInclude Include="Avail.h" />
     <ClInclude Include="Bookmarks.h" />
     <ClInclude Include="Compare.h" />
@@ -176,6 +177,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="076_gapbuf.cpp" />
     <ClCompile Include="Avail.cpp" />
     <ClCompile Include="Bookmarks.cpp" />
     <ClCompile Include="Compare.cpp" />
