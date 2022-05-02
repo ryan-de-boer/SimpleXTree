@@ -38,6 +38,7 @@ using std::chrono::system_clock;
 using namespace std;
 int HexToInt2(std::wstring str);
 void ReadFile();
+void RunProcessHide(std::wstring const& filePath, std::wstring const& arg);
 
 extern std::streampos thestart;
 extern std::streampos theend;
@@ -49,6 +50,7 @@ extern std::string theFile;
 extern int numMemBlock2;
 extern int numFound;
 extern int m_lastI;
+extern wchar_t* chars;
 
 void DrawString(CHAR_INFO *m_bufScreen, int nScreenWidth, int nScreenHeight, int x, int y, std::wstring c, short col = 0x000F);
 extern CHAR_INFO *m_bufScreen;
@@ -315,6 +317,745 @@ namespace SimpleXTree
   {
     m_exitThread = true;
     m_member_thread.join();
+  }
+
+  std::wstring currentTest = L"Untitled";
+  bool testPassed = true;
+  std::wstring errorMessage = L"";
+  bool allTestsPassed = true;
+
+  //std::vector<std::wstring> currentTests;
+  //std::vector<bool> testPasseds;
+  //std::vector<std::wstring> errorMessages;
+
+  std::vector<TestSuite> testSuites;
+
+  void SetCurrentTestSuite(std::wstring const& testSuiteName)
+  {
+    TestSuite ts;
+    ts.Name = testSuiteName;
+    testSuites.push_back(ts);
+  }
+
+  void SetCurrentTest(std::wstring const& testName)
+  {
+    if (!StrUtil::EqualsIgnoreCase(currentTest, L"Untitled"))
+    {
+      testSuites[testSuites.size()-1].currentTests.push_back(currentTest);
+      testSuites[testSuites.size() - 1].testPasseds.push_back(testPassed);
+      testSuites[testSuites.size() - 1].errorMessages.push_back(errorMessage);
+    }
+    currentTest = testName;
+    testPassed = true;
+    errorMessage = L"";
+  }
+
+  void EndTestsSuite()
+  {
+    testSuites[testSuites.size() - 1].currentTests.push_back(currentTest);
+    testSuites[testSuites.size() - 1].testPasseds.push_back(testPassed);
+    testSuites[testSuites.size() - 1].errorMessages.push_back(errorMessage);
+    currentTest = L"Untitled";
+  }
+
+  bool Search::Assert(int actualValue, int expectedValue, std::wstring const& customAssertMessage)
+  {
+    if (actualValue != expectedValue)
+    {
+      std::wstringstream msg;
+      msg << customAssertMessage;
+      if (!StrUtil::EndsWith(customAssertMessage, L"."))
+      {
+        msg << L".";
+      }
+      msg << L" Actual: " << actualValue << L", expected: " << expectedValue << L". Quit?";
+//      MessageBox(NULL, msg.str().c_str(), L"Assert Failure", MB_OK);
+
+      const int result = MessageBox(NULL, msg.str().c_str(), L"Assert Failure", MB_YESNOCANCEL);
+
+      switch (result)
+      {
+      case IDYES:
+        exit(0);
+        break;
+      case IDNO:
+        // Do something
+        break;
+      case IDCANCEL:
+        // Do something
+        break;
+      }
+
+      testPassed = false;
+      if (StrUtil::EqualsIgnoreCase(errorMessage, L""))
+      {
+        errorMessage = msg.str();
+      }
+      else
+      {
+        errorMessage = errorMessage + L"_BR_"+ msg.str();
+      }
+      allTestsPassed = false;
+      return false;
+    }
+    return true;
+  }
+
+  bool Search::Assert(int actualValue, int expectedValue, std::wstringstream const& customAssertMessage)
+  {
+    return Assert(actualValue, expectedValue, customAssertMessage.str());
+  }
+
+  void TestSuiteWriteTestReport(TestSuite const& testSuite, std::wofstream& fileStream)
+  {
+    unsigned int numFailed = 0;
+    unsigned int numTests = 0;
+    for (size_t i = 0; i<testSuite.testPasseds.size(); ++i)
+    {
+        numTests++;
+        if (!testSuite.testPasseds[i])
+        {
+          numFailed++;
+        }
+    }
+
+    fileStream << L"    <testsuite name=\"" << testSuite.Name << L"\" tests=\"" <<
+      numTests << L"\" failures=\"0\" errors=\"" << numFailed <<
+      L"\" time=\"0.0\">" << std::endl;
+
+    for (size_t i = 0; i<testSuite.testPasseds.size(); ++i)
+    {
+      {
+        fileStream << L"        <testcase name=\"" << testSuite.currentTests[i] << L"\" time=\"0.0\">";
+        if (!testSuite.testPasseds[i])
+        {
+          fileStream << L"<error message=\"" << testSuite.errorMessages[i] << L"\"/>";
+        }
+        fileStream << L"</testcase>" << std::endl;
+      }
+    }
+
+    fileStream << L"    </testsuite>" << std::endl;
+  }
+
+  void DeleteTestReport()
+  {
+    std::wstring path = GetAppPath() + L"\\TestData\\TestReport_AutomatedTesting.xml";
+    std::experimental::filesystem::remove(path);
+
+    path = GetAppPath() + L"\\TestData\\TestReport.html";
+    std::experimental::filesystem::remove(path);
+  }
+
+  void WriteTestReport()
+  {
+    std::wofstream fileStream(GetAppPath() + L"\\TestData\\TestReport_AutomatedTesting.xml", std::ios::out);
+    fileStream << "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\" ?>" << std::endl;
+    fileStream << "<?xml-stylesheet type=\"text/xsl\" href=\"junit-noframes_mod_notime.xsl\"?>" << std::endl;
+    fileStream << "<testsuites>" << std::endl;
+
+    //for (size_t i = 0; i<m_testSuites.size(); ++i)
+    //{
+    //  TestSuite* testSuite = m_testSuites[i];
+    //  if (testSuite->GetEnabled())
+    //  {
+    //    testSuite->WriteTestReport(fileStream);
+    //  }
+    //}
+
+    for (size_t i = 0; i<testSuites.size(); ++i)
+    {
+      TestSuiteWriteTestReport(testSuites[i], fileStream);
+    }
+
+    fileStream << "</testsuites>" << std::endl;
+    fileStream.close();
+  }
+
+  void ConvertToHtml()
+  {
+    RunProcessHide(GetAppPath() + L"\\TestData\\msxsl.exe", GetAppPath() + L"\\TestData\\msxsl.exe " + GetAppPath() + L"\\TestData\\TestReport_AutomatedTesting.xml " + GetAppPath() + L"\\TestData\\junit-noframes_mod_notime.xsl -o " + GetAppPath() + L"\\TestData\\TestReport.html");
+
+    std::wifstream t(GetAppPath() + L"\\TestData\\TestReport.html");
+    std::wstringstream buffer;
+    buffer << t.rdbuf();
+    std::wstring contents = buffer.str();
+    t.close();
+    StrUtil::ReplaceAll(contents, L"_BR_", L"<br>");
+
+    std::wofstream fs;
+    fs.open(GetAppPath() + L"\\TestData\\TestReport.html", std::wofstream::out);
+    fs << contents.c_str();
+    fs.close();
+  }
+
+  void OpenTestReport()
+  {
+    std::wstring path = (GetAppPath() + L"\\TestData\\TestReport.html");
+
+    std::wstringstream wstr2;
+    wstr2 << " /c " << "\"" << path << "\"";
+
+    ShellExecute(NULL, L"open", L"C:\\Windows\\System32\\CMD.exe", wstr2.str().c_str(), NULL, SW_HIDE);
+  }
+
+  inline bool exists_test31(const std::string& name) {
+    struct stat buffer;
+    return (stat(name.c_str(), &buffer) == 0);
+  }
+
+  void Search::SetupTest(std::wstring const& viewFile)
+  {
+    TCHAR szPath[MAX_PATH];
+
+    GetModuleFileName(NULL, szPath, MAX_PATH);
+
+    std::wstringstream ss2;
+    ss2 << szPath;
+    std::wstring p = ss2.str();
+    StrUtil::Replace(p, L"SimpleXTree.exe", viewFile);
+    pathToFile = StrUtil::ws2s(p);
+
+    rReadFile();
+
+    gbuf = new_buffer(2);
+
+    for (int i = 0; i < rtheend; ++i)
+    {
+      insert_character(gbuf, rmemblock2[i]);
+    }
+
+    while (gb_front(gbuf) != 0)
+    {
+      cursor_left(gbuf);
+    }
+    m_cursorPosition = 0;
+
+    while (m_cursorPosition < gb_front(gbuf))
+    {
+      cursor_right(gbuf);
+    }
+
+    m_renderAscii = true;
+    m_wordwrap = true;
+
+
+
+    ss2.str(L"");
+    ss2 << szPath;
+    p = ss2.str();
+    StrUtil::Replace(p, L"SimpleXTree.exe", L"ExtendedAciiValue.txt");
+    std::string srr2 = StrUtil::ws2s(p);
+
+    if (exists_test31(srr2))
+    {
+      ifstream rf(srr2, ios::out | ios::binary);
+      if (!rf) {
+        cout << "Cannot open file!" << endl;
+        return;
+      }
+      wchar_t  c;
+      rf.read((char *)&c, 2); // skip FF FE header
+      for (int i = 0; i <= 254; i += 1)
+      {
+        rf.read((char *)&c, 2);
+        chars[i] = c;
+        //      std::wstring ws = GetChar(c);
+        int a = 1;
+      }
+      rf.close();
+    }
+  }
+
+  void Search::Test(std::wstring const& args)
+  {
+
+    if (StrUtil::EqualsIgnoreCase(args, L"test") || args.find(L"TestCursorDown") != std::wstring::npos)
+    {
+      SetupTest(L"TestData\\_short.txt");
+      SetCurrentTestSuite(L"TestCursorDown");
+      SetCurrentTest(L"TestShortTxtCursorDown_Start");
+      int cursorToEndOfLine = GetCursorToEndOfLine();
+      Assert(cursorToEndOfLine, 9, L"Expected cursorToEndOfLine to be 9");
+      int nextLineToCursor = GetNextLineToCursor();
+      Assert(nextLineToCursor, 0, L"Expected nextLineToCursor to be 0");
+
+      SetCurrentTest(L"TestShortTxtCursorDown_Right1");
+      VK(VK_RIGHT);
+      cursorToEndOfLine = GetCursorToEndOfLine();
+      Assert(cursorToEndOfLine, 8, L"Expected cursorToEndOfLine to be 8");
+      nextLineToCursor = GetNextLineToCursor();
+      Assert(nextLineToCursor, 1, L"Expected nextLineToCursor to be 1");
+
+      SetCurrentTest(L"TestShortTxtCursorDown_Right2");
+      VK(VK_RIGHT);
+      cursorToEndOfLine = GetCursorToEndOfLine();
+      Assert(cursorToEndOfLine, 7, L"Expected cursorToEndOfLine to be 7");
+      nextLineToCursor = GetNextLineToCursor();
+      Assert(nextLineToCursor, 2, L"Expected nextLineToCursor to be 2");
+
+      SetCurrentTest(L"TestShortTxtCursorDown_Right3");
+      VK(VK_RIGHT);
+      cursorToEndOfLine = GetCursorToEndOfLine();
+      Assert(cursorToEndOfLine, 6, L"Expected cursorToEndOfLine to be 6");
+      nextLineToCursor = GetNextLineToCursor();
+      Assert(nextLineToCursor, 3, L"Expected nextLineToCursor to be 3");
+
+      SetCurrentTest(L"TestShortTxtCursorDown_Right4");
+      VK(VK_RIGHT);
+      cursorToEndOfLine = GetCursorToEndOfLine();
+      Assert(cursorToEndOfLine, 5, L"Expected cursorToEndOfLine to be 5");
+      nextLineToCursor = GetNextLineToCursor();
+      Assert(nextLineToCursor, 4, L"Expected nextLineToCursor to be 4");
+
+      SetCurrentTest(L"TestShortTxtCursorDown_Right5");
+      VK(VK_RIGHT);
+      cursorToEndOfLine = GetCursorToEndOfLine();
+      Assert(cursorToEndOfLine, 4, L"Expected cursorToEndOfLine to be 4");
+      nextLineToCursor = GetNextLineToCursor();
+      Assert(nextLineToCursor, 5, L"Expected nextLineToCursor to be 5");
+
+      SetCurrentTest(L"TestShortTxtCursorDown_Right6");
+      VK(VK_RIGHT);
+      cursorToEndOfLine = GetCursorToEndOfLine();
+      Assert(cursorToEndOfLine, 3, L"Expected cursorToEndOfLine to be 3");
+      nextLineToCursor = GetNextLineToCursor();
+      Assert(nextLineToCursor, 5, L"Expected nextLineToCursor to be 5");
+
+      SetCurrentTest(L"TestShortTxtCursorDown_Right7");
+      VK(VK_RIGHT);
+      cursorToEndOfLine = GetCursorToEndOfLine();
+      Assert(cursorToEndOfLine, 2, L"Expected cursorToEndOfLine to be 2");
+      nextLineToCursor = GetNextLineToCursor();
+      Assert(nextLineToCursor, 5, L"Expected nextLineToCursor to be 5");
+
+      SetCurrentTest(L"TestShortTxtCursorDown_Right8");
+      VK(VK_RIGHT);
+      cursorToEndOfLine = GetCursorToEndOfLine();
+      Assert(cursorToEndOfLine, 1, L"Expected cursorToEndOfLine to be 1");
+      nextLineToCursor = GetNextLineToCursor();
+      Assert(nextLineToCursor, 5, L"Expected nextLineToCursor to be 5");
+
+      SetCurrentTest(L"TestShortTxtCursorDown_Right9");
+      VK(VK_RIGHT);
+      cursorToEndOfLine = GetCursorToEndOfLine();
+      Assert(cursorToEndOfLine, 0, L"Expected cursorToEndOfLine to be 0");
+      nextLineToCursor = GetNextLineToCursor();
+      Assert(nextLineToCursor, 5, L"Expected nextLineToCursor to be 5");
+
+      SetCurrentTest(L"TestShortTxtCursorDown_Line2");
+      VK(VK_RIGHT);
+      cursorToEndOfLine = GetCursorToEndOfLine();
+      Assert(cursorToEndOfLine, 5, L"Expected cursorToEndOfLine to be 5");
+      nextLineToCursor = GetNextLineToCursor();
+      Assert(nextLineToCursor, 0, L"Expected nextLineToCursor to be 0");
+
+      SetCurrentTest(L"TestShortTxtCursorDown_Line2_Right1");
+      VK(VK_RIGHT);
+      cursorToEndOfLine = GetCursorToEndOfLine();
+      Assert(cursorToEndOfLine, 4, L"Expected cursorToEndOfLine to be 4");
+      nextLineToCursor = GetNextLineToCursor();
+      Assert(nextLineToCursor, 1, L"Expected nextLineToCursor to be 1");
+
+      SetCurrentTest(L"TestShortTxtCursorDown_Line2_Right2");
+      VK(VK_RIGHT);
+      cursorToEndOfLine = GetCursorToEndOfLine();
+      Assert(cursorToEndOfLine, 3, L"Expected cursorToEndOfLine to be 3");
+      nextLineToCursor = GetNextLineToCursor();
+      Assert(nextLineToCursor, 2, L"Expected nextLineToCursor to be 2");
+
+      SetCurrentTest(L"TestShortTxtCursorDown_Line2_Right3");
+      VK(VK_RIGHT);
+      cursorToEndOfLine = GetCursorToEndOfLine();
+      Assert(cursorToEndOfLine, 2, L"Expected cursorToEndOfLine to be 2");
+      nextLineToCursor = GetNextLineToCursor();
+      Assert(nextLineToCursor, 2, L"Expected nextLineToCursor to be 2");
+
+      SetCurrentTest(L"TestShortTxtCursorDown_Line2_Right4");
+      VK(VK_RIGHT);
+      cursorToEndOfLine = GetCursorToEndOfLine();
+      Assert(cursorToEndOfLine, 1, L"Expected cursorToEndOfLine to be 1");
+      nextLineToCursor = GetNextLineToCursor();
+      Assert(nextLineToCursor, 2, L"Expected nextLineToCursor to be 2");
+
+      SetCurrentTest(L"TestShortTxtCursorDown_Line2_Right5");
+      VK(VK_RIGHT);
+      cursorToEndOfLine = GetCursorToEndOfLine();
+      Assert(cursorToEndOfLine, 0, L"Expected cursorToEndOfLine to be 0");
+      nextLineToCursor = GetNextLineToCursor();
+      Assert(nextLineToCursor, 2, L"Expected nextLineToCursor to be 2");
+
+      SetCurrentTest(L"TestShortTxtCursorDown_Line3");
+      VK(VK_RIGHT);
+      cursorToEndOfLine = GetCursorToEndOfLine();
+      Assert(cursorToEndOfLine, 2, L"Expected cursorToEndOfLine to be 2");
+      nextLineToCursor = GetNextLineToCursor();
+      Assert(nextLineToCursor, 0, L"Expected nextLineToCursor to be 0");
+
+      SetCurrentTest(L"TestShortTxtCursorDown_Line3_Right1");
+      VK(VK_RIGHT);
+      cursorToEndOfLine = GetCursorToEndOfLine();
+      Assert(cursorToEndOfLine, 1, L"Expected cursorToEndOfLine to be 1");
+      nextLineToCursor = GetNextLineToCursor();
+      Assert(nextLineToCursor, 0, L"Expected nextLineToCursor to be 0");
+
+      SetCurrentTest(L"TestShortTxtCursorDown_Line3_Right2");
+      VK(VK_RIGHT);
+      cursorToEndOfLine = GetCursorToEndOfLine();
+      Assert(cursorToEndOfLine, 0, L"Expected cursorToEndOfLine to be 0");
+      nextLineToCursor = GetNextLineToCursor();
+      Assert(nextLineToCursor, 0, L"Expected nextLineToCursor to be 0");
+
+      SetCurrentTest(L"TestShortTxtCursorDown_Line4");
+      VK(VK_RIGHT);
+      cursorToEndOfLine = GetCursorToEndOfLine();
+      Assert(cursorToEndOfLine, 0, L"Expected cursorToEndOfLine to be 0");
+      nextLineToCursor = GetNextLineToCursor();
+      Assert(nextLineToCursor, -1, L"Expected nextLineToCursor to be -1");
+
+      SetCurrentTest(L"TestShortTxtCursorDown_Line4_Right1");
+      VK(VK_RIGHT);
+      cursorToEndOfLine = GetCursorToEndOfLine();
+      Assert(cursorToEndOfLine, 0, L"Expected cursorToEndOfLine to be 0");
+      nextLineToCursor = GetNextLineToCursor();
+      Assert(nextLineToCursor, -1, L"Expected nextLineToCursor to be -1");
+
+      SetupTest(L"TestData\\_short2.txt");
+
+      SetCurrentTest(L"TestShort2TxtCursorDown_Loop");
+      // bore ten. Parish any chatty can elinor direct for former. Up as meant
+      int j = 0;
+      for (int i = 69; i >= 0; --i)
+      {
+        cursorToEndOfLine = GetCursorToEndOfLine();
+        std::wstringstream buf;
+        buf << L"Expected cursorToEndOfLine to be " << i;
+        Assert(cursorToEndOfLine, i, buf);
+        nextLineToCursor = GetNextLineToCursor();
+        buf.str(L"");
+        buf << L"Expected nextLineToCursor to be " << j;
+        Assert(nextLineToCursor, j, buf);
+        VK(VK_RIGHT);
+        if (j < 27)
+        {
+          // should stop at 27
+          ++j;
+        }
+      }
+
+      // widow equal an share least.
+      j = 0;
+      for (int i = 27; i >= 0; --i)
+      {
+        cursorToEndOfLine = GetCursorToEndOfLine();
+        std::wstringstream buf;
+        buf << L"Expected cursorToEndOfLine to be " << i;
+        Assert(cursorToEndOfLine, i, buf);
+        nextLineToCursor = GetNextLineToCursor();
+        buf.str(L"");
+        buf << L"Expected nextLineToCursor to be -1";
+        Assert(nextLineToCursor, -1, buf);
+        VK(VK_RIGHT);
+      }
+
+      SetupTest(L"TestData\\along2.txt");
+
+      SetCurrentTest(L"TestAlongTxtCursorDown_Loop");
+      //std::vector<int> endOfLines;
+      //std::vector<int> nextLines;
+      //endOfLines.push_back(65);
+      //nextLines.push_back(64);
+      //endOfLines.push_back(64);
+      //nextLines.push_back(62); //62line or 72?
+
+      //for (int k = 0; k < endOfLines.size(); ++k)
+      //{
+      //  j = 0;
+      //  for (int i = endOfLines[k]; i >= 0; --i)
+      //  {
+      //    cursorToEndOfLine = GetCursorToEndOfLine();
+      //    std::wstringstream buf;
+      //    buf << L"Expected cursorToEndOfLine to be " << i;
+      //    Assert(cursorToEndOfLine, i, buf);
+      //    nextLineToCursor = GetNextLineToCursor();
+      //    buf.str(L"");
+      //    buf << L"Expected nextLineToCursor to be " << j;
+      //    Assert(nextLineToCursor, j, buf);
+      //    VK(VK_RIGHT);
+      //    if (j < nextLines[k])
+      //    {
+      //      // should stop here
+      //      ++j;
+      //    }
+      //  }
+      //}
+
+      // 1Folly words widow one downs few age every seven. If miss part by 
+      j = 0;
+      for (int i = 65; i >= 0; --i)
+      {
+        cursorToEndOfLine = GetCursorToEndOfLine();
+        std::wstringstream buf;
+        buf << L"Expected cursorToEndOfLine to be " << i;
+        Assert(cursorToEndOfLine, i, buf);
+        nextLineToCursor = GetNextLineToCursor();
+        buf.str(L"");
+        buf << L"Expected nextLineToCursor to be " << j;
+        Assert(nextLineToCursor, j, buf);
+        VK(VK_RIGHT);
+        if (j < 64)
+        {
+          // should stop at 64
+          ++j;
+        }
+      }
+
+      // fact he park just shew. Discovered had get considered projection
+      j = 0;
+      for (int i = 64; i >= 0; --i)
+      {
+        cursorToEndOfLine = GetCursorToEndOfLine();
+        std::wstringstream buf;
+        buf << L"Expected cursorToEndOfLine to be " << i;
+        Assert(cursorToEndOfLine, i, buf);
+        nextLineToCursor = GetNextLineToCursor();
+        buf.str(L"");
+        buf << L"Expected nextLineToCursor to be " << j;
+        Assert(nextLineToCursor, j, buf);
+        VK(VK_RIGHT);
+        if (j < 72)
+        {
+          // should stop at 72
+          ++j;
+        }
+      }
+
+      // who favourable. Necessary up knowledge it tolerably. Unwilling departure
+      j = 0;
+      for (int i = 72; i >= 0; --i)
+      {
+        cursorToEndOfLine = GetCursorToEndOfLine();
+        std::wstringstream buf;
+        buf << L"Expected cursorToEndOfLine to be " << i;
+        Assert(cursorToEndOfLine, i, buf);
+        nextLineToCursor = GetNextLineToCursor();
+        buf.str(L"");
+        buf << L"Expected nextLineToCursor to be " << j;
+        Assert(nextLineToCursor, j, buf);
+        VK(VK_RIGHT);
+        if (j < 64)
+        {
+          // should stop at 64
+          ++j;
+        }
+      }
+
+      // education is be dashwoods or an. Use off agreeable law unwilling
+      j = 0;
+      for (int i = 64; i >= 0; --i)
+      {
+        cursorToEndOfLine = GetCursorToEndOfLine();
+        std::wstringstream buf;
+        buf << L"Expected cursorToEndOfLine to be " << i;
+        Assert(cursorToEndOfLine, i, buf);
+        nextLineToCursor = GetNextLineToCursor();
+        buf.str(L"");
+        buf << L"Expected nextLineToCursor to be " << j;
+        Assert(nextLineToCursor, j, buf);
+        VK(VK_RIGHT);
+        if (j < 67)
+        {
+          // should stop at 67
+          ++j;
+        }
+      }
+
+      // sir deficient curiosity instantly. Easy mind life fact with see has
+      j = 0;
+      for (int i = 67; i >= 0; --i)
+      {
+        cursorToEndOfLine = GetCursorToEndOfLine();
+        std::wstringstream buf;
+        buf << L"Expected cursorToEndOfLine to be " << i;
+        Assert(cursorToEndOfLine, i, buf);
+        nextLineToCursor = GetNextLineToCursor();
+        buf.str(L"");
+        buf << L"Expected nextLineToCursor to be " << j;
+        Assert(nextLineToCursor, j, buf);
+        VK(VK_RIGHT);
+        if (j < 69)
+        {
+          // should stop at 69
+          ++j;
+        }
+      }
+
+      // bore ten. Parish any chatty can elinor direct for former. Up as meant
+      j = 0;
+      for (int i = 69; i >= 0; --i)
+      {
+        cursorToEndOfLine = GetCursorToEndOfLine();
+        std::wstringstream buf;
+        buf << L"Expected cursorToEndOfLine to be " << i;
+        Assert(cursorToEndOfLine, i, buf);
+        nextLineToCursor = GetNextLineToCursor();
+        buf.str(L"");
+        buf << L"Expected nextLineToCursor to be " << j;
+        Assert(nextLineToCursor, j, buf);
+        VK(VK_RIGHT);
+        if (j < 27)
+        {
+          // should stop at 27
+          ++j;
+        }
+      }
+
+      // widow equal an share least.
+      j = 0;
+      for (int i = 27; i >= 0; --i)
+      {
+        cursorToEndOfLine = GetCursorToEndOfLine();
+        std::wstringstream buf;
+        buf << L"Expected cursorToEndOfLine to be " << i;
+        Assert(cursorToEndOfLine, i, buf);
+        nextLineToCursor = GetNextLineToCursor();
+        buf.str(L"");
+        buf << L"Expected nextLineToCursor to be " << j;
+        Assert(nextLineToCursor, j, buf);
+        VK(VK_RIGHT);
+      }
+
+      // ""
+      j = 0;
+      for (int i = 0; i >= 0; --i)
+      {
+        cursorToEndOfLine = GetCursorToEndOfLine();
+        std::wstringstream buf;
+        buf << L"Expected cursorToEndOfLine to be " << i;
+        Assert(cursorToEndOfLine, i, buf);
+        nextLineToCursor = GetNextLineToCursor();
+        buf.str(L"");
+        buf << L"Expected nextLineToCursor to be " << j;
+        Assert(nextLineToCursor, j, buf);
+        VK(VK_RIGHT);
+      }
+
+      // Talent she for lively eat led sister. Entrance strongly packages
+      j = 0;
+      for (int i = 64; i >= 0; --i)
+      {
+        cursorToEndOfLine = GetCursorToEndOfLine();
+        std::wstringstream buf;
+        buf << L"Expected cursorToEndOfLine to be " << i;
+        Assert(cursorToEndOfLine, i, buf);
+        nextLineToCursor = GetNextLineToCursor();
+        buf.str(L"");
+        buf << L"Expected nextLineToCursor to be " << j;
+        Assert(nextLineToCursor, j, buf);
+        VK(VK_RIGHT);
+        if (j < 70)
+        {
+          // should stop at 70
+          ++j;
+        }
+      }
+
+
+      //SetCurrentTest(L"TestShort2TxtCursorDown_Start");
+      //cursorToEndOfLine = GetCursorToEndOfLine();
+      //Assert(cursorToEndOfLine, 69, L"Expected cursorToEndOfLine to be 69");
+      //nextLineToCursor = GetNextLineToCursor();
+      //Assert(nextLineToCursor, 0, L"Expected nextLineToCursor to be 0");
+
+      //SetCurrentTest(L"TestShort2TxtCursorDown_Right1");
+      //VK(VK_RIGHT);
+      //cursorToEndOfLine = GetCursorToEndOfLine();
+      //Assert(cursorToEndOfLine, 68, L"Expected cursorToEndOfLine to be 68");
+      //nextLineToCursor = GetNextLineToCursor();
+      //Assert(nextLineToCursor, 1, L"Expected nextLineToCursor to be 1");
+
+      //SetCurrentTest(L"TestShort2TxtCursorDown_Right2");
+      //VK(VK_RIGHT);
+      //cursorToEndOfLine = GetCursorToEndOfLine();
+      //Assert(cursorToEndOfLine, 67, L"Expected cursorToEndOfLine to be 67");
+      //nextLineToCursor = GetNextLineToCursor();
+      //Assert(nextLineToCursor, 2, L"Expected nextLineToCursor to be 2");
+
+      //SetCurrentTest(L"TestShort2TxtCursorDown_Right3");
+      //VK(VK_RIGHT);
+      //cursorToEndOfLine = GetCursorToEndOfLine();
+      //Assert(cursorToEndOfLine, 66, L"Expected cursorToEndOfLine to be 66");
+      //nextLineToCursor = GetNextLineToCursor();
+      //Assert(nextLineToCursor, 3, L"Expected nextLineToCursor to be 3");
+
+      //SetCurrentTest(L"TestShort2TxtCursorDown_Right4");
+      //VK(VK_RIGHT);
+      //cursorToEndOfLine = GetCursorToEndOfLine();
+      //Assert(cursorToEndOfLine, 65, L"Expected cursorToEndOfLine to be 65");
+      //nextLineToCursor = GetNextLineToCursor();
+      //Assert(nextLineToCursor, 4, L"Expected nextLineToCursor to be 4");
+
+      //SetCurrentTest(L"TestShort2TxtCursorDown_Right5");
+      //VK(VK_RIGHT);
+      //cursorToEndOfLine = GetCursorToEndOfLine();
+      //Assert(cursorToEndOfLine, 64, L"Expected cursorToEndOfLine to be 64");
+      //nextLineToCursor = GetNextLineToCursor();
+      //Assert(nextLineToCursor, 5, L"Expected nextLineToCursor to be 5");
+
+      //Assert(0, 1, L"Expected differs");
+
+      EndTestsSuite();
+
+    }
+    SetupTest(L"TestData\\_short.txt");
+
+    if (StrUtil::EqualsIgnoreCase(args, L"test") || args.find(L"TestCursorUp") != std::wstring::npos)
+    {
+
+      SetCurrentTestSuite(L"TestCursorUp");
+      SetCurrentTest(L"TestShortTxtCursorUp_Start");
+
+      for (int i = 0; i < 10; ++i)
+      {
+        VK(VK_RIGHT);
+      }
+
+
+      int c = GetCursorToStartOfLine(); //0
+      int d = GetPreviousLineToCursor(); //9
+      Assert(c, 0, L"c unexpected");
+      Assert(d, 9, L"d unexpected");
+
+      EndTestsSuite();
+    }
+
+    if (allTestsPassed)
+    {
+      MessageBox(NULL, L"Test results: PASSED", L"Automated Testing", MB_OK);
+    }
+    else
+    {
+      MessageBox(NULL, L"Test results: FAILED", L"Automated Testing", MB_OK);
+    }
+
+    const int result = MessageBox(NULL, L"View Test Report?", L"Test Report", MB_YESNOCANCEL);
+
+    switch (result)
+    {
+    case IDYES:
+      DeleteTestReport();
+      WriteTestReport();
+      ConvertToHtml();
+      OpenTestReport();
+      break;
+    case IDNO:
+      // Do something
+      break;
+    case IDCANCEL:
+      // Do something
+      break;
+    }
+
   }
 
   void Search::Search3(std::wstring theSearchHex)
@@ -2047,7 +2788,7 @@ namespace SimpleXTree
         buff << GetChar(extb[i]);
       }
     }
-    return 0;
+    return strlen(extb)-1;
   }
 
   //how much next line to cursorX index or end of line or end of file
@@ -2228,6 +2969,113 @@ namespace SimpleXTree
 
     return buff.str().length();
 
+  }
+
+  int Search::GetCursorToStartOfLine()
+  {
+    std::wstringstream buff;
+    char* extf = extractFront(gbuf);
+    char* extb = extractBack(gbuf);
+    int line = 2;
+    bool lastCharNewLine = false;
+    for (int i = 0; i < gb_front(gbuf); ++i)
+    {
+      lastCharNewLine = false;
+      if (extf[i] == 0x0D)
+      {
+        buff.str(L"");
+      }
+      else if (extf[i] == 0x0A)
+      {
+        buff.str(L"");
+        lastCharNewLine = true;
+        line++;
+      }
+      else if (m_wordwrap && extf[i] == ' ' && buff.str().length() > 63)
+      {
+        buff.str(L"");
+        lastCharNewLine = true;
+        line++;
+      }
+      else if (m_wordwrap && extf[i] == ' ' && buff.str().length() > 64)
+      {
+        buff.str(L"");
+        lastCharNewLine = true;
+        line++;
+      }
+      else
+      {
+        buff << GetChar(extf[i]);
+      }
+    }
+    int cursorX = buff.str().length();
+    int cursorY = line;
+
+    if (lastCharNewLine && cursorX == 0)
+    {
+      return 0;
+    }
+
+
+    buff << L"X"; // cursor
+
+
+    return 1;
+  }
+
+  int Search::GetPreviousLineToCursor()
+  {
+    std::wstringstream buff;
+    char* extf = extractFront(gbuf);
+    char* extb = extractBack(gbuf);
+    int line = 2;
+    bool lastCharNewLine = false;
+    std::wstring previousLine = L"";
+    for (int i = 0; i < gb_front(gbuf); ++i)
+    {
+      lastCharNewLine = false;
+      if (extf[i] == 0x0D)
+      {
+      }
+      else if (extf[i] == 0x0A)
+      {
+        previousLine = buff.str();
+        buff.str(L"");
+        lastCharNewLine = true;
+        line++;
+      }
+      else if (m_wordwrap && extf[i] == ' ' && buff.str().length() > 63)
+      {
+        previousLine = buff.str();
+        buff.str(L"");
+        lastCharNewLine = true;
+        line++;
+      }
+      else if (m_wordwrap && extf[i] == ' ' && buff.str().length() > 64)
+      {
+        previousLine = buff.str();
+        buff.str(L"");
+        lastCharNewLine = true;
+        line++;
+      }
+      else
+      {
+        buff << GetChar(extf[i]);
+      }
+    }
+    int cursorX = buff.str().length();
+    int cursorY = line;
+
+    if (lastCharNewLine)
+    {
+      return previousLine.length();
+    }
+
+
+    buff << L"X"; // cursor
+
+
+    return 10;
   }
 
   void Search::FindNextLine()
@@ -2584,14 +3432,17 @@ namespace SimpleXTree
     //  VK(VK_LEFT);
     //}
 
-    if (cursX > lineCounts[lineCounts.size() - 1])
+    if (lineCounts.size() > 0)
     {
-//      lineCounts[lineCounts.size() - 1]
-      for (int j = 0; j < cursX+1; ++j)
+      if (cursX > lineCounts[lineCounts.size() - 1])
       {
-        VK(VK_LEFT);
+        //      lineCounts[lineCounts.size() - 1]
+        for (int j = 0; j < cursX + 1; ++j)
+        {
+          VK(VK_LEFT);
+        }
+        return;
       }
-      return;
     }
 
     int diff = cursX - lastLine;

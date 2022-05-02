@@ -14,6 +14,16 @@ namespace SimpleXTree
   enum eCursor : int;
   enum eSearchType : int;
 
+  class TestSuite
+  {
+  public:
+    std::wstring Name;
+
+    std::vector<std::wstring> currentTests;
+    std::vector<bool> testPasseds;
+    std::vector<std::wstring> errorMessages;
+  };
+
   class Search
   {
   public:
@@ -29,6 +39,8 @@ namespace SimpleXTree
     void Search::FindPrevLine();
     int GetCursorToEndOfLine();
     int GetNextLineToCursor();
+    int Search::GetCursorToStartOfLine();
+    int GetPreviousLineToCursor();
     void Search::RenderDump();
     bool Search::DontRenderAscii();
     void KeyEvent(WCHAR ch);
@@ -38,6 +50,10 @@ namespace SimpleXTree
     }
     void VK(DWORD vk);
     void VKUp(DWORD vk);
+    void Test(std::wstring const& args);
+    void SetupTest(std::wstring const& viewFile);
+    bool Search::Assert(int actualValue, int expectedValue, std::wstring const& customAssertMessage);
+    bool Search::Assert(int actualValue, int expectedValue, std::wstringstream const& customAssertMessage);
   private:
     void ThreadFn();
     void Search3(std::wstring theSearchHex);
