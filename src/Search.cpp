@@ -1015,16 +1015,90 @@ namespace SimpleXTree
       SetCurrentTestSuite(L"TestCursorUp");
       SetCurrentTest(L"TestShortTxtCursorUp_Start");
 
-      for (int i = 0; i < 10; ++i)
+      //for (int i = 0; i < 10; ++i)
+      //{
+      //  VK(VK_RIGHT);
+      //}
+
+
+//      int c = GetCursorToStartOfLine(); //0
+//      int d = GetPreviousLineToCursor(); //9
+//      Assert(c, 0, L"c unexpected");
+//      Assert(d, 9, L"d unexpected");
+
+      // some line
+      for (int i = 0; i <= 9; ++i)
       {
+        int cursorToStartOfLine = GetCursorToStartOfLine();
+        std::wstringstream buf;
+        buf << L"Expected cursorToStartOfLine to be " << i;
+        Assert(cursorToStartOfLine, i, buf);
+        int previousLineToCursor = GetPreviousLineToCursor();
+        buf.str(L"");
+        buf << L"Expected previousLineToCursor to be -1";
+        Assert(previousLineToCursor, -1, buf);
         VK(VK_RIGHT);
       }
 
+      // short
+      int j = 9;
+      for (int i = 0; i <= 5; ++i)
+      {
+        int cursorToStartOfLine = GetCursorToStartOfLine();
+        std::wstringstream buf;
+        buf << L"Expected cursorToStartOfLine to be " << i;
+        Assert(cursorToStartOfLine, i, buf);
+        int previousLineToCursor = GetPreviousLineToCursor();
+        buf.str(L"");
+        buf << L"Expected previousLineToCursor to be " << j;
+        Assert(previousLineToCursor, j, buf);
+        VK(VK_RIGHT);
+        if (j > 4)
+        {
+          // should stop at 4
+          --j;
+        }
+      }
 
-      int c = GetCursorToStartOfLine(); //0
-      int d = GetPreviousLineToCursor(); //9
-      Assert(c, 0, L"c unexpected");
-      Assert(d, 9, L"d unexpected");
+      // mo
+      j = 5;
+      for (int i = 0; i <= 2; ++i)
+      {
+        int cursorToStartOfLine = GetCursorToStartOfLine();
+        std::wstringstream buf;
+        buf << L"Expected cursorToStartOfLine to be " << i;
+        Assert(cursorToStartOfLine, i, buf);
+        int previousLineToCursor = GetPreviousLineToCursor();
+        buf.str(L"");
+        buf << L"Expected previousLineToCursor to be " << j;
+        Assert(previousLineToCursor, j, buf);
+        VK(VK_RIGHT);
+        if (j > 3)
+        {
+          // should stop at 3
+          --j;
+        }
+      }
+
+      // ""
+      j = 2;
+      for (int i = 0; i <= 0; ++i)
+      {
+        int cursorToStartOfLine = GetCursorToStartOfLine();
+        std::wstringstream buf;
+        buf << L"Expected cursorToStartOfLine to be " << i;
+        Assert(cursorToStartOfLine, i, buf);
+        int previousLineToCursor = GetPreviousLineToCursor();
+        buf.str(L"");
+        buf << L"Expected previousLineToCursor to be " << j;
+        Assert(previousLineToCursor, j, buf);
+        VK(VK_RIGHT);
+        if (j > 2)
+        {
+          // should stop at 2
+          --j;
+        }
+      }
 
       EndTestsSuite();
     }
@@ -3011,16 +3085,17 @@ namespace SimpleXTree
     int cursorX = buff.str().length();
     int cursorY = line;
 
-    if (lastCharNewLine && cursorX == 0)
-    {
-      return 0;
-    }
+    return cursorX;
+    //if (lastCharNewLine && cursorX == 0)
+    //{
+    //  return 0;
+    //}
 
 
-    buff << L"X"; // cursor
+    //buff << L"X"; // cursor
 
 
-    return 1;
+    //return 1;
   }
 
   int Search::GetPreviousLineToCursor()
@@ -3033,7 +3108,7 @@ namespace SimpleXTree
     std::wstring previousLine = L"";
     for (int i = 0; i < gb_front(gbuf); ++i)
     {
-      lastCharNewLine = false;
+//      lastCharNewLine = false;
       if (extf[i] == 0x0D)
       {
       }
@@ -3066,16 +3141,33 @@ namespace SimpleXTree
     int cursorX = buff.str().length();
     int cursorY = line;
 
-    if (lastCharNewLine)
+    if (previousLine == L"")
     {
-      return previousLine.length();
+      if (lastCharNewLine)
+      {
+        return 0;
+      }
+      else
+      {
+        return -1;
+      }
+    }
+
+    int diff = previousLine.length() - cursorX;
+    if (diff > 0)
+    {
+      return diff;
+    }
+    else
+    {
+      return 0;
     }
 
 
-    buff << L"X"; // cursor
+//    buff << L"X"; // cursor
 
 
-    return 10;
+//    return 10;
   }
 
   void Search::FindNextLine()
@@ -3086,12 +3178,15 @@ namespace SimpleXTree
     rb << L"EOL:" << a << L", NL:" << r;
 //    MessageBox(NULL, rb.str().c_str(), L"Info", MB_OK);
     //add the 2 to get how many rights
-    int sum = a + r +1;
-//    if (sum > 1)
+//    if (r != -1)
     {
-      for (int j = 0; j < sum; ++j)
+      int sum = a + r + 1;
+      //    if (sum > 1)
       {
-        VK(VK_RIGHT);
+        for (int j = 0; j < sum; ++j)
+        {
+          VK(VK_RIGHT);
+        }
       }
     }
     return;
@@ -3358,6 +3453,25 @@ namespace SimpleXTree
 
   void Search::FindPrevLine()
   {
+    int a = GetCursorToStartOfLine();
+    int r = GetPreviousLineToCursor();
+    std::wstringstream rb;
+    rb << L"SOL:" << a << L", PLC:" << r;
+//    MessageBox(NULL, rb.str().c_str(), L"Info", MB_OK);
+
+    //add the 2 to get how many lefts
+    if (r != -1)
+    {
+      int sum = a + r + 1;
+      //    if (sum > 1)
+      {
+        for (int j = 0; j < sum; ++j)
+        {
+          VK(VK_LEFT);
+        }
+      }
+    }
+    return;
 
 
     std::wstringstream buff;
