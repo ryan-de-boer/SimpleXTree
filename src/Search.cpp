@@ -510,11 +510,19 @@ namespace SimpleXTree
 
     GetModuleFileName(NULL, szPath, MAX_PATH);
 
-    std::wstringstream ss2;
-    ss2 << szPath;
-    std::wstring p = ss2.str();
-    StrUtil::Replace(p, L"SimpleXTree.exe", viewFile);
-    pathToFile = StrUtil::ws2s(p);
+    if (viewFile.find(L":") != std::wstring::npos) // If rooted don't append current dir.
+    {
+      pathToFile = StrUtil::ws2s(viewFile);
+    }
+    else
+    {
+      // Else append current dir.
+      std::wstringstream ss2;
+      ss2 << szPath;
+      std::wstring p = ss2.str();
+      StrUtil::Replace(p, L"SimpleXTree.exe", viewFile);
+      pathToFile = StrUtil::ws2s(p);
+    }
 
     rReadFile();
 
@@ -540,10 +548,10 @@ namespace SimpleXTree
     m_wordwrap = true;
 
 
-
+    std::wstringstream ss2;
     ss2.str(L"");
     ss2 << szPath;
-    p = ss2.str();
+    std::wstring p = ss2.str();
     StrUtil::Replace(p, L"SimpleXTree.exe", L"ExtendedAciiValue.txt");
     std::string srr2 = StrUtil::ws2s(p);
 
@@ -1013,7 +1021,7 @@ namespace SimpleXTree
     {
 
       SetCurrentTestSuite(L"TestCursorUp");
-      SetCurrentTest(L"TestShortTxtCursorUp_Start");
+      SetCurrentTest(L"TestShortTxtCursorUp_Loop");
 
       //for (int i = 0; i < 10; ++i)
       //{
@@ -1096,6 +1104,250 @@ namespace SimpleXTree
         if (j > 2)
         {
           // should stop at 2
+          --j;
+        }
+      }
+
+      SetupTest(L"TestData\\_short2.txt");
+      SetCurrentTest(L"TestShort2TxtCursorUp_Loop");
+
+      // bore ten. Parish any chatty can elinor direct for former. Up as meant
+      for (int i = 0; i <= 69; ++i)
+      {
+        int cursorToStartOfLine = GetCursorToStartOfLine();
+        std::wstringstream buf;
+        buf << L"Expected cursorToStartOfLine to be " << i;
+        Assert(cursorToStartOfLine, i, buf);
+        int previousLineToCursor = GetPreviousLineToCursor();
+        buf.str(L"");
+        buf << L"Expected previousLineToCursor to be -1";
+        Assert(previousLineToCursor, -1, buf);
+        VK(VK_RIGHT);
+      }
+
+      // widow equal an share least.
+      j = 69;
+      for (int i = 0; i <= 27; ++i)
+      {
+        int cursorToStartOfLine = GetCursorToStartOfLine();
+        std::wstringstream buf;
+        buf << L"Expected cursorToStartOfLine to be " << i;
+        Assert(cursorToStartOfLine, i, buf);
+        int previousLineToCursor = GetPreviousLineToCursor();
+        buf.str(L"");
+        buf << L"Expected previousLineToCursor to be " << j;
+        Assert(previousLineToCursor, j, buf);
+        VK(VK_RIGHT);
+        if (j > 27)
+        {
+          // should stop at 27
+          --j;
+        }
+      }
+
+      SetupTest(L"TestData\\along2.txt");
+      SetCurrentTest(L"TestAlongTxtCursorUp_Loop");
+
+      // 1Folly words widow one downs few age every seven. If miss part by
+      int lineCount = std::wstring(L"1Folly words widow one downs few age every seven. If miss part by").length(); //65
+      for (int i = 0; i <= lineCount; ++i)
+      {
+        int cursorToStartOfLine = GetCursorToStartOfLine();
+        std::wstringstream buf;
+        buf << L"Expected cursorToStartOfLine to be " << i;
+        Assert(cursorToStartOfLine, i, buf);
+        int previousLineToCursor = GetPreviousLineToCursor();
+        buf.str(L"");
+        buf << L"Expected previousLineToCursor to be -1";
+        Assert(previousLineToCursor, -1, buf);
+        VK(VK_RIGHT);
+      }
+
+      // fact he park just shew. Discovered had get considered projection
+      lineCount = std::wstring(L"n").length(); //64
+      j = std::wstring(L"1Folly words widow one downs few age every seven. If miss part by").length(); //65
+      for (int i = 0; i <= 64; ++i)
+      {
+        int cursorToStartOfLine = GetCursorToStartOfLine();
+        std::wstringstream buf;
+        buf << L"Expected cursorToStartOfLine to be " << i;
+        Assert(cursorToStartOfLine, i, buf);
+        int previousLineToCursor = GetPreviousLineToCursor();
+        buf.str(L"");
+        buf << L"Expected previousLineToCursor to be " << j;
+        Assert(previousLineToCursor, j, buf);
+        VK(VK_RIGHT);
+        if (j > 1)
+        {
+          // should stop at 1
+          --j;
+        }
+      }
+
+      // who favourable. Necessary up knowledge it tolerably. Unwilling departure
+      lineCount = std::wstring(L"who favourable. Necessary up knowledge it tolerably. Unwilling departure").length(); //72
+      j = std::wstring(L"fact he park just shew. Discovered had get considered projection").length(); //64
+      for (int i = 0; i <= lineCount; ++i)
+      {
+        int cursorToStartOfLine = GetCursorToStartOfLine();
+        std::wstringstream buf;
+        buf << L"Expected cursorToStartOfLine to be " << i;
+        Assert(cursorToStartOfLine, i, buf);
+        int previousLineToCursor = GetPreviousLineToCursor();
+        buf.str(L"");
+        buf << L"Expected previousLineToCursor to be " << j;
+        Assert(previousLineToCursor, j, buf);
+        VK(VK_RIGHT);
+        if (j > 0)
+        {
+          // should stop at 0
+          --j;
+        }
+      }
+
+      // education is be dashwoods or an. Use off agreeable law unwilling
+      lineCount = std::wstring(L"education is be dashwoods or an. Use off agreeable law unwilling").length(); //64
+      j = std::wstring(L"who favourable. Necessary up knowledge it tolerably. Unwilling departure").length(); //72
+      for (int i = 0; i <= lineCount; ++i)
+      {
+        int cursorToStartOfLine = GetCursorToStartOfLine();
+        std::wstringstream buf;
+        buf << L"Expected cursorToStartOfLine to be " << i;
+        Assert(cursorToStartOfLine, i, buf);
+        int previousLineToCursor = GetPreviousLineToCursor();
+        buf.str(L"");
+        buf << L"Expected previousLineToCursor to be " << j;
+        Assert(previousLineToCursor, j, buf);
+        VK(VK_RIGHT);
+        if (j > 0)
+        {
+          // should stop at 0
+          --j;
+        }
+      }
+
+      // sir deficient curiosity instantly. Easy mind life fact with see has
+      lineCount = std::wstring(L"sir deficient curiosity instantly. Easy mind life fact with see has").length(); //67
+      j = std::wstring(L"education is be dashwoods or an. Use off agreeable law unwilling").length(); //64
+      for (int i = 0; i <= lineCount; ++i)
+      {
+        int cursorToStartOfLine = GetCursorToStartOfLine();
+        std::wstringstream buf;
+        buf << L"Expected cursorToStartOfLine to be " << i;
+        Assert(cursorToStartOfLine, i, buf);
+        int previousLineToCursor = GetPreviousLineToCursor();
+        buf.str(L"");
+        buf << L"Expected previousLineToCursor to be " << j;
+        Assert(previousLineToCursor, j, buf);
+        VK(VK_RIGHT);
+        if (j > 0)
+        {
+          // should stop at 0
+          --j;
+        }
+      }
+
+      // bore ten. Parish any chatty can elinor direct for former. Up as meant
+      lineCount = std::wstring(L"bore ten. Parish any chatty can elinor direct for former. Up as meant").length(); //69
+      j = std::wstring(L"sir deficient curiosity instantly. Easy mind life fact with see has").length(); //67
+      for (int i = 0; i <= lineCount; ++i)
+      {
+        int cursorToStartOfLine = GetCursorToStartOfLine();
+        std::wstringstream buf;
+        buf << L"Expected cursorToStartOfLine to be " << i;
+        Assert(cursorToStartOfLine, i, buf);
+        int previousLineToCursor = GetPreviousLineToCursor();
+        buf.str(L"");
+        buf << L"Expected previousLineToCursor to be " << j;
+        Assert(previousLineToCursor, j, buf);
+        VK(VK_RIGHT);
+        if (j > 0)
+        {
+          // should stop at 0
+          --j;
+        }
+      }
+
+      // widow equal an share least.
+      lineCount = std::wstring(L"widow equal an share least.").length(); //27
+      j = std::wstring(L"bore ten. Parish any chatty can elinor direct for former. Up as meant").length(); //69
+      for (int i = 0; i <= lineCount; ++i)
+      {
+        int cursorToStartOfLine = GetCursorToStartOfLine();
+        std::wstringstream buf;
+        buf << L"Expected cursorToStartOfLine to be " << i;
+        Assert(cursorToStartOfLine, i, buf);
+        int previousLineToCursor = GetPreviousLineToCursor();
+        buf.str(L"");
+        buf << L"Expected previousLineToCursor to be " << j;
+        Assert(previousLineToCursor, j, buf);
+        VK(VK_RIGHT);
+        if (j > 0)
+        {
+          // should stop at 0
+          --j;
+        }
+      }
+
+      // ""
+      lineCount = 0; //0
+      j = std::wstring(L"widow equal an share least.").length(); //27
+      for (int i = 0; i <= lineCount; ++i)
+      {
+        int cursorToStartOfLine = GetCursorToStartOfLine();
+        std::wstringstream buf;
+        buf << L"Expected cursorToStartOfLine to be " << i;
+        Assert(cursorToStartOfLine, i, buf);
+        int previousLineToCursor = GetPreviousLineToCursor();
+        buf.str(L"");
+        buf << L"Expected previousLineToCursor to be " << j;
+        Assert(previousLineToCursor, j, buf);
+        VK(VK_RIGHT);
+        if (j > 0)
+        {
+          // should stop at 0
+          --j;
+        }
+      }
+
+      // Talent she for lively eat led sister. Entrance strongly packages
+      lineCount = std::wstring(L"Talent she for lively eat led sister. Entrance strongly packages").length(); //64
+      j = 0; //0
+      for (int i = 0; i <= lineCount; ++i)
+      {
+        int cursorToStartOfLine = GetCursorToStartOfLine();
+        std::wstringstream buf;
+        buf << L"Expected cursorToStartOfLine to be " << i;
+        Assert(cursorToStartOfLine, i, buf);
+        int previousLineToCursor = GetPreviousLineToCursor();
+        buf.str(L"");
+        buf << L"Expected previousLineToCursor to be " << j;
+        Assert(previousLineToCursor, j, buf);
+        VK(VK_RIGHT);
+        if (j > 0)
+        {
+          // should stop at 0
+          --j;
+        }
+      }
+
+      //she out rendered get quitting denoting led. Dwelling confined improved
+      lineCount = std::wstring(L"she out rendered get quitting denoting led. Dwelling confined improved").length(); //70
+      j = std::wstring(L"Talent she for lively eat led sister. Entrance strongly packages").length(); //64
+      for (int i = 0; i <= lineCount; ++i)
+      {
+        int cursorToStartOfLine = GetCursorToStartOfLine();
+        std::wstringstream buf;
+        buf << L"Expected cursorToStartOfLine to be " << i;
+        Assert(cursorToStartOfLine, i, buf);
+        int previousLineToCursor = GetPreviousLineToCursor();
+        buf.str(L"");
+        buf << L"Expected previousLineToCursor to be " << j;
+        Assert(previousLineToCursor, j, buf);
+        VK(VK_RIGHT);
+        if (j > 0)
+        {
+          // should stop at 0
           --j;
         }
       }
@@ -3052,7 +3304,8 @@ namespace SimpleXTree
     char* extb = extractBack(gbuf);
     int line = 2;
     bool lastCharNewLine = false;
-    for (int i = 0; i < gb_front(gbuf); ++i)
+    int i = 0;
+    for (i = 0; i < gb_front(gbuf); ++i)
     {
       lastCharNewLine = false;
       if (extf[i] == 0x0D)
@@ -3082,6 +3335,10 @@ namespace SimpleXTree
         buff << GetChar(extf[i]);
       }
     }
+    //if (extf[i] == 'Í')
+    //{
+    //  return 0;
+    //}
     int cursorX = buff.str().length();
     int cursorY = line;
 
