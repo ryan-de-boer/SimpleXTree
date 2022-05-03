@@ -546,7 +546,7 @@ namespace SimpleXTree
 
     m_renderAscii = true;
     m_wordwrap = true;
-
+    m_renderDump = false;
 
     std::wstringstream ss2;
     ss2.str(L"");
