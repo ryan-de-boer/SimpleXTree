@@ -4152,6 +4152,52 @@ namespace SimpleXTree
 //    int line = 2;
 //    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, lines, FG_GREY | BG_BLACK);
 
+    side.str(L"");
+    for (int j = 0; j < 80; ++j)
+    {
+      side << ' ';
+    }
+
+    for (int i = line; i < 46; ++i)
+    {
+      DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, side.str(), FG_CYAN | BG_BLACK);
+      line++;
+    }
+
+
+    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"═══════════════════════════════════════════════════════════════─────────────────", FG_GREY | BG_BLACK);
+    line++;
+
+    //    int endit = 703 + 1;
+    int endit = GetNumChars();
+    if (theend < endit)
+    {
+      endit = theend;
+    }
+
+    double percent = (double)(thestart + std::streampos(endit)) / (double)theend * 100.0;
+    int ipercent = (int)percent;
+    std::wstringstream wpercent;
+    if (ipercent < 100)
+    {
+      wpercent << " ";
+    }
+    if (ipercent < 10)
+    {
+      wpercent << " ";
+    }
+    wpercent << ipercent << " %";
+    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"VIEW      ASCII  Dump  Edit  Find  Hex  Mask  Wordwrap  Jump  Indent            ", FG_GREY | BG_BLACK);
+    DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"                                                                          " + wpercent.str(), FG_CYAN | BG_BLACK);
+    DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"          A      D     E     F     H    M     W         J     I                 ", FG_CYAN | BG_BLACK);
+    line++;
+    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"COMMANDS  0..9 goto bookmark         F9 search             SPACE search again   ", FG_GREY | BG_BLACK);
+    DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"          0..9                       F9 s                  SPACE                ", FG_CYAN | BG_BLACK);
+    line++;
+    DrawString(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"←↑↓→ scroll  SHIFT 0..9 set ALT 0..9 clear bookmarks        F1 help  ESC cancel ", FG_GREY | BG_BLACK);
+    DrawStringSkipSpace(m_bufScreen, nScreenWidth, nScreenHeight, 0, line, L"             SHIFT 0..9     ALT 0..9                        F1       ESC        ", FG_CYAN | BG_BLACK);
+    line++;
+
     
   }
 
