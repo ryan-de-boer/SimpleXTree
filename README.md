@@ -6,8 +6,8 @@ Note: Needs to run as administrator mode in Windows 11!
 
 You can find other releases here: https://github.com/ryan-de-boer/SimpleXTreeReleases
 
-This is a simple xtree explorer inspired by eXtreme xtree and the original XTree Gold. Unfortunately the site for eXtreme no longer exists so you can only get an archive version.
-You can find the archive of freeware eXtreme here: http://members.iinet.net.au/~bertdb/ryan/eXtreme
+This is a simple xtree explorer inspired by eXtreme xtree and the original XTree Gold. 
+You can find the archive of freeware eXtreme here: https://github.com/ryan-de-boer/ryan-de-boer.github.io/raw/refs/heads/main/EXTREME%20xtree%20archive.7z and the latest version here: https://textmode.netlify.app/
 
 Note: Only basic browsing is implemented, eg you can't create folders copy or move files.
 
