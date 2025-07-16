@@ -2,6 +2,7 @@
 
 This page contains official source code of SimpleXTree. It is only tested with VS2017 on windows 10.
 The latest binary version is 0.1 and can be downloaded: https://github.com/ryan-de-boer/SimpleXTreeReleases/raw/main/SimpleXTree%200.1.7z
+Note: Needs to run as administrator mode in Windows 11!
 
 You can find other releases here: https://github.com/ryan-de-boer/SimpleXTreeReleases
 
