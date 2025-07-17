@@ -366,9 +366,9 @@ namespace SimpleXTree
 	Tags = std::vector<bool>();
 
     //std::vector<std::string> dFiles;
-    for (const auto & entry : std::experimental::filesystem::directory_iterator(Path))
+    for (const auto & entry : std::filesystem::directory_iterator(Path))
     {
-      if (std::experimental::filesystem::is_directory(entry.path()))
+      if (std::filesystem::is_directory(entry.path()))
       {
         std::wstring f = entry.path();
         std::wstring sub = f.substr(Path.length());

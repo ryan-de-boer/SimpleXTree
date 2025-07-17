@@ -17,7 +17,7 @@
 #include <iostream>
 #include <ctime>
 #include <vector>
-#include <experimental/filesystem>
+#include <filesystem>
 #include "FreeDiskSpace.h"
 #include <Ktmw32.h>
 #include <shlwapi.h>
@@ -332,7 +332,7 @@ namespace SimpleXTree
           //do del
           //https://stackoverflow.com/questions/734717/how-to-delete-a-folder-in-c
           std::wstring path = m_dirObject->PathW();
-          std::experimental::filesystem::remove(path);
+          std::filesystem::remove(path);
           if (m_dirObject->Parent != NULL)
           {
           	m_dirObject->Parent->Expand();

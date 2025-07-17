@@ -82,8 +82,8 @@ GapBuf* gbuf;
 
 namespace SimpleXTree
 {
-  const byte * begin(const byte* str) { return str; }
-  const byte * end(const byte* str, int numBytes) { return str + numBytes; }
+  const std::byte * begin(const std::byte* str) { return str; }
+  const std::byte * end(const std::byte* str, int numBytes) { return str + numBytes; }
 
   enum COLOUR
   {
@@ -441,10 +441,10 @@ namespace SimpleXTree
   void DeleteTestReport()
   {
     std::wstring path = GetAppPath() + L"\\TestData\\TestReport_AutomatedTesting.xml";
-    std::experimental::filesystem::remove(path);
+    std::filesystem::remove(path);
 
     path = GetAppPath() + L"\\TestData\\TestReport.html";
-    std::experimental::filesystem::remove(path);
+    std::filesystem::remove(path);
   }
 
   void WriteTestReport()
@@ -1440,7 +1440,7 @@ namespace SimpleXTree
         break;
       }
     }
-    byte* aSearch = (byte*)&chSearch[0];
+    std::byte* aSearch = (std::byte*)&chSearch[0];
 
     std::streampos searchPos = thestart;
 
@@ -1459,7 +1459,7 @@ namespace SimpleXTree
       numMemBlock2 = 100000000; //100 meg try
     }
 
-    byte* memblock3 = new byte[numMemBlock2];
+    std::byte* memblock3 = new std::byte[numMemBlock2];
 
     source.seekg(std::streampos(thestart), ios::beg);
     source.read((char*)memblock3, numMemBlock2);
@@ -1581,7 +1581,7 @@ namespace SimpleXTree
     bool OneSet;
     WCHAR Two;
     bool TwoSet;
-    AnEdit::AnEdit() : OneSet(false), TwoSet(false), One(0), Two(0)
+    AnEdit() : OneSet(false), TwoSet(false), One(0), Two(0)
     {
     }
   };

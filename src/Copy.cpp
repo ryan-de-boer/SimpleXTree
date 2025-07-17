@@ -105,7 +105,7 @@ namespace SimpleXTree
       buf << this->DestPath << L"\\" << this->DestName;
     }
     std::wstring dFile = buf.str();
-    if (!std::experimental::filesystem::exists(dFile))
+    if (!std::filesystem::exists(dFile))
     {
       // skip existing files for now, prefer to ask to overwrite though
       std::wstringstream destPath;
@@ -117,7 +117,7 @@ namespace SimpleXTree
       {
         destPath << this->DestPath;
       }
-      std::experimental::filesystem::copy(this->Path, destPath.str());
+      std::filesystem::copy(this->Path, destPath.str());
     }
   }
 
@@ -606,7 +606,7 @@ namespace SimpleXTree
 		   m_destinationFolder = m_typed2;
 		   m_toStep = false;
        m_multiFileCopy = true;
-		   if (!std::experimental::filesystem::exists(m_destinationFolder))
+		   if (!std::filesystem::exists(m_destinationFolder))
 		   {
 			    m_createDirStep = true;
 		   }
@@ -621,7 +621,7 @@ namespace SimpleXTree
         m_destinationFolder = m_typed2;
         m_singleToStep = false;
         m_multiFileCopy = false;
-        if (!std::experimental::filesystem::exists(m_destinationFolder))
+        if (!std::filesystem::exists(m_destinationFolder))
         {
           m_createDirStep = true;
         }
@@ -811,7 +811,7 @@ namespace SimpleXTree
         item.Path = taggedFiles[i];
         item.Name = GetName(item.Path);
         //https://stackoverflow.com/questions/5840148/how-can-i-get-a-files-size-in-c
-        item.SizeInBytes = std::experimental::filesystem::file_size(item.Path);
+        item.SizeInBytes = std::filesystem::file_size(item.Path);
         item.DestPath = m_typed2;
         m_copyItems.push_back(item);
       }
@@ -822,7 +822,7 @@ namespace SimpleXTree
       item.Path = m_singleFile;
       item.Name = GetName(item.Path);
       //https://stackoverflow.com/questions/5840148/how-can-i-get-a-files-size-in-c
-      item.SizeInBytes = std::experimental::filesystem::file_size(item.Path);
+      item.SizeInBytes = std::filesystem::file_size(item.Path);
       item.DestPath = m_typed2;
       item.DestName = m_typed;
       m_copyItems.push_back(item);

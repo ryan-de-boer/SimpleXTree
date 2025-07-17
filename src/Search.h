@@ -35,14 +35,14 @@ namespace SimpleXTree
     void Render();
     void RenderAscii();
     void RenderAscii2();
-    void Search::FindNextLine();
-    void Search::FindPrevLine();
+    void FindNextLine();
+    void FindPrevLine();
     int GetCursorToEndOfLine();
     int GetNextLineToCursor();
-    int Search::GetCursorToStartOfLine();
+    int GetCursorToStartOfLine();
     int GetPreviousLineToCursor();
-    void Search::RenderDump();
-    bool Search::DontRenderAscii();
+    void RenderDump();
+    bool DontRenderAscii();
     void KeyEvent(WCHAR ch);
     bool IsActivated() const
     {
@@ -52,8 +52,8 @@ namespace SimpleXTree
     void VKUp(DWORD vk);
     void Test(std::wstring const& args);
     void SetupTest(std::wstring const& viewFile);
-    bool Search::Assert(int actualValue, int expectedValue, std::wstring const& customAssertMessage);
-    bool Search::Assert(int actualValue, int expectedValue, std::wstringstream const& customAssertMessage);
+    bool Assert(int actualValue, int expectedValue, std::wstring const& customAssertMessage);
+    bool Assert(int actualValue, int expectedValue, std::wstringstream const& customAssertMessage);
   private:
     void ThreadFn();
     void Search3(std::wstring theSearchHex);
@@ -62,8 +62,8 @@ namespace SimpleXTree
     __int64 GetXCoord(__int64 cursorPosition1, eCursor cur);
     __int64 GetDumpYCoord(__int64 cursorPosition1, eCursor cur);
     __int64 GetDumpXCoord(__int64 cursorPosition1, eCursor cur);
-    bool Search::HasCoord(__int64 x, __int64 y, std::wstring& hexChar);
-    bool Search::HasCoordDump(__int64 x, __int64 y, std::wstring& hexChar);
+    bool HasCoord(__int64 x, __int64 y, std::wstring& hexChar);
+    bool HasCoordDump(__int64 x, __int64 y, std::wstring& hexChar);
     bool m_exitThread;
     bool m_threadReadyToSearch;
     std::wstring m_theSearchHex;
@@ -76,12 +76,12 @@ namespace SimpleXTree
     bool m_renderDump;
     bool m_wordwrap;
     bool m_newline;
-    int Search::GetNumLines() const;
-    int Search::GetNumChars() const;
+    int GetNumLines() const;
+    int GetNumChars() const;
     void RenderCursor();
   private:
-    void Search::RenderNow();
-    void Search::InsertHexChar(char ch);
+    void RenderNow();
+    void InsertHexChar(char ch);
   public:
     void End();
     bool m_editing;

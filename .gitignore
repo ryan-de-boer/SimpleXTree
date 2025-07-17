@@ -36,3 +36,6 @@ src/x64
 src/.vs
 src/wtf.txt
 *.vcxproj.user
+
+src/SimpleXTree/x64
+

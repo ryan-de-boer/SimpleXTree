@@ -396,9 +396,9 @@ namespace SimpleXTree
   std::vector<std::wstring> IterateFiles(std::wstring const& path)
   {
     std::vector<std::wstring> files;
-    for (const auto & entry : std::experimental::filesystem::directory_iterator(path))
+    for (const auto & entry : std::filesystem::directory_iterator(path))
     {
-      if (std::experimental::filesystem::is_directory(entry.path()))
+      if (std::filesystem::is_directory(entry.path()))
       {
         std::wstring f = entry.path();
         std::vector<std::wstring> children = IterateFiles(f);
@@ -462,9 +462,9 @@ namespace SimpleXTree
 
         std::vector<std::wstring> folder1Files;
         std::vector<std::wstring> folder2Files;
-        for (const auto & entry : std::experimental::filesystem::directory_iterator(m_initial->PathW()))
+        for (const auto & entry : std::filesystem::directory_iterator(m_initial->PathW()))
         {
-          if (std::experimental::filesystem::is_directory(entry.path()))
+          if (std::filesystem::is_directory(entry.path()))
           {
             //Subs, preforms the comparison operation into subdirectories aswell.
             if (m_subs)
@@ -482,9 +482,9 @@ namespace SimpleXTree
             folder1Files.push_back(f);
           }
         }
-        for (const auto & entry : std::experimental::filesystem::directory_iterator(typedNoSlash))
+        for (const auto & entry : std::filesystem::directory_iterator(typedNoSlash))
         {
-          if (std::experimental::filesystem::is_directory(entry.path()))
+          if (std::filesystem::is_directory(entry.path()))
           {
             if (m_subs)
             {
