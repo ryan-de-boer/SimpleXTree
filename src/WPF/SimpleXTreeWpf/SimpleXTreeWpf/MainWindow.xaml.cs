@@ -20,6 +20,7 @@ using System.IO;
 using System.Globalization;
 using System.Windows.Media.Media3D;
 using Path = System.IO.Path;
+using System.Windows.Threading;
 
 namespace SimpleXTreeWpf
 {
@@ -48,13 +49,20 @@ namespace SimpleXTreeWpf
 
       ////  host.AddVisual(rect);
       //this.Content = m_visualHost;
-      //CreateContextMenu();
+      CreateContextMenu();
 
       //this.SnapsToDevicePixels = true;
       //this.UseLayoutRounding= true;
 
 
       DrawTerminal();
+      UpdateTime();
+
+      _timer = new DispatcherTimer();
+      //      _timer.Interval = TimeSpan.FromSeconds(1); // update every second
+      _timer.Interval = TimeSpan.FromSeconds(0.016); // update every second
+      _timer.Tick += _timer_Tick;
+      _timer.Start();
     }
 
     private void PrintString(CharInfo[,] screen, int x, int y, string str, Brush bg, Brush fg)
@@ -242,8 +250,98 @@ namespace SimpleXTreeWpf
 
       // Display in Image
       TerminalImage.Source = bmp;
+
+      m_bmp = bmp;
     }
 
+    RenderTargetBitmap m_bmp;
+
+    private DispatcherTimer _timer;
+
+    private void UpdateTime()
+    {
+      CharInfo[,] screen = new CharInfo[80, 50];
+      for (int r = 0; r < 80; r++)
+      {
+        for (int c = 0; c < 50; c++)
+        {
+          screen[r, c] = new CharInfo();
+        }
+      }
+
+      DateTime now = DateTime.Now;//.AddHours(-2);
+
+      //      string str12 = " Fr 18-07-25  6:46:12 pm ";
+      string before = now.ToString("ddd dd-MM-yy");
+      string after = now.ToString("h:mm:ss tt");
+      if (after[1] == ':')
+      {
+        before += " ";
+      }
+
+      string str12 = " " + before + " " + after + " ";
+      string ampm = str12.Substring(str12.Length - 3).ToLower();
+      str12 = str12.Substring(0, str12.Length - 3) + ampm;
+      PrintString(screen, 54, 0, str12, Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
+
+      DrawScreen(screen);
+    }
+
+    private void _timer_Tick(object? sender, EventArgs e)
+    {
+      UpdateTime();
+    }
+
+    private void DrawScreen(CharInfo[,] screen)
+    {
+
+      // Create DrawingVisual for off-screen rendering
+      DrawingVisual visual = new DrawingVisual();
+      using (DrawingContext dc = visual.RenderOpen())
+      {
+        Typeface typeface = new Typeface("Consolas");
+        double fontSize = charHeight * 0.9;
+
+        // Draw grid
+        for (int y = 0; y < rows; y++)
+        {
+          for (int x = 0; x < cols; x++)
+          {
+            if (!screen[x, y].Dirty)
+            {
+              continue;
+            }
+
+            Rect rect = new Rect(x * charWidth, y * charHeight, charWidth, charHeight);
+
+            // Background
+            //            dc.DrawRectangle(Brushes.Black, null, rect);
+            dc.DrawRectangle(screen[x, y].Background, null, rect);
+
+            // Character (alternating ─ and │)
+            //            string ch = (y % 2 == 0) ? "─" : "│";
+            string ch = "│";
+            ch = screen[x, y].Ch.ToString();
+            FormattedText ft = new FormattedText(
+                ch,
+                CultureInfo.InvariantCulture,
+                FlowDirection.LeftToRight,
+                typeface,
+                fontSize,
+                //                Brushes.White,
+                screen[x, y].Foreground,
+                VisualTreeHelper.GetDpi(this).PixelsPerDip
+            );
+
+            // Align top-left
+            dc.DrawText(ft, new Point(x * charWidth, y * charHeight));
+          }
+        }
+      }
+
+      // Render to bitmap
+      m_bmp.Render(visual);
+    }
 
 
     MenuItem m_tabItem;
@@ -335,9 +433,69 @@ namespace SimpleXTreeWpf
       m_currentTab = senderMenu;
       m_currentTab.Header = "* " + text;
       m_currentTabPath = text;
-      m_visualHost.TabPath = m_currentTabPath;
-      m_visualHost.UpdateCurrrentTab();
+      //      m_visualHost.TabPath = m_currentTabPath;
+      //      m_visualHost.UpdateCurrrentTab();
+      TabPath = m_currentTabPath;
+      UpdateCurrrentTab();
     }
+
+    public void UpdateCurrrentTab()
+    {
+      CharInfo[,] screen = new CharInfo[80, 50];
+      for (int r = 0; r < 80; r++)
+      {
+        for (int c = 0; c < 50; c++)
+        {
+          screen[r, c] = new CharInfo();
+        }
+      }
+
+      int xa = 0;
+      string pathSpot = "                                                ";
+      string str10 = " Path: ";
+      int numCharsLeft = pathSpot.Length - TabPath.Length;
+      string strCharsLeft = "";
+      for (int i = 0; i < numCharsLeft; i++)
+      {
+        strCharsLeft += " ";
+      }
+      string str11 = TabPath + strCharsLeft;
+      string str12 = " Fr 18-07-25  6:46:12 pm ";
+
+      xa += str10.Length;
+      PrintString(screen, xa, 0, str11, Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
+      xa += str11.Length;
+      //      PrintString(screen, xa, 0, str12, Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
+
+      //      PrintString(screen, 0, 0, "hello", Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
+
+      DrawCurrentSelected(screen);
+
+      DrawScreen(screen);
+
+      UpdateTime();
+
+      //      DrawWholeScreen();
+
+    }
+
+    private void DrawCurrentSelected(CharInfo[,] screen)
+    {
+      string str310 = " ";
+      string str311 = "D:\\";
+      str311 = this.TabPath;
+      string str312 = "                                                     ";
+
+      int xa = 1;
+      PrintString(screen, xa, 2, str310, new SolidColorBrush(Color.FromRgb(204, 204, 204)), Brushes.Black);
+      xa += str310.Length;
+      PrintString(screen, xa, 2, str311, new SolidColorBrush(Color.FromRgb(204, 204, 204)), Brushes.Black);
+      xa += str311.Length;
+      PrintString(screen, xa, 2, str312, new SolidColorBrush(Color.FromRgb(204, 204, 204)), Brushes.Black);
+      xa += str312.Length;
+    }
+
+
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
