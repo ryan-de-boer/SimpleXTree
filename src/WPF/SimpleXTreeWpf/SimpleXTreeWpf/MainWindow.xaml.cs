@@ -60,7 +60,8 @@ namespace SimpleXTreeWpf
 
       _timer = new DispatcherTimer();
       //      _timer.Interval = TimeSpan.FromSeconds(1); // update every second
-      _timer.Interval = TimeSpan.FromSeconds(0.016); // update every second
+//      _timer.Interval = TimeSpan.FromSeconds(0.016); // update every second
+      _timer.Interval = TimeSpan.FromSeconds(0.016*2); // update every second
       _timer.Tick += _timer_Tick;
       _timer.Start();
     }
@@ -292,12 +293,13 @@ namespace SimpleXTreeWpf
       UpdateTime();
     }
 
+    DrawingVisual m_screenVisual = new DrawingVisual();
+
     private void DrawScreen(CharInfo[,] screen)
     {
 
       // Create DrawingVisual for off-screen rendering
-      DrawingVisual visual = new DrawingVisual();
-      using (DrawingContext dc = visual.RenderOpen())
+      using (DrawingContext dc = m_screenVisual.RenderOpen())
       {
         Typeface typeface = new Typeface("Consolas");
         double fontSize = charHeight * 0.9;
@@ -307,7 +309,8 @@ namespace SimpleXTreeWpf
         {
           for (int x = 0; x < cols; x++)
           {
-            if (!screen[x, y].Dirty)
+            CharInfo cell = screen[x, y];
+            if (!cell.Dirty)
             {
               continue;
             }
@@ -318,6 +321,25 @@ namespace SimpleXTreeWpf
             //            dc.DrawRectangle(Brushes.Black, null, rect);
             dc.DrawRectangle(screen[x, y].Background, null, rect);
 
+
+
+            // Create or get cached FormattedText
+            string cacheKey = $"{cell.Ch}-{cell.Foreground}";
+            if (!m_textCache.TryGetValue(cacheKey, out var ft))
+            {
+              ft = new FormattedText(
+                  cell.Ch.ToString(),
+                  CultureInfo.InvariantCulture,
+                  FlowDirection.LeftToRight,
+                  typeface,
+                  fontSize,
+                  cell.Foreground,
+                  VisualTreeHelper.GetDpi(m_screenVisual).PixelsPerDip
+              );
+              m_textCache[cacheKey] = ft;
+            }
+
+            /*
             // Character (alternating ─ and │)
             //            string ch = (y % 2 == 0) ? "─" : "│";
             string ch = "│";
@@ -332,17 +354,21 @@ namespace SimpleXTreeWpf
                 screen[x, y].Foreground,
                 VisualTreeHelper.GetDpi(this).PixelsPerDip
             );
+*/
 
             // Align top-left
             dc.DrawText(ft, new Point(x * charWidth, y * charHeight));
+
+            screen[x, y].Dirty = false;
           }
         }
       }
 
       // Render to bitmap
-      m_bmp.Render(visual);
+      m_bmp.Render(m_screenVisual);
     }
 
+    private Dictionary<string, FormattedText> m_textCache = new Dictionary<string, FormattedText>();
 
     MenuItem m_tabItem;
     MenuItem m_newTab;
