@@ -39,3 +39,6 @@ src/wtf.txt
 
 src/SimpleXTree/x64
 
+.vs
+bin
+obj

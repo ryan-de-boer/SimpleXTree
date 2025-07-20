@@ -1,0 +1,8 @@
+﻿<Window x:Class="WpfTerminal.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Terminal" Height="1200" Width="880">
+    <Grid>
+        <Image x:Name="TerminalImage"/>
+    </Grid>
+</Window>
