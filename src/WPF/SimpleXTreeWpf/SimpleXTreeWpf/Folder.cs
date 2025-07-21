@@ -12,7 +12,9 @@ namespace SimpleXTreeWpf
       this.Name = name;
     }
 
-    public string Name { get; set; }
+    public string Name { get; set; } = "";
+
+    public bool Selected { get; set; } = false;
 
     public List<Folder> Children { get; set; } = new List<Folder>();
   }

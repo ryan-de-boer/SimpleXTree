@@ -31,12 +31,20 @@ namespace SimpleXTreeWpf
   {
     VisualHost m_visualHost;
     string m_currentTabPath = "D:\\";
+    string m_selectedPath = "D:\\";
+
+    Folder root = new Folder("My Computer");
+    DriveInfo[] drives = DriveInfo.GetDrives();
+    Dictionary<string, Folder> driveLookup = new Dictionary<string, Folder>();
+
 
     public MainWindow()
     {
         
       InitializeComponent();
       Loaded += OnLoaded;
+
+      this.KeyDown += MainWindow_KeyDown;
 
       //m_visualHost = new VisualHost(this);
 
@@ -55,6 +63,29 @@ namespace SimpleXTreeWpf
       //this.UseLayoutRounding= true;
 
 
+      foreach (DriveInfo drive in drives)
+      {
+        Folder driveFolder = new Folder(drive.Name);
+        if (m_selectedPath.Equals(drive.Name))
+        {
+          driveFolder.Selected = true;
+        }
+        driveLookup[drive.Name] = driveFolder;
+        root.Children.Add(driveFolder);
+
+        foreach (string path in Directory.GetDirectories(drive.Name))
+        {
+          string folderName = Path.GetFileName(path);
+          Folder newFolder = new Folder(folderName);
+          if (newFolder.Name.Equals(m_selectedPath))
+          {
+            newFolder.Selected = true;
+          }
+          driveFolder.Children.Add(newFolder);
+        }
+      }
+
+
       DrawTerminal();
       UpdateTime();
 
@@ -67,6 +98,68 @@ namespace SimpleXTreeWpf
 
 //      this.Width = 590;
 //      this.Height = 800;
+    }
+
+    private void MainWindow_KeyDown(object sender, KeyEventArgs e)
+    {
+      if (e.Key == Key.Down)
+      {
+        Next();
+        DrawTerminal();
+        UpdateTime();
+      }
+      else if (e.Key == Key.Up)
+      {
+        Prev();
+        DrawTerminal();
+        UpdateTime();
+      }
+    }
+
+    private void Next()
+    {
+      if (driveLookup["D:\\"].Selected)
+      {
+        driveLookup["D:\\"].Selected = false;
+        driveLookup["D:\\"].Children[0].Selected = true;
+      }
+      else
+      {
+        for (int i = 0; i < driveLookup["D:\\"].Children.Count; ++i)
+        {
+          if (driveLookup["D:\\"].Children[i].Selected && i + 1 < driveLookup["D:\\"].Children.Count)
+          {
+            driveLookup["D:\\"].Children[i].Selected = false;
+            driveLookup["D:\\"].Children[i + 1].Selected = true;
+            break;
+          }
+        }
+      }
+    }
+
+    private void Prev()
+    {
+      if (driveLookup["D:\\"].Selected)
+      {
+        // stay selected
+      }
+      else if (driveLookup["D:\\"].Children[0].Selected)
+      {
+        driveLookup["D:\\"].Children[0].Selected = false;
+        driveLookup["D:\\"].Selected = true;
+      }
+      else
+      {
+        for (int i = driveLookup["D:\\"].Children.Count - 1; i >= 0; --i)
+        {
+          if (driveLookup["D:\\"].Children[i].Selected && i - 1 >= 0)
+          {
+            driveLookup["D:\\"].Children[i].Selected = false;
+            driveLookup["D:\\"].Children[i - 1].Selected = true;
+            break;
+          }
+        }
+      }
     }
 
     private void PrintString(CharInfo[,] screen, int x, int y, string str, Brush bg, Brush fg)
@@ -122,7 +215,8 @@ namespace SimpleXTreeWpf
       xa += str10.Length;
       PrintString(screen, xa, 0, str11, Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
       xa += str11.Length;
-      PrintString(screen, xa, 0, str12, Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
+//      PrintString(screen, xa, 0, str12, Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
+      PrintString(screen, xa, 0, "", Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
 
 
       //        PrintString(screen, 0, 0, str1, Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
@@ -130,11 +224,14 @@ namespace SimpleXTreeWpf
       PrintString(screen, 0, 1, str2, Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
       //        string str3 = "│ D:\\                                                     │FILE  *.*           │";
       string str30 = "│";
-      //        string str31 = " D:\\                                                     ";
+      //        string str31 = " D:\\
+      //        ";
+
       string str310 = " ";
       string str311 = "D:\\";
       str311 = this.TabPath;
       string str312 = "                                                     ";
+
       string str32 = "│FILE  ";
       string str33 = "*.*";
       string str34 = "           │";
@@ -142,12 +239,24 @@ namespace SimpleXTreeWpf
       PrintString(screen, xa, 2, str30, Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
       xa += str30.Length;
 
-      PrintString(screen, xa, 2, str310, new SolidColorBrush(Color.FromRgb(204, 204, 204)), Brushes.Black);
-      xa += str310.Length;
-      PrintString(screen, xa, 2, str311, new SolidColorBrush(Color.FromRgb(204, 204, 204)), Brushes.Black);
-      xa += str311.Length;
-      PrintString(screen, xa, 2, str312, new SolidColorBrush(Color.FromRgb(204, 204, 204)), Brushes.Black);
-      xa += str312.Length;
+      if (driveLookup["D:\\"].Selected)
+      {
+        PrintString(screen, xa, 2, str310, new SolidColorBrush(Color.FromRgb(204, 204, 204)), Brushes.Black);
+        xa += str310.Length;
+        PrintString(screen, xa, 2, str311, new SolidColorBrush(Color.FromRgb(204, 204, 204)), new SolidColorBrush(Color.FromRgb(118, 118, 118)));
+        xa += str311.Length;
+        PrintString(screen, xa, 2, str312, new SolidColorBrush(Color.FromRgb(204, 204, 204)), Brushes.Black);
+        xa += str312.Length;
+      }
+      else
+      {
+        PrintString(screen, xa, 2, str310, Brushes.Black, Brushes.Black);
+        xa += str310.Length;
+        PrintString(screen, xa, 2, str311, Brushes.Black, new SolidColorBrush(Color.FromRgb(97, 214, 214)));
+        xa += str311.Length;
+        PrintString(screen, xa, 2, str312, Brushes.Black, Brushes.Black);
+        xa += str312.Length;
+      }
 
       PrintString(screen, xa, 2, str32, Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
       xa += str32.Length;
@@ -173,21 +282,8 @@ namespace SimpleXTreeWpf
               xa += str43.Length;
       */
 
-      Folder root = new Folder("My Computer");
-      DriveInfo[] drives = DriveInfo.GetDrives();
-      Dictionary<string, Folder> driveLookup = new Dictionary<string, Folder>();
-      foreach (DriveInfo drive in drives)
-      {
-        Folder driveFolder = new Folder(drive.Name);
-        driveLookup[drive.Name] = driveFolder;
-        root.Children.Add(driveFolder);
 
-        foreach (string path in Directory.GetDirectories(drive.Name))
-        {
-          string folderName = Path.GetFileName(path);
-          driveFolder.Children.Add(new Folder(folderName));
-        }
-      }
+
 
 
       int yUpTo = 3;
@@ -201,8 +297,16 @@ namespace SimpleXTreeWpf
 
         PrintString(screen, xa, yUpTo, str50, Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
         xa += str50.Length;
-        PrintString(screen, xa, yUpTo, str51, Brushes.Black, new SolidColorBrush(Color.FromRgb(97, 214, 214)));
-        xa += str51.Length;
+        if (folder.Selected)
+        {
+          PrintString(screen, xa, yUpTo, str51, new SolidColorBrush(Color.FromRgb(204, 204, 204)), new SolidColorBrush(Color.FromRgb(118, 118, 118)));
+          xa += str51.Length;
+        }
+        else
+        {
+          PrintString(screen, xa, yUpTo, str51, Brushes.Black, new SolidColorBrush(Color.FromRgb(97, 214, 214)));
+          xa += str51.Length;
+        }
 
         yUpTo += 1;
       }
@@ -382,6 +486,8 @@ namespace SimpleXTreeWpf
 
       // Render to bitmap
       m_bmp.Render(m_screenVisual);
+
+//      TerminalImage.
     }
 
     private Dictionary<string, FormattedText> m_textCache = new Dictionary<string, FormattedText>();
