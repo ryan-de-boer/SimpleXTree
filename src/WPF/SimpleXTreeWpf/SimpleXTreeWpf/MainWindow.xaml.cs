@@ -36,7 +36,7 @@ namespace SimpleXTreeWpf
     {
         
       InitializeComponent();
-      Loaded += OnLoaded;
+//      Loaded += OnLoaded;
 
       //m_visualHost = new VisualHost(this);
 
@@ -64,6 +64,9 @@ namespace SimpleXTreeWpf
       _timer.Interval = TimeSpan.FromSeconds(0.016*2); // update every second
       _timer.Tick += _timer_Tick;
       _timer.Start();
+
+//      this.Width = 590;
+//      this.Height = 800;
     }
 
     private void PrintString(CharInfo[,] screen, int x, int y, string str, Brush bg, Brush fg)
@@ -253,6 +256,17 @@ namespace SimpleXTreeWpf
       TerminalImage.Source = bmp;
 
       m_bmp = bmp;
+
+      //      TerminalImage.Width = 590;
+      //      TerminalImage.Height = 831;
+
+      //      Height = 830;
+      //      Width = 586.7;
+      //      Width = m_bmp.Width/1.5;
+      //      Height = m_bmp.Height/1.5;
+      Width = 603;
+      Height = 838;
+
     }
 
     RenderTargetBitmap m_bmp;
