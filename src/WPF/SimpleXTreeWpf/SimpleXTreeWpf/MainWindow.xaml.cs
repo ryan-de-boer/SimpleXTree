@@ -36,7 +36,7 @@ namespace SimpleXTreeWpf
     {
         
       InitializeComponent();
-//      Loaded += OnLoaded;
+      Loaded += OnLoaded;
 
       //m_visualHost = new VisualHost(this);
 
@@ -264,8 +264,8 @@ namespace SimpleXTreeWpf
       //      Width = 586.7;
       //      Width = m_bmp.Width/1.5;
       //      Height = m_bmp.Height/1.5;
-      Width = 603;
-      Height = 838;
+//      Width = 603;
+//      Height = 838;
 
     }
 
@@ -304,6 +304,8 @@ namespace SimpleXTreeWpf
 
     private void _timer_Tick(object? sender, EventArgs e)
     {
+      //Width was 602
+      //Height was 838, at scale 1, times 0.66666...
       UpdateTime();
     }
 
@@ -555,6 +557,10 @@ namespace SimpleXTreeWpf
       var dpi = VisualTreeHelper.GetDpi(this);
       double scaleX = dpi.DpiScaleX;
       double scaleY = dpi.DpiScaleY;
+      scaleX = 0.66666666;
+      scaleY = 0.66666666;
+      targetWidth = (int)(targetWidth * scaleX);
+      targetHeight = (int)(targetHeight *scaleY);
 
       // Get window styles (to calculate border size)
       GetWindowRect(hwnd, out RECT rect);
