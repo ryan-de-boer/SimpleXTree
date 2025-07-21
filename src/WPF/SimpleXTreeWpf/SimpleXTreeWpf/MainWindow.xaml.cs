@@ -663,10 +663,18 @@ namespace SimpleXTreeWpf
       var dpi = VisualTreeHelper.GetDpi(this);
       double scaleX = dpi.DpiScaleX;
       double scaleY = dpi.DpiScaleY;
-      scaleX = 0.66666666;
-      scaleY = 0.66666666;
+      if (Math.Abs(dpi.DpiScaleX - 1.0) < 0.1 && Math.Abs(dpi.DpiScaleY - 1.0) < 0.1)
+      {
+        scaleX = 0.66666666;
+        scaleY = 0.66666666;
+      }
+      else if (Math.Abs(dpi.DpiScaleX - 1.5) < 0.1 && Math.Abs(dpi.DpiScaleY - 1.5) < 0.1)
+      {
+        scaleX = 1;
+        scaleY = 1;
+      }
       targetWidth = (int)(targetWidth * scaleX);
-      targetHeight = (int)(targetHeight *scaleY);
+      targetHeight = (int)(targetHeight * scaleY);
 
       // Get window styles (to calculate border size)
       GetWindowRect(hwnd, out RECT rect);
