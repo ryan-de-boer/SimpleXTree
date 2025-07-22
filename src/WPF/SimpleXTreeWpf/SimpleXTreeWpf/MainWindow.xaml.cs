@@ -289,6 +289,11 @@ namespace SimpleXTreeWpf
       int yUpTo = 3;
       foreach (Folder folder in driveLookup["D:\\"].Children)
       {
+        if (yUpTo== 37)
+        {
+          break;
+        }
+
         xa = 0;
         if (yUpTo == 50)
           break;
@@ -301,6 +306,13 @@ namespace SimpleXTreeWpf
         {
           PrintString(screen, xa, yUpTo, str51, new SolidColorBrush(Color.FromRgb(204, 204, 204)), new SolidColorBrush(Color.FromRgb(118, 118, 118)));
           xa += str51.Length;
+
+          string restOfLine = " ";
+          for (int i = str51.Length; i < 56; ++i)
+          {
+            restOfLine += " ";
+          }
+          PrintString(screen, xa, yUpTo, restOfLine, new SolidColorBrush(Color.FromRgb(204, 204, 204)), new SolidColorBrush(Color.FromRgb(118, 118, 118)));
         }
         else
         {
@@ -308,8 +320,18 @@ namespace SimpleXTreeWpf
           xa += str51.Length;
         }
 
-        yUpTo += 1;
+        yUpTo++;
       }
+
+      string bot = "├─────────────────────────────────────────────────────────┴────────────────────┤";
+      PrintString(screen, 0, yUpTo, bot, Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
+      yUpTo++;
+      string b1 = "│ ";
+      xa = 0;
+      PrintString(screen, xa, yUpTo, b1, Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
+      xa += b1.Length;
+      string dirNotLogged = "Dir Not Logged";
+      PrintString(screen, xa, yUpTo, dirNotLogged, Brushes.Black, new SolidColorBrush(Color.FromRgb(97, 214, 214)));
 
 
       // Create DrawingVisual for off-screen rendering
@@ -659,20 +681,23 @@ namespace SimpleXTreeWpf
       // Get window handle
       var hwnd = new WindowInteropHelper(this).Handle;
 
+      double scaleX = 1;
+      double scaleY = 1;
+
       // Get DPI scale
-      var dpi = VisualTreeHelper.GetDpi(this);
-      double scaleX = dpi.DpiScaleX;
-      double scaleY = dpi.DpiScaleY;
-      if (Math.Abs(dpi.DpiScaleX - 1.0) < 0.1 && Math.Abs(dpi.DpiScaleY - 1.0) < 0.1)
-      {
-        scaleX = 0.66666666;
-        scaleY = 0.66666666;
-      }
-      else if (Math.Abs(dpi.DpiScaleX - 1.5) < 0.1 && Math.Abs(dpi.DpiScaleY - 1.5) < 0.1)
-      {
-        scaleX = 1;
-        scaleY = 1;
-      }
+      //var dpi = VisualTreeHelper.GetDpi(this);
+      //double scaleX = dpi.DpiScaleX;
+      //double scaleY = dpi.DpiScaleY;
+      //if (Math.Abs(dpi.DpiScaleX - 1.0) < 0.1 && Math.Abs(dpi.DpiScaleY - 1.0) < 0.1)
+      //{
+      //  scaleX = 0.66666666;
+      //  scaleY = 0.66666666;
+      //}
+      //else if (Math.Abs(dpi.DpiScaleX - 1.5) < 0.1 && Math.Abs(dpi.DpiScaleY - 1.5) < 0.1)
+      //{
+      //  scaleX = 1;
+      //  scaleY = 1;
+      //}
       targetWidth = (int)(targetWidth * scaleX);
       targetHeight = (int)(targetHeight * scaleY);
 
