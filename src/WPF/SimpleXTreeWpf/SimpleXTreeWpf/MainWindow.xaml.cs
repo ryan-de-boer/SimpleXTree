@@ -178,6 +178,24 @@ namespace SimpleXTreeWpf
       }
     }
 
+    private void PrintStringSkipSpace(CharInfo[,] screen, int x, int y, string str, Brush bg, Brush fg, string fontName = FONT_NAME)
+    {
+      for (int i = 0; i < str.Length; i++)
+      {
+        if (str[i]!=' ')
+        {
+          screen[x + i, y] = new CharInfo();
+          screen[x + i, y].Ch = str[i];
+          screen[x + i, y].Background = bg;
+          screen[x + i, y].Foreground = fg;
+          screen[x + i, y].Font = fontName;
+          screen[x + i, y].Dirty = true;
+        }
+      }
+    }
+
+    
+
     string TabPath = "D:\\";
 
     const int cols = 80;
@@ -186,6 +204,10 @@ namespace SimpleXTreeWpf
     const int height = 1200;
     double charWidth = (double)width / cols;
     double charHeight = (double)height / rows;
+
+    SolidColorBrush lightGrey = new SolidColorBrush(Color.FromRgb(204, 204, 204));
+    SolidColorBrush lightBlue = new SolidColorBrush(Color.FromRgb(97, 214, 214));
+
     void DrawTerminal()
     {
 
@@ -361,13 +383,17 @@ namespace SimpleXTreeWpf
       PrintString(screen, xa, yUpTo, "│", Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
       yUpTo++;
 
-      PrintString(screen, xa, yUpTo, "DIR", Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
+      PrintString(screen, xa, yUpTo, "DIR       Avail  Branch  Compare  Delete  Filespec  Global  Invert  Log  Make", Brushes.Black, lightGrey);
+      PrintStringSkipSpace(screen, xa, yUpTo, "          A      B       C        D       F         G       I       L    M   ", Brushes.Black, lightBlue);
       yUpTo++;
 
-      PrintString(screen, xa, yUpTo, "COMMANDS", Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
+      PrintString(screen, xa, yUpTo, "COMMANDS  Open  Pick  Rename  Showall  Tag  Untag  Volume  eXecute  Quit", Brushes.Black, lightGrey);
+      PrintStringSkipSpace(screen, xa, yUpTo, "          O     P     R       S        T    U      V        X       Q   ", Brushes.Black, lightBlue);
       yUpTo++;
 
-      PrintString(screen, xa, yUpTo, "◄─┘", Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)), FONT_NAME_ARROW);
+      PrintString(screen, xa, yUpTo, "◄─┘", Brushes.Black, lightBlue, FONT_NAME_ARROW);
+      PrintString(screen, 3, yUpTo, " file  F5 rescan  F6 newview  F8 split    F11 clipboard  F1 help  < > select", Brushes.Black, lightGrey);
+      PrintStringSkipSpace(screen, 3, yUpTo, "       F5         F6          F8          F11            F1       < >       ", Brushes.Black, lightBlue);
       yUpTo++;
 
       // Create DrawingVisual for off-screen rendering
