@@ -13,6 +13,7 @@ namespace SimpleXTreeWpf
     public Brush Foreground = Brushes.Black;
     public char Ch = ' ';
     public bool Dirty = false;
+    public string Font = "Consolas";
 
     public CharInfo(Brush background, Brush foreground, char ch)
     {

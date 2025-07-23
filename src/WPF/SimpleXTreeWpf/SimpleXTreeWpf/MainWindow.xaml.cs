@@ -29,6 +29,9 @@ namespace SimpleXTreeWpf
   /// </summary>
   public partial class MainWindow : Window
   {
+    private const string FONT_NAME = "Consolas";
+    private const string FONT_NAME_ARROW = "Lucida Console";
+
     VisualHost m_visualHost;
     string m_currentTabPath = "D:\\";
     string m_selectedPath = "D:\\";
@@ -162,7 +165,7 @@ namespace SimpleXTreeWpf
       }
     }
 
-    private void PrintString(CharInfo[,] screen, int x, int y, string str, Brush bg, Brush fg)
+    private void PrintString(CharInfo[,] screen, int x, int y, string str, Brush bg, Brush fg, string fontName=FONT_NAME)
     {
       for (int i = 0; i < str.Length; i++)
       {
@@ -170,6 +173,7 @@ namespace SimpleXTreeWpf
         screen[x + i, y].Ch = str[i];
         screen[x + i, y].Background = bg;
         screen[x + i, y].Foreground = fg;
+        screen[x + i, y].Font = fontName;
         screen[x + i, y].Dirty = true;
       }
     }
@@ -299,6 +303,11 @@ namespace SimpleXTreeWpf
           break;
         string str50 = "│";
         string str51 = "+├──" + folder.Name;
+        if (folder.Name== driveLookup["D:\\"].Children[driveLookup["D:\\"].Children.Count - 1].Name)
+        {
+          //last
+          str51 = "+└──" + folder.Name;
+        }
 
         PrintString(screen, xa, yUpTo, str50, Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
         xa += str50.Length;
@@ -323,6 +332,16 @@ namespace SimpleXTreeWpf
         yUpTo++;
       }
 
+      for (int i=yUpTo;i<37;++i)
+      {
+        xa = 0;
+        string after37 = "│";
+        PrintString(screen, xa, yUpTo, after37, Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
+        yUpTo++;
+        i++;
+      }
+
+
       string bot = "├─────────────────────────────────────────────────────────┴────────────────────┤";
       PrintString(screen, 0, yUpTo, bot, Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
       yUpTo++;
@@ -332,13 +351,31 @@ namespace SimpleXTreeWpf
       xa += b1.Length;
       string dirNotLogged = "Dir Not Logged";
       PrintString(screen, xa, yUpTo, dirNotLogged, Brushes.Black, new SolidColorBrush(Color.FromRgb(97, 214, 214)));
+      yUpTo++;
+      xa = 0;
+      for (int i=0;i<7;++i)
+      {
+        PrintString(screen, xa, yUpTo, "│", Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
+        yUpTo++;
+      }
+      PrintString(screen, xa, yUpTo, "│", Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
+      yUpTo++;
 
+      PrintString(screen, xa, yUpTo, "DIR", Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
+      yUpTo++;
+
+      PrintString(screen, xa, yUpTo, "COMMANDS", Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
+      yUpTo++;
+
+      PrintString(screen, xa, yUpTo, "◄─┘", Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)), FONT_NAME_ARROW);
+      yUpTo++;
 
       // Create DrawingVisual for off-screen rendering
       DrawingVisual visual = new DrawingVisual();
       using (DrawingContext dc = visual.RenderOpen())
       {
-        Typeface typeface = new Typeface("Consolas");
+        string currentFont = FONT_NAME;
+        Typeface typeface = new Typeface(currentFont);
         double fontSize = charHeight * 0.9;
 
         // Draw grid
@@ -356,6 +393,11 @@ namespace SimpleXTreeWpf
             //            string ch = (y % 2 == 0) ? "─" : "│";
             string ch = "│";
             ch = screen[x,y].Ch.ToString();
+            if (!screen[x,y].Font.Equals(currentFont))
+            {
+              currentFont = screen[x, y].Font;
+              typeface = new Typeface(currentFont);
+            }
             FormattedText ft = new FormattedText(
                 ch,
                 CultureInfo.InvariantCulture,
@@ -443,7 +485,7 @@ namespace SimpleXTreeWpf
       // Create DrawingVisual for off-screen rendering
       using (DrawingContext dc = m_screenVisual.RenderOpen())
       {
-        Typeface typeface = new Typeface("Consolas");
+        Typeface typeface = new Typeface(FONT_NAME);
         double fontSize = charHeight * 0.9;
 
         // Draw grid
@@ -681,13 +723,18 @@ namespace SimpleXTreeWpf
       // Get window handle
       var hwnd = new WindowInteropHelper(this).Handle;
 
-      double scaleX = 1;
-      double scaleY = 1;
+      //double scaleX = 1;
+      //double scaleY = 1;
 
       // Get DPI scale
-      //var dpi = VisualTreeHelper.GetDpi(this);
-      //double scaleX = dpi.DpiScaleX;
-      //double scaleY = dpi.DpiScaleY;
+      var dpi = VisualTreeHelper.GetDpi(this);
+      double scaleX = dpi.DpiScaleX;
+      double scaleY = dpi.DpiScaleY;
+
+      //works on laptop, does it work on desktop?
+      scaleX = dpi.DpiScaleX / 1.5;
+      scaleY = dpi.DpiScaleY / 1.5;
+
       //if (Math.Abs(dpi.DpiScaleX - 1.0) < 0.1 && Math.Abs(dpi.DpiScaleY - 1.0) < 0.1)
       //{
       //  scaleX = 0.66666666;
@@ -698,6 +745,7 @@ namespace SimpleXTreeWpf
       //  scaleX = 1;
       //  scaleY = 1;
       //}
+
       targetWidth = (int)(targetWidth * scaleX);
       targetHeight = (int)(targetHeight * scaleY);
 
