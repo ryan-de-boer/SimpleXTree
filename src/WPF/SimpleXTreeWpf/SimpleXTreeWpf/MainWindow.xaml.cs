@@ -41,14 +41,29 @@ namespace SimpleXTreeWpf
     DriveInfo[] drives = DriveInfo.GetDrives();
     Dictionary<string, Folder> driveLookup = new Dictionary<string, Folder>();
 
+    ImageSource m_darkBlock;
+    ImageSource m_lightBlock;
 
     public MainWindow()
     {
         
       InitializeComponent();
 
+
+      Uri uri = new Uri("pack://application:,,,/SimpleXTreeWpf;component/DarkBlock.png", UriKind.Absolute);
+      m_darkBlock = new BitmapImage(uri);
+
+      uri = new Uri("pack://application:,,,/SimpleXTreeWpf;component/LightBlock.png", UriKind.Absolute);
+      m_lightBlock = new BitmapImage(uri);
+
+      //      RenderOptions.SetBitmapScalingMode(TerminalImage, BitmapScalingMode.HighQuality);
+      //      RenderOptions.SetBitmapScalingMode(TerminalImage, BitmapScalingMode.NearestNeighbor);
+      //      RenderOptions.SetEdgeMode(TerminalImage, EdgeMode.Unspecified);
+
       m_bmp = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+//      m_bmp = new RenderTargetBitmap(587, 800, 96, 96, PixelFormats.Pbgra32);
       TerminalImage.Source = m_bmp;
+
 
       Loaded += OnLoaded;
 
@@ -140,7 +155,7 @@ namespace SimpleXTreeWpf
 
         Dispatcher.Invoke(() =>
         {
-          DrawTerminal();
+          DrawTerminal(true);
           UpdateTime();
         });
       }
@@ -206,6 +221,17 @@ namespace SimpleXTreeWpf
         screen[x + i, y].Background = bg;
         screen[x + i, y].Foreground = fg;
         screen[x + i, y].Font = fontName;
+        screen[x + i, y].Dirty = true;
+      }
+    }
+
+    private void PrintImage(CharInfo[,] screen, int x, int y, string str, bool isDark)
+    {
+      for (int i = 0; i < str.Length; i++)
+      {
+        screen[x + i, y] = new CharInfo();
+        screen[x + i, y].HasDarkImage = isDark;
+        screen[x + i, y].HasLightImage = !isDark;
         screen[x + i, y].Dirty = true;
       }
     }
@@ -292,9 +318,9 @@ namespace SimpleXTreeWpf
       str311 = this.TabPath;
       string str312 = "                                                     ";
 
-      string str32 = "│FILE  ";
+      string str32 = "│FILE ";
       string str33 = "*.*";
-      string str34 = "           │";
+      string str34 = "            │";
       xa = 0;
       PrintString(screen, xa, 2, str30, Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
       xa += str30.Length;
@@ -395,14 +421,15 @@ namespace SimpleXTreeWpf
         yUpTo++;
       }
 
-      for (int i=yUpTo;i<37;++i)
+
+
+      while (yUpTo < 37)
+      //      for (int i=yUpTo;i<37;++i)
       {
         xa = 0;
-        string after37 = "│";
-//        PrintString(screen, xa, yUpTo, after37, Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
-        PrintString(screen, xa, yUpTo, after37, Brushes.Black, Brushes.Black);
+        string after37 = "│                                                         │                    │";
+        PrintString(screen, xa, yUpTo, after37, Brushes.Black, lightGrey);
         yUpTo++;
-        i++;
       }
 
 
@@ -411,6 +438,9 @@ namespace SimpleXTreeWpf
       string bot = "├─────────────────────────────────────────────────────────┴────────────────────┤";
       PrintString(screen, 0, yUpTo, bot, Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
       yUpTo++;
+
+      DrawRightPanel(screen);
+
       string b1 = "│ ";
       xa = 0;
       PrintString(screen, xa, yUpTo, b1, Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
@@ -427,6 +457,8 @@ namespace SimpleXTreeWpf
       PrintString(screen, xa, yUpTo, "│", Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
       yUpTo++;
 
+      DrawBottomPanel(screen);
+
       PrintString(screen, xa, yUpTo, "DIR       Avail  Branch  Compare  Delete  Filespec  Global  Invert  Log  Make", Brushes.Black, lightGrey);
       PrintStringSkipSpace(screen, xa, yUpTo, "          A      B       C        D       F         G       I       L    M   ", Brushes.Black, lightBlue);
       yUpTo++;
@@ -441,6 +473,7 @@ namespace SimpleXTreeWpf
       yUpTo++;
 
       }
+
 
       // Create DrawingVisual for off-screen rendering
       DrawingVisual visual = new DrawingVisual();
@@ -464,6 +497,14 @@ namespace SimpleXTreeWpf
             // Background
 //            dc.DrawRectangle(Brushes.Black, null, rect);
             dc.DrawRectangle(screen[x, y].Background, null, rect);
+            if (screen[x,y].HasLightImage)
+            {
+              dc.DrawImage(m_lightBlock, rect);
+            }
+            if (screen[x, y].HasDarkImage)
+            {
+              dc.DrawImage(m_darkBlock, rect);
+            }
 
             // Character (alternating ─ and │)
             //            string ch = (y % 2 == 0) ? "─" : "│";
@@ -518,6 +559,195 @@ namespace SimpleXTreeWpf
       //      Height = m_bmp.Height/1.5;
       //      Width = 603;
       //      Height = 838;
+
+    }
+
+    private void DrawRightPanel(CharInfo[,] screen)
+    {
+      /*
+┬────────────────────┐
+│FILE *.*            │
+├────────────────────┤
+│DISK D:DATA         │
+│ Available Bytes    │
+│    375,287,500,800 │
+│ Total Bytes        │
+│  1,000,186,310,656 │
+├────────────────────┤
+│DISK              1 │
+│ Total              │
+│  Files           4 │
+│  Bytes       7,077 │
+│ Matching           │
+│  Files           4 │
+│  Bytes       7,077 │
+│ Tagged             │
+│  Files           0 │
+│  Bytes           0 │
+│ Current Directory  │
+│  D:\               │
+│  Bytes       7,077 │
+│  Attr              │
+│  Create            │
+│  Time              │
+│ Directory Items    │
+│  Dirs           33 │
+│  Files           4 │
+│  Match           4 │
+│                    │
+│                    │
+│                    │
+│                    │
+│                    │
+│                    │
+│                    │
+┴────────────────────┤
+*/
+      int xa = 58;
+      int yUpTo = 1;
+      SolidColorBrush bg = Brushes.Black;
+      PrintString(screen, xa, yUpTo, "┬────────────────────┐", bg, lightGrey);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│FILE *.*            │", bg, lightGrey);
+      PrintStringSkipSpace(screen, xa, yUpTo, "      *.*", bg, lightBlue);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "├────────────────────┤", bg, lightGrey);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│DISK D:DATA         │", bg, lightGrey);
+      PrintStringSkipSpace(screen, xa, yUpTo, "      D:DATA", bg, lightBlue);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│ Available Bytes    │", bg, lightGrey);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│    375,287,500,800 │", bg, lightGrey);
+      PrintStringSkipSpace(screen, xa, yUpTo, "     375,287,500,800", bg, lightBlue);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│ Total Bytes        │", bg, lightGrey);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│  1,000,186,310,656 │", bg, lightGrey);
+      PrintStringSkipSpace(screen, xa, yUpTo, "   1,000,186,310,656", bg, lightBlue);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "├────────────────────┤", bg, lightGrey);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│DISK              1 │", bg, lightGrey);
+      PrintStringSkipSpace(screen, xa, yUpTo, " DISK              1", bg, lightBlue);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│ Total              │", bg, lightGrey);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│  Files           4 │", bg, lightGrey);
+      PrintStringSkipSpace(screen, xa, yUpTo, "                   4", bg, lightBlue);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│  Bytes       7,077 │", bg, lightGrey);
+      PrintStringSkipSpace(screen, xa, yUpTo, "               7,077", bg, lightBlue);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│ Matching           │", bg, lightGrey);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│  Files           4 │", bg, lightGrey);
+      PrintStringSkipSpace(screen, xa, yUpTo, "                   4", bg, lightBlue);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│  Bytes       7,077 │", bg, lightGrey);
+      PrintStringSkipSpace(screen, xa, yUpTo, "               7,077", bg, lightBlue);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│ Tagged             │", bg, lightGrey);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│  Files           0 │", bg, lightGrey);
+      PrintStringSkipSpace(screen, xa, yUpTo, "                   0", bg, lightBlue);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│  Bytes           0 │", bg, lightGrey);
+      PrintStringSkipSpace(screen, xa, yUpTo, "                   0", bg, lightBlue);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│ Current Directory  │", bg, lightGrey);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│  D:\\               │", bg, lightGrey);
+      PrintStringSkipSpace(screen, xa, yUpTo, "   D:\\", bg, lightBlue);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│  Bytes       7,077 │", bg, lightGrey);
+      PrintStringSkipSpace(screen, xa, yUpTo, "               7,077", bg, lightBlue);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│  Attr              │", bg, lightGrey);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│  Create            │", bg, lightGrey);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│  Time              │", bg, lightGrey);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│ Directory Items    │", bg, lightGrey);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│  Dirs           33 │", bg, lightGrey);
+      PrintStringSkipSpace(screen, xa, yUpTo, "                  33", bg, lightBlue);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│  Files           4 │", bg, lightGrey);
+      PrintStringSkipSpace(screen, xa, yUpTo, "                   4", bg, lightBlue);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│  Match           4 │", bg, lightGrey);
+      PrintStringSkipSpace(screen, xa, yUpTo, "                   4", bg, lightBlue);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│                    │", bg, lightGrey);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│                    │", bg, lightGrey);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│                    │", bg, lightGrey);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│                    │", bg, lightGrey);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│                    │", bg, lightGrey);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│                    │", bg, lightGrey);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│                    │", bg, lightGrey);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "┴────────────────────┤", bg, lightGrey);
+      yUpTo++;
+    }
+
+    private void DrawBottomPanel(CharInfo[,] screen)
+    {
+/*
+├─────────────────────────────────────────────────────────┴────────────────────┤
+│ Dir Not Logged                                                               │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+└▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓┘
+ */
+      int xa = 0;
+      int yUpTo = 37;
+      SolidColorBrush bg = Brushes.Black;
+      PrintString(screen, xa, yUpTo, "├─────────────────────────────────────────────────────────┴────────────────────┤", bg, lightGrey);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│ Dir Not Logged                                                               │", bg, lightGrey);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│                                                                              │", bg, lightGrey);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│                                                                              │", bg, lightGrey);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│                                                                              │", bg, lightGrey);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│                                                                              │", bg, lightGrey);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│                                                                              │", bg, lightGrey);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│                                                                              │", bg, lightGrey);
+      yUpTo++;
+      PrintString(screen, xa, yUpTo, "│                                                                              │", bg, lightGrey);
+      yUpTo++;
+      //      PrintString(screen, xa, yUpTo, "└▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓┘", bg, lightGrey);
+      //      yUpTo++;
+      //      PrintString(screen, xa, yUpTo, "└░░▒▒▓▓██┘", bg, lightGrey, "Terminal");
+      //     yUpTo++;
+      //            PrintString(screen, xa, yUpTo,
+      //                                       "└▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒┘", bg, lightGrey);
+      //            yUpTo++;
+
+      //      PrintString(screen, xa, yUpTo, "└░░▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓┘", bg, lightGrey);
+      //      yUpTo++;
+
+      PrintString(screen, xa, yUpTo, "└                                                                              ┘", bg, lightGrey);
+      PrintImage(screen, 1, yUpTo, "                                                                              ", false);
+      PrintImage(screen, 1, yUpTo, "   ", true);
+      yUpTo++;
 
     }
 
@@ -624,8 +854,8 @@ namespace SimpleXTreeWpf
             );
 */
 
-            // Align top-left
-            dc.DrawText(ft, new Point(x * charWidth, y * charHeight));
+      // Align top-left
+      dc.DrawText(ft, new Point(x * charWidth, y * charHeight));
 
             screen[x, y].Dirty = false;
           }
@@ -797,12 +1027,15 @@ namespace SimpleXTreeWpf
     {
       double oldX = this.Left;
       double oldY = this.Top;
-      
+
       // Desired window size in actual physical pixels
-//      int targetWidth = 880-2;
-//      int targetHeight = 1200-32;
-      int targetWidth = 880;
-      int targetHeight = 1200;
+      //      int targetWidth = 880-2;
+      //      int targetHeight = 1200-32;
+      //      int targetWidth = 880;
+      //      int targetHeight = 1200;
+
+      int targetWidth = 587;
+      int targetHeight = 800;
 
       // Get window handle
       var hwnd = new WindowInteropHelper(this).Handle;
@@ -818,6 +1051,9 @@ namespace SimpleXTreeWpf
       //works on laptop, does it work on desktop?
       scaleX = dpi.DpiScaleX / 1.5;
       scaleY = dpi.DpiScaleY / 1.5;
+
+      scaleX = 1;
+      scaleY = 1;
 
       //if (Math.Abs(dpi.DpiScaleX - 1.0) < 0.1 && Math.Abs(dpi.DpiScaleY - 1.0) < 0.1)
       //{

@@ -9,7 +9,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="DarkBlock.png" />
+    <None Remove="LightBlock.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="tree_trans_icon.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="DarkBlock.png" />
+    <Resource Include="LightBlock.png" />
   </ItemGroup>
 
 </Project>

@@ -14,6 +14,8 @@ namespace SimpleXTreeWpf
     public char Ch = ' ';
     public bool Dirty = false;
     public string Font = "Consolas";
+    public bool HasDarkImage = false;
+    public bool HasLightImage = false;
 
     public CharInfo(Brush background, Brush foreground, char ch)
     {
