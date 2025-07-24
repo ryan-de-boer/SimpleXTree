@@ -120,8 +120,87 @@ namespace SimpleXTreeWpf
       _timer.Tick += _timer_Tick;
       _timer.Start();
 
-//      this.Width = 590;
-//      this.Height = 800;
+      //      this.Width = 590;
+      //      this.Height = 800;
+
+      this.MouseDown += MainWindow_MouseDown;
+      this.MouseMove += MainWindow_MouseMove;
+      this.MouseLeave += MainWindow_MouseLeave;
+    }
+
+    private void MainWindow_MouseLeave(object sender, MouseEventArgs e)
+    {
+      driveLookup["D:\\"].MouseOver = false;
+      foreach (Folder f in driveLookup["D:\\"].Children)
+      {
+        f.MouseOver = false;
+      }
+      DrawTerminal(true);
+    }
+
+    private void MainWindow_MouseMove(object sender, MouseEventArgs e)
+    {
+      Point p = e.GetPosition(TerminalImage);
+      double mx = p.X;
+      double my = p.Y;
+      //      MessageBox.Show(mx + "," + my);
+      double cellW = TerminalImage.DesiredSize.Width / 80.0;
+      double cellH = TerminalImage.DesiredSize.Height / 50.0;
+      if (mx > 0 && mx <= MXL * cellW && my>0 && my < 37*cellH)
+      {
+//        DrawTerminal(true, false, true, cellW, cellH, mx, my);
+MouseParams mouseParams = new MouseParams();
+        mouseParams.CellW = cellW;
+        mouseParams.CellH = cellH;
+        mouseParams.Mx= mx;
+        mouseParams.My = my;
+
+        DrawTerminal(true, eMouseTrace.MouseOver, mouseParams);
+      }
+      else
+      {
+        driveLookup["D:\\"].MouseOver = false;
+        foreach (Folder f in driveLookup["D:\\"].Children)
+        {
+          f.MouseOver = false;
+        }
+        DrawTerminal(true);
+      }
+    }
+
+    enum eMouseTrace
+    {
+      None,
+      MouseDown,
+      MouseOver
+    }
+
+    public class MouseParams
+    {
+      public double CellW = 0.0;
+      public double CellH = 0.0;
+      public double Mx = 0.0;
+      public double My = 0.0;
+    }
+
+    private void MainWindow_MouseDown(object sender, MouseButtonEventArgs e)
+    {
+      Point p = e.GetPosition(TerminalImage);
+      double mx = p.X;
+      double my = p.Y;
+//      MessageBox.Show(mx + "," + my);
+      double cellW = TerminalImage.DesiredSize.Width / 80.0;
+      double cellH = TerminalImage.DesiredSize.Height / 50.0;
+      //      DrawTerminal(true, true, false, cellW, cellH, mx, my);
+
+      MouseParams mouseParams = new MouseParams();
+      mouseParams.CellW = cellW;
+      mouseParams.CellH = cellH;
+      mouseParams.Mx = mx;
+      mouseParams.My = my;
+      DrawTerminal(true, eMouseTrace.MouseDown, mouseParams);
+
+
     }
 
     private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -266,8 +345,13 @@ namespace SimpleXTreeWpf
     SolidColorBrush lightGrey = new SolidColorBrush(Color.FromRgb(204, 204, 204));
     SolidColorBrush lightBlue = new SolidColorBrush(Color.FromRgb(97, 214, 214));
 
-    void DrawTerminal(bool justDirs=false)
+    double MXL = 58.0;
+
+//    void DrawTerminal(bool justDirs = false, bool traceMouse = false, bool traceMouseOver = false, double cellW = 0.0, double cellH = 0.0, double mx = 0.0, double my = 0.0)
+    void DrawTerminal(bool justDirs = false, eMouseTrace mouseTrace = eMouseTrace.None, MouseParams mouseParams = null)
     {
+      bool redraw = false;
+
       CharInfo[,] screen = new CharInfo[80, 50];
       for (int r = 0; r < 80; r++)
       {
@@ -334,6 +418,15 @@ namespace SimpleXTreeWpf
         PrintString(screen, xa, 2, str312, new SolidColorBrush(Color.FromRgb(204, 204, 204)), Brushes.Black);
         xa += str312.Length;
       }
+      else if (driveLookup["D:\\"].MouseOver)
+      {
+        PrintString(screen, xa, 2, str310, new SolidColorBrush(Color.FromRgb(204, 204, 204)), Brushes.Black);
+        xa += str310.Length;
+        PrintString(screen, xa, 2, str311, new SolidColorBrush(Color.FromRgb(204, 204, 204)), new SolidColorBrush(Color.FromRgb(255, 255, 8)));
+        xa += str311.Length;
+        PrintString(screen, xa, 2, str312, new SolidColorBrush(Color.FromRgb(204, 204, 204)), Brushes.Black);
+        xa += str312.Length;
+      }
       else
       {
         PrintString(screen, xa, 2, str310, Brushes.Black, Brushes.Black);
@@ -342,6 +435,32 @@ namespace SimpleXTreeWpf
         xa += str311.Length;
         PrintString(screen, xa, 2, str312, Brushes.Black, Brushes.Black);
         xa += str312.Length;
+      }
+      if (mouseTrace==eMouseTrace.MouseOver && 
+        mouseParams.My >= 2 * mouseParams.CellH && 
+        mouseParams.My <= 3 * mouseParams.CellH && 
+        mouseParams.Mx <= MXL * mouseParams.CellW)
+      {
+        //        MessageBox.Show("sel drive");
+        driveLookup["D:\\"].MouseOver = true;
+        foreach (Folder f in driveLookup["D:\\"].Children)
+        {
+          f.MouseOver = false;
+        }
+        redraw = true;// DrawTerminal(true);
+      }
+      if (mouseTrace==eMouseTrace.MouseDown && 
+        mouseParams.My >= 2 * mouseParams.CellH &&
+        mouseParams.My <= 3 * mouseParams.CellH &&
+        mouseParams.Mx <= MXL * mouseParams.CellW)
+      {
+//        MessageBox.Show("sel drive");
+        driveLookup["D:\\"].Selected = true;
+        foreach (Folder f in driveLookup["D:\\"].Children)
+        {
+          f.Selected = false;
+        }
+        redraw = true;// DrawTerminal(true);
       }
 
       PrintString(screen, xa, 2, str32, Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
@@ -405,6 +524,18 @@ namespace SimpleXTreeWpf
           }
           PrintString(screen, xa, yUpTo, restOfLine, new SolidColorBrush(Color.FromRgb(204, 204, 204)), new SolidColorBrush(Color.FromRgb(118, 118, 118)));
         }
+        else if (folder.MouseOver)
+        {
+          PrintString(screen, xa, yUpTo, str51, new SolidColorBrush(Color.FromRgb(204, 204, 204)), new SolidColorBrush(Color.FromRgb(255, 255, 8)));
+          xa += str51.Length;
+
+          string restOfLine = " ";
+          for (int i = str51.Length; i < 56; ++i)
+          {
+            restOfLine += " ";
+          }
+          PrintString(screen, xa, yUpTo, restOfLine, new SolidColorBrush(Color.FromRgb(204, 204, 204)), new SolidColorBrush(Color.FromRgb(118, 118, 118)));
+        }
         else
         {
           PrintString(screen, xa, yUpTo, str51, Brushes.Black, new SolidColorBrush(Color.FromRgb(97, 214, 214)));
@@ -416,6 +547,31 @@ namespace SimpleXTreeWpf
             restOfLine += " ";
           }
           PrintString(screen, xa, yUpTo, restOfLine, Brushes.Black, Brushes.Black);
+        }
+
+        if (mouseTrace==eMouseTrace.MouseOver && mouseParams.My >= yUpTo * mouseParams.CellH && mouseParams.My <= (yUpTo + 1) * mouseParams.CellH && mouseParams.Mx <= MXL * mouseParams.CellW)
+        {
+          //          MessageBox.Show("sel folder: "+folder.Name);
+
+          driveLookup["D:\\"].MouseOver = false;
+          foreach (Folder f in driveLookup["D:\\"].Children)
+          {
+            f.MouseOver = false;
+          }
+          folder.MouseOver = true;
+          redraw = true;// DrawTerminal(true);
+        }
+        if (mouseTrace == eMouseTrace.MouseDown && mouseParams.My >= yUpTo * mouseParams.CellH && mouseParams.My <= (yUpTo+1) * mouseParams.CellH && mouseParams.Mx <= MXL* mouseParams.CellW)
+        {
+//          MessageBox.Show("sel folder: "+folder.Name);
+
+          driveLookup["D:\\"].Selected = false;
+          foreach (Folder f in driveLookup["D:\\"].Children)
+          {
+            f.Selected = false;
+          }
+          folder.Selected= true;
+          redraw = true;// DrawTerminal(true);
         }
 
         yUpTo++;
@@ -548,6 +704,10 @@ namespace SimpleXTreeWpf
 
       // Display in Image
 
+      if (redraw)
+      {
+        DrawTerminal(true);
+      }
 
 
       //      TerminalImage.Width = 590;
@@ -932,8 +1092,8 @@ namespace SimpleXTreeWpf
 
       m_currentTab.Header = "* " + text;
       m_currentTabPath = text;
-      m_visualHost.TabPath = m_currentTabPath;
-      m_visualHost.UpdateCurrrentTab();
+//      m_visualHost.TabPath = m_currentTabPath;
+//      m_visualHost.UpdateCurrrentTab();
     }
 
     private void NewTab_Click(object sender, RoutedEventArgs e)
