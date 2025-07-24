@@ -21,6 +21,7 @@ using System.Globalization;
 using System.Windows.Media.Media3D;
 using Path = System.IO.Path;
 using System.Windows.Threading;
+using System.Diagnostics;
 
 namespace SimpleXTreeWpf
 {
@@ -45,9 +46,14 @@ namespace SimpleXTreeWpf
     {
         
       InitializeComponent();
+
+      m_bmp = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+      TerminalImage.Source = m_bmp;
+
       Loaded += OnLoaded;
 
-      this.KeyDown += MainWindow_KeyDown;
+      //this.KeyDown += MainWindow_KeyDown;
+      this.PreviewKeyDown += MainWindow_PreviewKeyDown;
 
       //m_visualHost = new VisualHost(this);
 
@@ -103,20 +109,46 @@ namespace SimpleXTreeWpf
 //      this.Height = 800;
     }
 
-    private void MainWindow_KeyDown(object sender, KeyEventArgs e)
+    private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+      KeyDown(e);
+    }
+
+    private void KeyDown(KeyEventArgs e)
     {
       if (e.Key == Key.Down)
       {
         Next();
-        DrawTerminal();
-        UpdateTime();
+        //        DrawTerminal();
+        //        UpdateTime();
+
+        Dispatcher.Invoke(() =>
+        {
+          Stopwatch sw = Stopwatch.StartNew();
+          DrawTerminal(true);
+          UpdateTime();
+          sw.Stop();
+
+          System.Diagnostics.Debug.WriteLine("sw: " + sw.Elapsed.ToString());
+        });
       }
       else if (e.Key == Key.Up)
       {
         Prev();
-        DrawTerminal();
-        UpdateTime();
+        //        DrawTerminal();
+        //        UpdateTime();
+
+        Dispatcher.Invoke(() =>
+        {
+          DrawTerminal();
+          UpdateTime();
+        });
       }
+    }
+
+    private void MainWindow_KeyDown(object sender, KeyEventArgs e)
+    {
+//      KeyDown(e);
     }
 
     private void Next()
@@ -208,9 +240,8 @@ namespace SimpleXTreeWpf
     SolidColorBrush lightGrey = new SolidColorBrush(Color.FromRgb(204, 204, 204));
     SolidColorBrush lightBlue = new SolidColorBrush(Color.FromRgb(97, 214, 214));
 
-    void DrawTerminal()
+    void DrawTerminal(bool justDirs=false)
     {
-
       CharInfo[,] screen = new CharInfo[80, 50];
       for (int r = 0; r < 80; r++)
       {
@@ -237,6 +268,8 @@ namespace SimpleXTreeWpf
       string str11 = TabPath + strCharsLeft;
       string str12 = " Fr 18-07-25  6:46:12 pm ";
 
+      if (!justDirs)
+      {
       PrintString(screen, xa, 0, str10, Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
       xa += str10.Length;
       PrintString(screen, xa, 0, str11, Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
@@ -248,10 +281,11 @@ namespace SimpleXTreeWpf
       //        PrintString(screen, 0, 0, str1, Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
       string str2 = "┌─────────────────────────────────────────────────────────┬────────────────────┐";
       PrintString(screen, 0, 1, str2, Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
-      //        string str3 = "│ D:\\                                                     │FILE  *.*           │";
+        //        string str3 = "│ D:\\                                                     │FILE  *.*           │";
+      }
       string str30 = "│";
-      //        string str31 = " D:\\
-      //        ";
+        //        string str31 = " D:\\
+        //        ";
 
       string str310 = " ";
       string str311 = "D:\\";
@@ -349,6 +383,13 @@ namespace SimpleXTreeWpf
         {
           PrintString(screen, xa, yUpTo, str51, Brushes.Black, new SolidColorBrush(Color.FromRgb(97, 214, 214)));
           xa += str51.Length;
+
+          string restOfLine = " ";
+          for (int i = str51.Length; i < 56; ++i)
+          {
+            restOfLine += " ";
+          }
+          PrintString(screen, xa, yUpTo, restOfLine, Brushes.Black, Brushes.Black);
         }
 
         yUpTo++;
@@ -358,12 +399,15 @@ namespace SimpleXTreeWpf
       {
         xa = 0;
         string after37 = "│";
-        PrintString(screen, xa, yUpTo, after37, Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
+//        PrintString(screen, xa, yUpTo, after37, Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
+        PrintString(screen, xa, yUpTo, after37, Brushes.Black, Brushes.Black);
         yUpTo++;
         i++;
       }
 
 
+      if (!justDirs)
+      {
       string bot = "├─────────────────────────────────────────────────────────┴────────────────────┤";
       PrintString(screen, 0, yUpTo, bot, Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
       yUpTo++;
@@ -396,6 +440,8 @@ namespace SimpleXTreeWpf
       PrintStringSkipSpace(screen, 3, yUpTo, "       F5         F6          F8          F11            F1       < >       ", Brushes.Black, lightBlue);
       yUpTo++;
 
+      }
+
       // Create DrawingVisual for off-screen rendering
       DrawingVisual visual = new DrawingVisual();
       using (DrawingContext dc = visual.RenderOpen())
@@ -409,6 +455,10 @@ namespace SimpleXTreeWpf
         {
           for (int x = 0; x < cols; x++)
           {
+            if (!screen[x, y].Dirty)
+            {
+              break;
+            }
             Rect rect = new Rect(x * charWidth, y * charHeight, charWidth, charHeight);
 
             // Background
@@ -441,15 +491,23 @@ namespace SimpleXTreeWpf
         }
       }
 
+      //// Render to bitmap
+      //RenderTargetBitmap bmp = new RenderTargetBitmap(
+      //    width, height, 96, 96, PixelFormats.Pbgra32);
+      //bmp.Render(visual);
+
+      //// Display in Image
+      //TerminalImage.Source = bmp;
+
+      //m_bmp = bmp;
+
+
       // Render to bitmap
-      RenderTargetBitmap bmp = new RenderTargetBitmap(
-          width, height, 96, 96, PixelFormats.Pbgra32);
-      bmp.Render(visual);
+      m_bmp.Render(visual);
 
       // Display in Image
-      TerminalImage.Source = bmp;
 
-      m_bmp = bmp;
+
 
       //      TerminalImage.Width = 590;
       //      TerminalImage.Height = 831;
@@ -458,8 +516,8 @@ namespace SimpleXTreeWpf
       //      Width = 586.7;
       //      Width = m_bmp.Width/1.5;
       //      Height = m_bmp.Height/1.5;
-//      Width = 603;
-//      Height = 838;
+      //      Width = 603;
+      //      Height = 838;
 
     }
 

@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:SimpleXTreeWpf"
         mc:Ignorable="d"
         Title="Simple XTree WPF" Height="800" Width="586.7">
-    <Grid x:Name="MainGrid"
+    <Grid x:Name="MainGrid" Background="Black"
           >
         <!--Height="800" Width="586.7" -->
 
