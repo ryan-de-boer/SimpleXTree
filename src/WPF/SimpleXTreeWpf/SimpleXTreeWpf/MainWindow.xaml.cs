@@ -1031,11 +1031,11 @@ namespace SimpleXTreeWpf
       // Desired window size in actual physical pixels
       //      int targetWidth = 880-2;
       //      int targetHeight = 1200-32;
-      //      int targetWidth = 880;
-      //      int targetHeight = 1200;
+            int targetWidth = 880;
+            int targetHeight = 1200;
 
-      int targetWidth = 587;
-      int targetHeight = 800;
+      //int targetWidth = 587;
+      //int targetHeight = 800;
 
       // Get window handle
       var hwnd = new WindowInteropHelper(this).Handle;
@@ -1052,8 +1052,8 @@ namespace SimpleXTreeWpf
       scaleX = dpi.DpiScaleX / 1.5;
       scaleY = dpi.DpiScaleY / 1.5;
 
-      scaleX = 1;
-      scaleY = 1;
+//      scaleX = 1;
+//      scaleY = 1;
 
       //if (Math.Abs(dpi.DpiScaleX - 1.0) < 0.1 && Math.Abs(dpi.DpiScaleY - 1.0) < 0.1)
       //{
