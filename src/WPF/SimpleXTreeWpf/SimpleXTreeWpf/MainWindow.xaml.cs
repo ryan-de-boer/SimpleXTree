@@ -137,7 +137,16 @@ namespace SimpleXTreeWpf
     {
       if (e.Data.GetDataPresent(DataFormats.FileDrop))
       {
-        e.Effects = DragDropEffects.Copy;
+        bool ctrl = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
+        bool shift = (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift;
+        if (ctrl)
+        {
+          e.Effects = DragDropEffects.Copy;
+        }
+        else if (shift)
+        {
+          e.Effects = DragDropEffects.Move;
+        }
         Point p = e.GetPosition(TerminalImage);
         DoMouseMove(p);
       }
