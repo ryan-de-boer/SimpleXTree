@@ -878,6 +878,7 @@ MouseParams mouseParams = new MouseParams();
       PrintString(screen, xa, yUpTo, "├─────────────────────────────────────────────────────────┴────────────────────┤", bg, lightGrey);
       yUpTo++;
       PrintString(screen, xa, yUpTo, "│ Dir Not Logged                                                               │", bg, lightGrey);
+      PrintStringSkipSpace(screen, xa, yUpTo, "  Dir Not Logged", bg, lightBlue);
       yUpTo++;
       PrintString(screen, xa, yUpTo, "│                                                                              │", bg, lightGrey);
       yUpTo++;
@@ -1069,8 +1070,25 @@ MouseParams mouseParams = new MouseParams();
 
       contextMenu.Items.Add(m_tabItem);
 
+      MenuItem exploreItem = new MenuItem { Header = "Explore" };
+      exploreItem.Click += ExploreItem_Click;
+      contextMenu.Items.Add(exploreItem);
+
       // Attach to a control (e.g., a TextBox)
       this.ContextMenu = contextMenu;
+    }
+
+    private void ExploreItem_Click(object sender, RoutedEventArgs e)
+    {
+      foreach (Folder folder in driveLookup["D:\\"].Children)
+      {
+        if (folder.Selected)
+        {
+          string path = "D:\\" + folder.Name;
+          Process.Start("explorer", "\""+path+"\"");
+          break;
+        }
+      }
     }
 
     private void RemoveTab_Click(object sender, RoutedEventArgs e)
