@@ -563,15 +563,99 @@ MouseParams mouseParams = new MouseParams();
         }
         if (mouseTrace == eMouseTrace.MouseDown && mouseParams.My >= yUpTo * mouseParams.CellH && mouseParams.My <= (yUpTo+1) * mouseParams.CellH && mouseParams.Mx <= MXL* mouseParams.CellW)
         {
-//          MessageBox.Show("sel folder: "+folder.Name);
+          //          MessageBox.Show("sel folder: "+folder.Name);
 
-          driveLookup["D:\\"].Selected = false;
-          foreach (Folder f in driveLookup["D:\\"].Children)
+          if ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
           {
-            f.Selected = false;
+            bool startSelected = false;
+            bool reverse = false;
+            foreach (Folder f in driveLookup["D:\\"].Children)
+            {
+              if (f.Selected)
+              {
+                startSelected = true;
+
+                int currentIndex = 0;
+                int newIndex = 0;
+                int index = 0;
+                foreach (Folder ff in driveLookup["D:\\"].Children)
+                {
+                  if (ff.Name.Equals(f.Name))
+                  {
+                    currentIndex = index;
+                  }
+                  index++;
+                }
+                index = 0;
+                foreach (Folder ff in driveLookup["D:\\"].Children)
+                {
+                  if (ff.Name.Equals(folder.Name))
+                  {
+                    newIndex = index;
+                  }
+                  index++;
+                }
+
+                if (newIndex < currentIndex)
+                {
+                  reverse = true;
+                  break;
+                }
+              }
+              if (startSelected)
+              {
+                if (f.Name.Equals(folder.Name))
+                {
+                  f.Selected = true;
+                  redraw = true;
+                  break;
+                }
+                else
+                {
+                  f.Selected = true;
+                  redraw = true;
+                }
+              }
+            }
+
+            if (reverse)
+            {
+              startSelected = false;
+              for (int i= driveLookup["D:\\"].Children.Count-1;i>=0;i--)
+              {
+                Folder f = driveLookup["D:\\"].Children[i];
+
+                if (f.Selected)
+                {
+                  startSelected = true;
+                }
+                if (startSelected)
+                {
+                  if (f.Name.Equals(folder.Name))
+                  {
+                    f.Selected = true;
+                    redraw = true;
+                    break;
+                  }
+                  else
+                  {
+                    f.Selected = true;
+                    redraw = true;
+                  }
+                }
+              }
+            }
           }
-          folder.Selected= true;
-          redraw = true;// DrawTerminal(true);
+          else
+          {
+            driveLookup["D:\\"].Selected = false;
+            foreach (Folder f in driveLookup["D:\\"].Children)
+            {
+              f.Selected = false;
+            }
+            folder.Selected = true;
+            redraw = true;// DrawTerminal(true);
+          }
         }
 
         yUpTo++;
