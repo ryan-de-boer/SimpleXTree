@@ -96,6 +96,7 @@ namespace SimpleXTreeWpf
         }
         driveLookup[drive.Name] = driveFolder;
         root.Children.Add(driveFolder);
+        //driveFolder.Parent = root;
 
         foreach (string path in Directory.GetDirectories(drive.Name))
         {
@@ -106,9 +107,13 @@ namespace SimpleXTreeWpf
             newFolder.Selected = true;
           }
           driveFolder.Children.Add(newFolder);
+          newFolder.Parent = driveFolder;
         }
       }
 
+      TerminalImage.AllowDrop= true;
+      TerminalImage.Drop += TerminalImage_Drop;
+      TerminalImage.DragOver += TerminalImage_DragOver;
 
       DrawTerminal();
       UpdateTime();
@@ -128,31 +133,148 @@ namespace SimpleXTreeWpf
       this.MouseLeave += MainWindow_MouseLeave;
     }
 
-    private void MainWindow_MouseLeave(object sender, MouseEventArgs e)
+    private void TerminalImage_DragOver(object sender, DragEventArgs e)
     {
-      driveLookup["D:\\"].MouseOver = false;
-      foreach (Folder f in driveLookup["D:\\"].Children)
+      if (e.Data.GetDataPresent(DataFormats.FileDrop))
       {
-        f.MouseOver = false;
+        e.Effects = DragDropEffects.Copy;
+        Point p = e.GetPosition(TerminalImage);
+        DoMouseMove(p);
       }
-      DrawTerminal(true);
+      else
+      {
+        e.Effects = DragDropEffects.None;
+      }
+
+      e.Handled = true;
     }
 
-    private void MainWindow_MouseMove(object sender, MouseEventArgs e)
+    private void TerminalImage_Drop(object sender, DragEventArgs e)
     {
-      Point p = e.GetPosition(TerminalImage);
+      if (e.Data.GetDataPresent(DataFormats.FileDrop))
+      {
+        bool ctrl = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
+
+          string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+
+        Folder dropLocation = null;
+        if (driveLookup["D:\\"].MouseOver)
+        {
+          dropLocation = driveLookup["D:\\"];
+        }
+        foreach (Folder f in driveLookup["D:\\"].Children)
+        {
+          if (f.MouseOver)
+          {
+            dropLocation = f;
+          }
+        }
+
+        StringBuilder stringBuilder= new StringBuilder();
+        if (ctrl)
+        {
+          stringBuilder.AppendLine("Copy these files/folders to: " + dropLocation.GetAbsolutePath() + " ?");
+        }
+        else
+        {
+          stringBuilder.AppendLine("Move these files/folders to: " + dropLocation.GetAbsolutePath() + " ?");
+        }
+        foreach (var file in files)
+        {
+          stringBuilder.AppendLine(file);
+        }
+
+        var result = MessageBox.Show(
+    stringBuilder.ToString(),    // Message
+    "Confirmation",                          // Title
+    MessageBoxButton.YesNo,                  // Buttons
+    MessageBoxImage.Question                 // Icon
+);
+
+        // Check the result
+        if (result == MessageBoxResult.Yes)
+        {
+          // User clicked Yes
+          foreach (string path in files)
+          {
+            if (File.Exists(path))
+            {
+              string fileName = Path.GetFileName(path);
+              string destPath = Path.Combine(dropLocation.GetAbsolutePath(), fileName);
+
+              if (ctrl)
+              {
+                // This will overwrite if file already exists
+                File.Copy(path, destPath, overwrite: true);
+              }
+              else
+              {
+                File.Move(path, destPath, true);
+              }
+            }
+            else if (Directory.Exists(path))
+            {
+              if (ctrl)
+              {
+                // Copy folder recursively
+                string folderName = Path.GetFileName(path.TrimEnd(Path.DirectorySeparatorChar));
+                string destFolderPath = Path.Combine(dropLocation.GetAbsolutePath(), folderName);
+                CopyDirectory(path, destFolderPath);
+              }
+              else
+              {
+                string folderName = Path.GetFileName(path.TrimEnd(Path.DirectorySeparatorChar));
+                string destDir = Path.Combine(dropLocation.GetAbsolutePath(), folderName);
+                Directory.Move(path, destDir);
+              }
+            }
+          }
+        }
+        else
+        {
+          // User clicked No
+        }
+
+//        MessageBox.Show(stringBuilder.ToString());
+      }
+    }
+
+    /// <summary>
+    /// Recursively copies a directory and all its contents
+    /// </summary>
+    void CopyDirectory(string sourceDir, string destDir)
+    {
+      Directory.CreateDirectory(destDir);
+
+      foreach (string file in Directory.GetFiles(sourceDir))
+      {
+        string fileName = Path.GetFileName(file);
+        string destFile = Path.Combine(destDir, fileName);
+        File.Copy(file, destFile, overwrite: true);
+      }
+
+      foreach (string subDir in Directory.GetDirectories(sourceDir))
+      {
+        string dirName = Path.GetFileName(subDir);
+        string destSubDir = Path.Combine(destDir, dirName);
+        CopyDirectory(subDir, destSubDir);
+      }
+    }
+
+    private void DoMouseMove(Point p)
+    {
       double mx = p.X;
       double my = p.Y;
       //      MessageBox.Show(mx + "," + my);
       double cellW = TerminalImage.DesiredSize.Width / 80.0;
       double cellH = TerminalImage.DesiredSize.Height / 50.0;
-      if (mx > 0 && mx <= MXL * cellW && my>0 && my < 37*cellH)
+      if (mx > 0 && mx <= MXL * cellW && my > 0 && my < 37 * cellH)
       {
-//        DrawTerminal(true, false, true, cellW, cellH, mx, my);
-MouseParams mouseParams = new MouseParams();
+        //        DrawTerminal(true, false, true, cellW, cellH, mx, my);
+        MouseParams mouseParams = new MouseParams();
         mouseParams.CellW = cellW;
         mouseParams.CellH = cellH;
-        mouseParams.Mx= mx;
+        mouseParams.Mx = mx;
         mouseParams.My = my;
 
         DrawTerminal(true, eMouseTrace.MouseOver, mouseParams);
@@ -166,6 +288,22 @@ MouseParams mouseParams = new MouseParams();
         }
         DrawTerminal(true);
       }
+    }
+
+    private void MainWindow_MouseLeave(object sender, MouseEventArgs e)
+    {
+      driveLookup["D:\\"].MouseOver = false;
+      foreach (Folder f in driveLookup["D:\\"].Children)
+      {
+        f.MouseOver = false;
+      }
+      DrawTerminal(true);
+    }
+
+    private void MainWindow_MouseMove(object sender, MouseEventArgs e)
+    {
+      Point p = e.GetPosition(TerminalImage);
+      DoMouseMove(p);
     }
 
     enum eMouseTrace
