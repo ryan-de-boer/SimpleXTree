@@ -304,6 +304,47 @@ namespace SimpleXTreeWpf
     {
       Point p = e.GetPosition(TerminalImage);
       DoMouseMove(p);
+
+      if (e.LeftButton == MouseButtonState.Pressed)
+      {
+        List<string> selectedPaths = new List<string>();
+        foreach (Folder f in driveLookup["D:\\"].Children)
+        {
+          if (f.Selected && Directory.Exists(f.GetAbsolutePath()))
+          {
+            selectedPaths.Add(f.GetAbsolutePath());
+          }
+        }
+
+          // Put folder path into a string array
+          string[] folders = selectedPaths.ToArray();
+
+          // Create a DataObject with FileDrop format
+          DataObject dataObject = new DataObject(DataFormats.FileDrop, folders);
+
+
+        bool shift = (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift;
+
+        if (shift)
+        {
+          // Optional: set allowed effects (Copy preferred)
+          dataObject.SetData("Preferred DropEffect", DragDropEffects.Move);
+
+          // Start drag-and-drop operation
+          DragDrop.DoDragDrop((DependencyObject)sender, dataObject, DragDropEffects.Move);
+
+        }
+        else
+        {
+          // Optional: set allowed effects (Copy preferred)
+          dataObject.SetData("Preferred DropEffect", DragDropEffects.Copy);
+
+          // Start drag-and-drop operation
+          DragDrop.DoDragDrop((DependencyObject)sender, dataObject, DragDropEffects.Copy);
+        }
+
+      }
+
     }
 
     enum eMouseTrace
@@ -336,7 +377,11 @@ namespace SimpleXTreeWpf
       mouseParams.CellH = cellH;
       mouseParams.Mx = mx;
       mouseParams.My = my;
-      DrawTerminal(true, eMouseTrace.MouseDown, mouseParams);
+
+      bool ctrl = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
+
+      if (!ctrl)
+        DrawTerminal(true, eMouseTrace.MouseDown, mouseParams);
 
 
     }
