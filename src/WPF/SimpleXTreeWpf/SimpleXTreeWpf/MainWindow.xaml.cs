@@ -154,8 +154,9 @@ namespace SimpleXTreeWpf
       if (e.Data.GetDataPresent(DataFormats.FileDrop))
       {
         bool ctrl = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
+        bool shift = (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift;
 
-          string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+        string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
 
         Folder dropLocation = null;
         if (driveLookup["D:\\"].MouseOver)
@@ -175,9 +176,13 @@ namespace SimpleXTreeWpf
         {
           stringBuilder.AppendLine("Copy these files/folders to: " + dropLocation.GetAbsolutePath() + " ?");
         }
-        else
+        else if (shift)
         {
           stringBuilder.AppendLine("Move these files/folders to: " + dropLocation.GetAbsolutePath() + " ?");
+        }
+        else
+        {
+          return; // no accidental moves
         }
         foreach (var file in files)
         {
@@ -324,6 +329,7 @@ namespace SimpleXTreeWpf
 
 
         bool shift = (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift;
+        bool ctrl = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
 
         if (shift)
         {
@@ -334,7 +340,7 @@ namespace SimpleXTreeWpf
           DragDrop.DoDragDrop((DependencyObject)sender, dataObject, DragDropEffects.Move);
 
         }
-        else
+        else if (ctrl)
         {
           // Optional: set allowed effects (Copy preferred)
           dataObject.SetData("Preferred DropEffect", DragDropEffects.Copy);
