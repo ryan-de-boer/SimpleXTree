@@ -22,6 +22,7 @@ using System.Windows.Media.Media3D;
 using Path = System.IO.Path;
 using System.Windows.Threading;
 using System.Diagnostics;
+using Microsoft.Win32;
 
 namespace SimpleXTreeWpf
 {
@@ -64,6 +65,22 @@ namespace SimpleXTreeWpf
 //      m_bmp = new RenderTargetBitmap(587, 800, 96, 96, PixelFormats.Pbgra32);
       TerminalImage.Source = m_bmp;
 
+      handler = (s, e) =>
+      {
+        var oldSource = (BitmapImage)TerminalImage.Source;
+        if (oldSource != null)
+        {
+          var uri = oldSource.UriSource;
+          var newBitmap = new BitmapImage();
+          newBitmap.BeginInit();
+          newBitmap.CacheOption = BitmapCacheOption.OnLoad; // to read immediately, avoid locking file
+          newBitmap.UriSource = uri;
+          newBitmap.EndInit();
+          TerminalImage.Source = newBitmap;
+        }
+      };
+
+      SystemEvents.DisplaySettingsChanged += handler;
 
       Loaded += OnLoaded;
 
@@ -131,6 +148,15 @@ namespace SimpleXTreeWpf
       this.MouseDown += MainWindow_MouseDown;
       this.MouseMove += MainWindow_MouseMove;
       this.MouseLeave += MainWindow_MouseLeave;
+
+      this.Closing += MainWindow_Closing;
+    }
+
+    EventHandler handler;
+
+    private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+    {
+      SystemEvents.DisplaySettingsChanged -= handler;
     }
 
     private void TerminalImage_DragOver(object sender, DragEventArgs e)
