@@ -67,17 +67,11 @@ namespace SimpleXTreeWpf
 
       handler = (s, e) =>
       {
-        var oldSource = (BitmapImage)TerminalImage.Source;
-        if (oldSource != null)
-        {
-          var uri = oldSource.UriSource;
-          var newBitmap = new BitmapImage();
-          newBitmap.BeginInit();
-          newBitmap.CacheOption = BitmapCacheOption.OnLoad; // to read immediately, avoid locking file
-          newBitmap.UriSource = uri;
-          newBitmap.EndInit();
-          TerminalImage.Source = newBitmap;
-        }
+        m_bmp = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+        TerminalImage.Source = m_bmp;
+
+        DrawTerminal();
+        UpdateTime();
       };
 
       SystemEvents.DisplaySettingsChanged += handler;
