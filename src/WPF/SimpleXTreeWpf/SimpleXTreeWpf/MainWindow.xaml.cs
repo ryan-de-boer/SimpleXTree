@@ -456,6 +456,39 @@ namespace SimpleXTreeWpf
           UpdateTime();
         });
       }
+      else if (e.Key== Key.Enter)
+      {
+        for (int i = 0; i < driveLookup["D:\\"].Children.Count; ++i)
+        {
+          if (driveLookup["D:\\"].Children[i].Selected)
+          {
+            driveLookup["D:\\"].Children[i].Expand();
+            /*
+            driveLookup["D:\\"].Children[i].IsExpanded = true;
+
+            foreach (string path in Directory.GetDirectories(driveLookup["D:\\"].Children[i].GetAbsolutePath()))
+            {
+              string folderName = Path.GetFileName(path);
+              Folder newFolder = new Folder(folderName);
+              if (newFolder.Name.Equals(m_selectedPath))
+              {
+                newFolder.Selected = true;
+              }
+              driveLookup["D:\\"].Children[i].Children.Add(newFolder);
+              newFolder.Parent = driveLookup["D:\\"].Children[i];
+            }
+            */
+
+            break;
+          }
+        }
+
+        Dispatcher.Invoke(() =>
+        {
+          DrawTerminal(true);
+          UpdateTime();
+        });
+      }
     }
 
     private void MainWindow_KeyDown(object sender, KeyEventArgs e)
@@ -465,6 +498,9 @@ namespace SimpleXTreeWpf
 
     private void Next()
     {
+      Folder init = driveLookup["D:\\"];
+      List<Folder> flatList = init.GetAllChildren();
+
       if (driveLookup["D:\\"].Selected)
       {
         driveLookup["D:\\"].Selected = false;
@@ -472,12 +508,12 @@ namespace SimpleXTreeWpf
       }
       else
       {
-        for (int i = 0; i < driveLookup["D:\\"].Children.Count; ++i)
+        for (int i = 0; i < flatList.Count; ++i)
         {
-          if (driveLookup["D:\\"].Children[i].Selected && i + 1 < driveLookup["D:\\"].Children.Count)
+          if (flatList[i].Selected && i + 1 < flatList.Count)
           {
-            driveLookup["D:\\"].Children[i].Selected = false;
-            driveLookup["D:\\"].Children[i + 1].Selected = true;
+            flatList[i].Selected = false;
+            flatList[i + 1].Selected = true;
             break;
           }
         }
@@ -486,6 +522,9 @@ namespace SimpleXTreeWpf
 
     private void Prev()
     {
+      Folder init = driveLookup["D:\\"];
+      List<Folder> flatList = init.GetAllChildren();
+
       if (driveLookup["D:\\"].Selected)
       {
         // stay selected
@@ -497,12 +536,12 @@ namespace SimpleXTreeWpf
       }
       else
       {
-        for (int i = driveLookup["D:\\"].Children.Count - 1; i >= 0; --i)
+        for (int i = flatList.Count - 1; i >= 0; --i)
         {
-          if (driveLookup["D:\\"].Children[i].Selected && i - 1 >= 0)
+          if (flatList[i].Selected && i - 1 >= 0)
           {
-            driveLookup["D:\\"].Children[i].Selected = false;
-            driveLookup["D:\\"].Children[i - 1].Selected = true;
+            flatList[i].Selected = false;
+            flatList[i - 1].Selected = true;
             break;
           }
         }
@@ -705,13 +744,22 @@ namespace SimpleXTreeWpf
               xa += str43.Length;
       */
 
-
-
-
+      Folder init = driveLookup["D:\\"];
+//      List<Folder> initList = new List<Folder>();
+//      init.Children[2].IsExpanded = true;
+//      init.Children[2].Expand();
+      List<Folder> flatList = init.GetAllChildren();
 
       int yUpTo = 3;
-      foreach (Folder folder in driveLookup["D:\\"].Children)
+      //foreach (Folder folder in driveLookup["D:\\"].Children)
+      for (int i=0;i< flatList.Count;++i)
       {
+        Folder folder = flatList[i];
+        Folder nextFolder = flatList[i];
+        if (i< flatList.Count-1)
+        {
+          nextFolder = flatList[i + 1];
+        }
         if (yUpTo== 37)
         {
           break;
@@ -721,7 +769,37 @@ namespace SimpleXTreeWpf
         if (yUpTo == 50)
           break;
         string str50 = "│";
-        string str51 = "+├──" + folder.Name;
+        string str51 = "";
+
+        if (folder.IsExpanded)
+        {
+          str51 += " ";
+        }
+        else
+        {
+          str51 += "+";
+        }
+
+        int indent = folder.Indent*3;
+        if (indent>0)
+        {
+          str51 += "│";
+          for (int c=1;c<indent;++c)
+          {
+            str51 += " ";
+          }
+        }
+
+        if (nextFolder.Indent < folder.Indent)
+        {
+          str51 += "└──";
+        }
+        else
+        {
+          str51 += "├──";
+        }
+
+        str51 += folder.Name;
         if (folder.Name== driveLookup["D:\\"].Children[driveLookup["D:\\"].Children.Count - 1].Name)
         {
           //last
@@ -736,7 +814,7 @@ namespace SimpleXTreeWpf
           xa += str51.Length;
 
           string restOfLine = " ";
-          for (int i = str51.Length; i < 56; ++i)
+          for (int j = str51.Length; j < 56; ++j)
           {
             restOfLine += " ";
           }
@@ -748,7 +826,7 @@ namespace SimpleXTreeWpf
           xa += str51.Length;
 
           string restOfLine = " ";
-          for (int i = str51.Length; i < 56; ++i)
+          for (int j = str51.Length; j < 56; ++j)
           {
             restOfLine += " ";
           }
@@ -760,7 +838,7 @@ namespace SimpleXTreeWpf
           xa += str51.Length;
 
           string restOfLine = " ";
-          for (int i = str51.Length; i < 56; ++i)
+          for (int j = str51.Length; j < 56; ++j)
           {
             restOfLine += " ";
           }
@@ -771,11 +849,19 @@ namespace SimpleXTreeWpf
         {
           //          MessageBox.Show("sel folder: "+folder.Name);
 
+          //try removing mouseover first
+          //driveLookup["D:\\"].MouseOver = false;
+          //foreach (Folder f in driveLookup["D:\\"].Children)
+          //{
+          //  f.MouseOver = false;
+          //}
+
           driveLookup["D:\\"].MouseOver = false;
-          foreach (Folder f in driveLookup["D:\\"].Children)
+          foreach (Folder f in flatList)
           {
             f.MouseOver = false;
           }
+
           folder.MouseOver = true;
           redraw = true;// DrawTerminal(true);
         }
@@ -839,9 +925,9 @@ namespace SimpleXTreeWpf
             if (reverse)
             {
               startSelected = false;
-              for (int i= driveLookup["D:\\"].Children.Count-1;i>=0;i--)
+              for (int j= driveLookup["D:\\"].Children.Count-1;j>=0;j--)
               {
-                Folder f = driveLookup["D:\\"].Children[i];
+                Folder f = driveLookup["D:\\"].Children[j];
 
                 if (f.Selected)
                 {
@@ -866,11 +952,18 @@ namespace SimpleXTreeWpf
           }
           else
           {
-            driveLookup["D:\\"].Selected = false;
-            foreach (Folder f in driveLookup["D:\\"].Children)
+            //try removing first
+            //driveLookup["D:\\"].Selected = false;
+            //foreach (Folder f in driveLookup["D:\\"].Children)
+            //{
+            //  f.Selected = false;
+            //}
+
+            foreach (Folder f in flatList)
             {
               f.Selected = false;
             }
+
             folder.Selected = true;
             redraw = true;// DrawTerminal(true);
           }
