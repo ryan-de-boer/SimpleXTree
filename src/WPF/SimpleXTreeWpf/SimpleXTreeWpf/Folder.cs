@@ -14,6 +14,7 @@ namespace SimpleXTreeWpf
     }
 
     public int Indent { get; set; } = 0;
+    public bool IsLastChild { get; set; } = false;
 
     public string Name { get; set; } = "";
 
@@ -31,13 +32,19 @@ namespace SimpleXTreeWpf
       if (!IsExpanded)
       {
         string absolutePath = GetAbsolutePath();
-        foreach (string path in Directory.GetDirectories(absolutePath))
+        string[] dirs = Directory.GetDirectories(absolutePath);
+        for (int i=0;i<dirs.Length;++i)
         {
+          string path = dirs[i];
           string folderName = Path.GetFileName(path);
           Folder newFolder = new Folder(folderName);
           newFolder.Indent = Indent + 1;
           Children.Add(newFolder);
           newFolder.Parent = this;
+          if (i==dirs.Length-1)
+          {
+            newFolder.IsLastChild = true;
+          }
         }
         IsExpanded = true;
       }
@@ -62,7 +69,7 @@ namespace SimpleXTreeWpf
       Folder nextFolder = Parent;
       while (nextFolder.Parent != null)
       {
-        stack.Push(nextFolder);
+        stack.Push(nextFolder.Parent);
         nextFolder = nextFolder.Parent;
       }
 

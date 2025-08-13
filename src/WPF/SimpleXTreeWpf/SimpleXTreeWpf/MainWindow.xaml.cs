@@ -456,13 +456,14 @@ namespace SimpleXTreeWpf
           UpdateTime();
         });
       }
-      else if (e.Key== Key.Enter)
+      else if (e.Key== Key.Enter || e.Key==Key.OemPlus)
       {
-        for (int i = 0; i < driveLookup["D:\\"].Children.Count; ++i)
+        List<Folder> flatList = driveLookup["D:\\"].GetAllChildren();
+        for (int i = 0; i < flatList.Count; ++i)
         {
-          if (driveLookup["D:\\"].Children[i].Selected)
+          if (flatList[i].Selected)
           {
-            driveLookup["D:\\"].Children[i].Expand();
+            flatList[i].Expand();
             /*
             driveLookup["D:\\"].Children[i].IsExpanded = true;
 
@@ -479,6 +480,25 @@ namespace SimpleXTreeWpf
             }
             */
 
+            break;
+          }
+        }
+
+        Dispatcher.Invoke(() =>
+        {
+          DrawTerminal(true);
+          UpdateTime();
+        });
+      }
+      else if (e.Key == Key.OemMinus)
+      {
+        List<Folder> flatList = driveLookup["D:\\"].GetAllChildren();
+        for (int i = 0; i < flatList.Count; ++i)
+        {
+          if (flatList[i].Selected)
+          {
+            flatList[i].IsExpanded = false;
+            flatList[i].Children.Clear();
             break;
           }
         }
@@ -550,7 +570,11 @@ namespace SimpleXTreeWpf
 
     private void PrintString(CharInfo[,] screen, int x, int y, string str, Brush bg, Brush fg, string fontName=FONT_NAME)
     {
-      for (int i = 0; i < str.Length; i++)
+      int max = 80;
+      int strL = str.Length;
+      if (strL > max)
+        strL = max;
+      for (int i = 0; i < strL; i++)
       {
         screen[x + i, y] = new CharInfo();
         screen[x + i, y].Ch = str[i];
@@ -786,11 +810,24 @@ namespace SimpleXTreeWpf
           str51 += "│";
           for (int c=1;c<indent;++c)
           {
-            str51 += " ";
+            if (c % 3 == 0)
+            {
+              if (!folder.Parent.IsLastChild)
+              {
+                str51 += "│";
+              }
+              else
+              {
+                str51 += " ";
+              }
+            }
+            else
+              str51 += " ";
           }
         }
 
-        if (nextFolder.Indent < folder.Indent)
+//        if (nextFolder.Indent < folder.Indent)
+        if (folder.IsLastChild)
         {
           str51 += "└──";
         }
