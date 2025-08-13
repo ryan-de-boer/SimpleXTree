@@ -150,8 +150,50 @@ namespace SimpleXTreeWpf
       this.MouseDown += MainWindow_MouseDown;
       this.MouseMove += MainWindow_MouseMove;
       this.MouseLeave += MainWindow_MouseLeave;
+      this.PreviewMouseWheel += MainWindow_PreviewMouseWheel;
 
       this.Closing += MainWindow_Closing;
+    }
+
+    private void MainWindow_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+      if (e.Delta <= 0)
+      {
+        List<Folder> flatList = driveLookup["D:\\"].GetAllChildren();
+        if (m_viewOffset + 10 + 35 < flatList.Count)
+        {
+          m_viewOffset += 10;
+        }
+        else
+        {
+          m_viewOffset = flatList.Count - 34;
+        }
+        int b = 1;
+        b++;
+      }
+      else if (e.Delta > 0)
+      {
+        if (m_viewOffset<=10)
+        {
+          m_viewOffset = 0;
+        }
+        else
+        {
+          m_viewOffset -= 10;
+        }
+        int b = 1;
+        b++;
+      }
+
+      Dispatcher.Invoke(() =>
+      {
+        Stopwatch sw = Stopwatch.StartNew();
+        DrawTerminal(true);
+        UpdateTime();
+        sw.Stop();
+
+        System.Diagnostics.Debug.WriteLine("sw: " + sw.Elapsed.ToString());
+      });
     }
 
     EventHandler handler;
@@ -924,7 +966,14 @@ namespace SimpleXTreeWpf
           str51 = "+└──" + folder.Name;
           if (folder.IsLastChild)
           {
-            str51 = " └──" + folder.Name;
+            if (folder.IsExpanded)
+            {
+              str51 = " └──" + folder.Name;
+            }
+            else
+            {
+              str51 = "+└──" + folder.Name;
+            }
           }
         }
 
@@ -1081,12 +1130,29 @@ namespace SimpleXTreeWpf
             //  f.Selected = false;
             //}
 
+            driveLookup["D:\\"].Selected = false;
             foreach (Folder f in flatList)
             {
               f.Selected = false;
             }
 
             folder.Selected = true;
+
+            if (mouseParams.Mx <= mouseParams.CellW*4)
+            {
+              if (folder.IsExpanded)
+              {
+                folder.IsExpanded = false;
+                folder.Children.Clear();
+              }
+              else
+              {
+                folder.Expand();
+              }
+              int b = 1;
+              b++;
+            }
+
             redraw = true;// DrawTerminal(true);
           }
         }
