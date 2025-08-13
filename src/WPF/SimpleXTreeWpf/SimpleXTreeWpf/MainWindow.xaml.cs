@@ -456,7 +456,7 @@ namespace SimpleXTreeWpf
           UpdateTime();
         });
       }
-      else if (e.Key== Key.Enter || e.Key==Key.OemPlus)
+      else if (e.Key== Key.Enter || e.Key==Key.OemPlus || e.Key == Key.Add)
       {
         List<Folder> flatList = driveLookup["D:\\"].GetAllChildren();
         for (int i = 0; i < flatList.Count; ++i)
@@ -490,7 +490,7 @@ namespace SimpleXTreeWpf
           UpdateTime();
         });
       }
-      else if (e.Key == Key.OemMinus)
+      else if (e.Key == Key.OemMinus || e.Key == Key.Subtract)
       {
         List<Folder> flatList = driveLookup["D:\\"].GetAllChildren();
         for (int i = 0; i < flatList.Count; ++i)
