@@ -126,6 +126,14 @@ namespace SimpleXTreeWpf
       TerminalImage.Drop += TerminalImage_Drop;
       TerminalImage.DragOver += TerminalImage_DragOver;
 
+      driveLookup["D:\\"].Selected = true;
+      List<Folder> flatList = driveLookup["D:\\"].GetAllChildren();
+      foreach (Folder f in flatList)
+      {
+        f.Selected = false;
+      }
+//      flatList[10].Selected = true;
+
       DrawTerminal();
       UpdateTime();
 
@@ -327,9 +335,10 @@ namespace SimpleXTreeWpf
     private void MainWindow_MouseLeave(object sender, MouseEventArgs e)
     {
       driveLookup["D:\\"].MouseOver = false;
-      foreach (Folder f in driveLookup["D:\\"].Children)
+      List<Folder> flatList = driveLookup["D:\\"].GetAllChildren();
+      for (int i = 0; i < flatList.Count; ++i)
       {
-        f.MouseOver = false;
+        flatList[i].MouseOver = false;
       }
       DrawTerminal(true);
     }
@@ -534,11 +543,17 @@ namespace SimpleXTreeWpf
           {
             flatList[i].Selected = false;
             flatList[i + 1].Selected = true;
+            if (m_viewOffset + 33<=i)
+            {
+              m_viewOffset++;
+            }
             break;
           }
         }
       }
     }
+
+    private int m_viewOffset = 0;
 
     private void Prev()
     {
@@ -562,6 +577,11 @@ namespace SimpleXTreeWpf
           {
             flatList[i].Selected = false;
             flatList[i - 1].Selected = true;
+
+            if (m_viewOffset >= i)
+            {
+              m_viewOffset--;
+            }
             break;
           }
         }
@@ -576,6 +596,10 @@ namespace SimpleXTreeWpf
         strL = max;
       for (int i = 0; i < strL; i++)
       {
+        if (x+i>=max)
+        {
+          break;
+        }
         screen[x + i, y] = new CharInfo();
         screen[x + i, y].Ch = str[i];
         screen[x + i, y].Background = bg;
@@ -675,8 +699,8 @@ namespace SimpleXTreeWpf
         //        string str3 = "│ D:\\                                                     │FILE  *.*           │";
       }
       string str30 = "│";
-        //        string str31 = " D:\\
-        //        ";
+      //        string str31 = " D:\\
+      //        ";
 
       string str310 = " ";
       string str311 = "D:\\";
@@ -775,16 +799,28 @@ namespace SimpleXTreeWpf
       List<Folder> flatList = init.GetAllChildren();
 
       int yUpTo = 3;
+      if (m_viewOffset > 0)
+      {
+        yUpTo--;
+      }
       //foreach (Folder folder in driveLookup["D:\\"].Children)
-      for (int i=0;i< flatList.Count;++i)
+      for (int i= m_viewOffset; i< flatList.Count;++i)
       {
         Folder folder = flatList[i];
+        //if (viewOffset+i < flatList.Count)
+        //{
+        //  folder = flatList[viewOffset+i];
+        //}
         Folder nextFolder = flatList[i];
         if (i< flatList.Count-1)
         {
           nextFolder = flatList[i + 1];
+          //if (viewOffset+i+1 < flatList.Count - 1)
+          //{
+          //  nextFolder = flatList[viewOffset + i + 1];
+          //}
         }
-        if (yUpTo== 37)
+        if (yUpTo == 37)
         {
           break;
         }
@@ -805,20 +841,65 @@ namespace SimpleXTreeWpf
         }
 
         int indent = folder.Indent*3;
+        Stack<bool> lastChild = new Stack<bool>();
+        Stack<bool> lastChildCopy = new Stack<bool>();
+        Stack<string> lastNameCopy = new Stack<string>();
+        Folder p = folder.Parent;
+        lastChild.Push(p.IsLastChild);
+        lastChildCopy.Push(p.IsLastChild);
+        lastNameCopy.Push(p.Name);
+        while (p!=null)
+        {
+          p = p.Parent;
+          if (p!=null)
+          {
+            lastChild.Push(p.IsLastChild);
+            lastChildCopy.Push(p.IsLastChild);
+            lastNameCopy.Push(p.Name);
+          }
+        }
+
+        //System.Diagnostics.Debug.WriteLine("BEG");
+        //System.Diagnostics.Debug.WriteLine(folder.Name);
+        //foreach (bool l in lastChild)
+        //{
+        //  System.Diagnostics.Debug.WriteLine("L:" + l);
+        //}
+        //foreach (string l in lastNameCopy)
+        //{
+        //  System.Diagnostics.Debug.WriteLine("LN:" + l);
+        //}
+        //System.Diagnostics.Debug.WriteLine("END");
+
         if (indent>0)
         {
-          str51 += "│";
+          lastChild.Pop();
+          if (lastChild.Pop())
+          {
+            str51 += " ";
+//            str51 += "Y";
+          }
+          else
+          {
+            str51 += "│";
+//            str51 += "N";
+          }
+          //          lastChild.Pop();
+//          lastChild.Pop();
           for (int c=1;c<indent;++c)
           {
             if (c % 3 == 0)
             {
-              if (!folder.Parent.IsLastChild)
+              bool nextChild = lastChild.Pop();
+              if (!nextChild)
               {
                 str51 += "│";
+//                str51 += "N";
               }
               else
               {
                 str51 += " ";
+//                str51 += "Y";
               }
             }
             else
@@ -841,6 +922,10 @@ namespace SimpleXTreeWpf
         {
           //last
           str51 = "+└──" + folder.Name;
+          if (folder.IsLastChild)
+          {
+            str51 = " └──" + folder.Name;
+          }
         }
 
         PrintString(screen, xa, yUpTo, str50, Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));

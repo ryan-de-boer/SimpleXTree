@@ -14,7 +14,22 @@ namespace SimpleXTreeWpf
     }
 
     public int Indent { get; set; } = 0;
-    public bool IsLastChild { get; set; } = false;
+    public bool IsLastChild 
+    {
+      get
+      {
+        if (Name=="D:\\")
+        {
+          return true;
+        }
+        return m_isLastChild;
+      }
+      set
+      {
+        m_isLastChild = value;
+      }
+    }
+      private bool m_isLastChild = false;
 
     public string Name { get; set; } = "";
 
@@ -47,6 +62,16 @@ namespace SimpleXTreeWpf
           }
         }
         IsExpanded = true;
+
+        if (Parent!=null)
+        {
+          string parentAbsolutePath = Parent.GetAbsolutePath();
+          string[] parentDirs = Directory.GetDirectories(parentAbsolutePath);
+          if (this.GetAbsolutePath().Equals(parentDirs[parentDirs.Length-1]+"\\"))
+          {
+            IsLastChild = true;
+          }
+        }
       }
     }
 
@@ -65,9 +90,12 @@ namespace SimpleXTreeWpf
     {
       Stack<Folder> stack = new Stack<Folder>();
       stack.Push(this);
-      stack.Push(Parent);
+      if (Parent!=null)
+      {
+        stack.Push(Parent);
+      }
       Folder nextFolder = Parent;
-      while (nextFolder.Parent != null)
+      while (nextFolder!=null && nextFolder.Parent != null)
       {
         stack.Push(nextFolder.Parent);
         nextFolder = nextFolder.Parent;
