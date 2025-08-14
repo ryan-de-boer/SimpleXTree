@@ -151,8 +151,22 @@ namespace SimpleXTreeWpf
       this.MouseMove += MainWindow_MouseMove;
       this.MouseLeave += MainWindow_MouseLeave;
       this.PreviewMouseWheel += MainWindow_PreviewMouseWheel;
+      this.MouseDoubleClick += MainWindow_MouseDoubleClick;
 
       this.Closing += MainWindow_Closing;
+    }
+
+    private void MainWindow_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+      List<Folder> flatList = driveLookup["D:\\"].GetAllChildren();
+      foreach (Folder f in flatList)
+      {
+        if (f.Selected)
+        {
+          f.Expand();
+          break;
+        }
+      }
     }
 
     private void MainWindow_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
@@ -507,7 +521,7 @@ namespace SimpleXTreeWpf
           UpdateTime();
         });
       }
-      else if (e.Key== Key.Enter || e.Key==Key.OemPlus || e.Key == Key.Add)
+      else if (e.Key == Key.Enter || e.Key == Key.OemPlus || e.Key == Key.Add)
       {
         List<Folder> flatList = driveLookup["D:\\"].GetAllChildren();
         for (int i = 0; i < flatList.Count; ++i)
@@ -559,6 +573,149 @@ namespace SimpleXTreeWpf
           DrawTerminal(true);
           UpdateTime();
         });
+      }
+      else if (e.Key == Key.End)
+      {
+        List<Folder> flatList = driveLookup["D:\\"].GetAllChildren();
+        driveLookup["D:\\"].Selected = false;
+        foreach (Folder f in flatList)
+        {
+          f.Selected = false;
+        }
+        flatList[flatList.Count - 1].Selected = true;
+        m_viewOffset = flatList.Count - 35;
+        if (m_viewOffset < 0)
+          m_viewOffset = 0;
+
+        Dispatcher.Invoke(() =>
+        {
+          DrawTerminal(true);
+          UpdateTime();
+        });
+      }
+      else if (e.Key == Key.Home)
+      {
+        List<Folder> flatList = driveLookup["D:\\"].GetAllChildren();
+        driveLookup["D:\\"].Selected = true;
+        foreach (Folder f in flatList)
+        {
+          f.Selected = false;
+        }
+        m_viewOffset = 0;
+
+        Dispatcher.Invoke(() =>
+        {
+          DrawTerminal(true);
+          UpdateTime();
+        });
+      }
+      else if (e.Key == Key.PageDown)
+      {
+        if (driveLookup["D:\\"].Selected)
+        {
+          List<Folder> flatList = driveLookup["D:\\"].GetAllChildren();
+          driveLookup["D:\\"].Selected = false;
+          foreach (Folder f in flatList)
+          {
+            f.Selected = false;
+          }
+          int pIndex = m_viewOffset + 33;
+          if (flatList.Count < 33)
+            pIndex = m_viewOffset + flatList.Count - 1;
+
+          flatList[pIndex].Selected = true;
+        }
+        else
+        {
+          List<Folder> flatList = driveLookup["D:\\"].GetAllChildren();
+          foreach (Folder f in flatList)
+          {
+            if (f.Selected)
+            {
+              f.Selected = false;
+
+              m_viewOffset += 33;
+              int pIndex = m_viewOffset + 34;
+              if (flatList.Count < m_viewOffset + 34)
+              {
+                m_viewOffset = flatList.Count - 35;
+                if (m_viewOffset < 0)
+                  m_viewOffset = 0;
+                pIndex = flatList.Count - 1;
+              }
+
+              flatList[pIndex].Selected = true;
+
+              break;
+            }
+          }
+        }
+
+        Dispatcher.Invoke(() =>
+        {
+          DrawTerminal(true);
+          UpdateTime();
+        });
+      }
+      else if (e.Key == Key.PageUp)
+      {
+        if (driveLookup["D:\\"].Selected)
+        {
+          //leave it
+          return;
+        }
+        else
+        {
+          List<Folder> flatList = driveLookup["D:\\"].GetAllChildren();
+          int index = 0;
+          foreach (Folder f in flatList)
+          {
+            if (f.Selected)
+            {
+              f.Selected = false;
+
+              if (index == flatList.Count-1)
+              {
+                int pIndex2 = flatList.Count - 1 - 34;
+                flatList[pIndex2].Selected = true;
+//                m_viewOffset = pIndex2 - 34;
+                break;
+              }
+
+              m_viewOffset -= 33;
+              if (m_viewOffset<0)
+              {
+                m_viewOffset = 0;
+                driveLookup["D:\\"].Selected = true;
+                break;
+              }
+//              int pIndex = m_viewOffset + 33;
+              int pIndex = index - 34;
+              //if (flatList.Count < m_viewOffset - 34)
+              //{
+              //  m_viewOffset = flatList.Count - 35;
+              //  if (m_viewOffset < 0)
+              //    m_viewOffset = 0;
+              //  pIndex = flatList.Count - 1;
+              //}
+
+              flatList[pIndex].Selected = true;
+              m_viewOffset = index - 34;
+              if (m_viewOffset < 0)
+                m_viewOffset = 0;
+
+              break;
+            }
+            index++;
+          }
+        }
+
+        Dispatcher.Invoke(() =>
+        {
+          DrawTerminal(true);
+          UpdateTime();
+        });
+
       }
     }
 
