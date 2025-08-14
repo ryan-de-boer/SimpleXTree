@@ -1044,7 +1044,7 @@ namespace SimpleXTreeWpf
           {
             bool startSelected = false;
             bool reverse = false;
-            foreach (Folder f in driveLookup["D:\\"].Children)
+            foreach (Folder f in flatList)
             {
               if (f.Selected)
               {
@@ -1053,7 +1053,7 @@ namespace SimpleXTreeWpf
                 int currentIndex = 0;
                 int newIndex = 0;
                 int index = 0;
-                foreach (Folder ff in driveLookup["D:\\"].Children)
+                foreach (Folder ff in flatList)
                 {
                   if (ff.Name.Equals(f.Name))
                   {
@@ -1062,7 +1062,7 @@ namespace SimpleXTreeWpf
                   index++;
                 }
                 index = 0;
-                foreach (Folder ff in driveLookup["D:\\"].Children)
+                foreach (Folder ff in flatList)
                 {
                   if (ff.Name.Equals(folder.Name))
                   {
@@ -1096,9 +1096,9 @@ namespace SimpleXTreeWpf
             if (reverse)
             {
               startSelected = false;
-              for (int j= driveLookup["D:\\"].Children.Count-1;j>=0;j--)
+              for (int j= flatList.Count-1;j>=0;j--)
               {
-                Folder f = driveLookup["D:\\"].Children[j];
+                Folder f = flatList[j];
 
                 if (f.Selected)
                 {
