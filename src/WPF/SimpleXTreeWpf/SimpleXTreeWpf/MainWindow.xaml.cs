@@ -698,8 +698,14 @@ namespace SimpleXTreeWpf
               //    m_viewOffset = 0;
               //  pIndex = flatList.Count - 1;
               //}
+              if (pIndex<0)
+              {
+                driveLookup["D:\\"].Selected = true;
+                m_viewOffset = 0;
+                break;
+              }
 
-              flatList[pIndex].Selected = true;
+                flatList[pIndex].Selected = true;
               m_viewOffset = index - 34;
               if (m_viewOffset < 0)
                 m_viewOffset = 0;
