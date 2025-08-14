@@ -1142,41 +1142,59 @@ namespace SimpleXTreeWpf
 
         PrintString(screen, xa, yUpTo, str50, Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
         xa += str50.Length;
+
+        bool max = false;
+        int maxLength = "+   │     │     │     │  │  │  │     ├──cordova-plugin-ba".Length;
+        if (str51.Length>maxLength)
+        {
+          str51 = str51.Substring(0, maxLength);
+          max = true;
+        }
+
         if (folder.Selected)
         {
           PrintString(screen, xa, yUpTo, str51, new SolidColorBrush(Color.FromRgb(204, 204, 204)), new SolidColorBrush(Color.FromRgb(118, 118, 118)));
           xa += str51.Length;
 
-          string restOfLine = " ";
-          for (int j = str51.Length; j < 56; ++j)
+          if (!max)
           {
-            restOfLine += " ";
+            string restOfLine = " ";
+            for (int j = str51.Length; j < 56; ++j)
+            {
+              restOfLine += " ";
+            }
+            PrintString(screen, xa, yUpTo, restOfLine, new SolidColorBrush(Color.FromRgb(204, 204, 204)), new SolidColorBrush(Color.FromRgb(118, 118, 118)));
           }
-          PrintString(screen, xa, yUpTo, restOfLine, new SolidColorBrush(Color.FromRgb(204, 204, 204)), new SolidColorBrush(Color.FromRgb(118, 118, 118)));
         }
         else if (folder.MouseOver)
         {
           PrintString(screen, xa, yUpTo, str51, new SolidColorBrush(Color.FromRgb(204, 204, 204)), new SolidColorBrush(Color.FromRgb(255, 255, 8)));
           xa += str51.Length;
 
-          string restOfLine = " ";
-          for (int j = str51.Length; j < 56; ++j)
+          if (!max)
           {
-            restOfLine += " ";
+            string restOfLine = " ";
+            for (int j = str51.Length; j < 56; ++j)
+            {
+              restOfLine += " ";
+            }
+            PrintString(screen, xa, yUpTo, restOfLine, new SolidColorBrush(Color.FromRgb(204, 204, 204)), new SolidColorBrush(Color.FromRgb(118, 118, 118)));
           }
-          PrintString(screen, xa, yUpTo, restOfLine, new SolidColorBrush(Color.FromRgb(204, 204, 204)), new SolidColorBrush(Color.FromRgb(118, 118, 118)));
         }
         else
         {
           PrintString(screen, xa, yUpTo, str51, Brushes.Black, new SolidColorBrush(Color.FromRgb(97, 214, 214)));
           xa += str51.Length;
 
-          string restOfLine = " ";
-          for (int j = str51.Length; j < 56; ++j)
+          if (!max)
           {
-            restOfLine += " ";
+            string restOfLine = " ";
+            for (int j = str51.Length; j < 56; ++j)
+            {
+              restOfLine += " ";
+            }
+            PrintString(screen, xa, yUpTo, restOfLine, Brushes.Black, Brushes.Black);
           }
-          PrintString(screen, xa, yUpTo, restOfLine, Brushes.Black, Brushes.Black);
         }
 
         if (mouseTrace==eMouseTrace.MouseOver && mouseParams.My >= yUpTo * mouseParams.CellH && mouseParams.My <= (yUpTo + 1) * mouseParams.CellH && mouseParams.Mx <= MXL * mouseParams.CellW)
