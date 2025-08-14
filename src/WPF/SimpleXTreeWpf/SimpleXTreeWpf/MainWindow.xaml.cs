@@ -677,6 +677,8 @@ namespace SimpleXTreeWpf
               if (index == flatList.Count-1)
               {
                 int pIndex2 = flatList.Count - 1 - 34;
+                if (pIndex2 < 0)
+                  pIndex2 = 0;
                 flatList[pIndex2].Selected = true;
 //                m_viewOffset = pIndex2 - 34;
                 break;
