@@ -871,6 +871,21 @@ namespace SimpleXTreeWpf
         }
       }
 
+      //update title?
+      List<Folder> fList = driveLookup["D:\\"].GetAllChildren();
+      double percent = 35.0 / (double)fList.Count * 100.0;
+
+      double startPercent = (double)m_viewOffset/ (double)fList.Count * 100.0;
+      int maxEnd = m_viewOffset + 35;
+      if (maxEnd>fList.Count)
+      {
+        maxEnd = fList.Count;
+      }
+      double endPercent = (double)maxEnd / (double)fList.Count * 100.0;
+
+//      this.Title = "Simple XTree WPF "+percent+"%, "+startPercent+"% - "+endPercent+"%";
+      //update title?
+
 
       int xa = 0;
       string pathSpot = "                                                ";
@@ -1377,7 +1392,7 @@ namespace SimpleXTreeWpf
       PrintString(screen, xa, yUpTo, "│", Brushes.Black, new SolidColorBrush(Color.FromRgb(204, 204, 204)));
       yUpTo++;
 
-      DrawBottomPanel(screen);
+//      DrawBottomPanel(screen);
 
       PrintString(screen, xa, yUpTo, "DIR       Avail  Branch  Compare  Delete  Filespec  Global  Invert  Log  Make", Brushes.Black, lightGrey);
       PrintStringSkipSpace(screen, xa, yUpTo, "          A      B       C        D       F         G       I       L    M   ", Brushes.Black, lightBlue);
@@ -1394,6 +1409,7 @@ namespace SimpleXTreeWpf
 
       }
 
+      DrawBottomPanel(screen);
 
       // Create DrawingVisual for off-screen rendering
       DrawingVisual visual = new DrawingVisual();
@@ -1670,8 +1686,49 @@ namespace SimpleXTreeWpf
       //      yUpTo++;
 
       PrintString(screen, xa, yUpTo, "└                                                                              ┘", bg, lightGrey);
-      PrintImage(screen, 1, yUpTo, "                                                                              ", false);
-      PrintImage(screen, 1, yUpTo, "   ", true);
+
+
+      List<Folder> fList = driveLookup["D:\\"].GetAllChildren();
+      double percent = 35.0 / (double)fList.Count * 100.0;
+
+      double startPercent = (double)m_viewOffset / (double)fList.Count * 100.0;
+      int maxEnd = m_viewOffset + 35;
+      if (maxEnd > fList.Count)
+      {
+        maxEnd = fList.Count;
+      }
+      double endPercent = (double)maxEnd / (double)fList.Count * 100.0;
+
+      int scrollAreaLength = "                                                                              ".Length;
+      double a = (double)scrollAreaLength * ((double)startPercent / 100.0);
+//      int first = (int)Math.Round(a, 0);
+      int first = (int)a;
+      string firstBar = "";
+      for (int i=0;i<first;++i)
+      {
+        firstBar += " ";
+      }
+      PrintImage(screen, 1, yUpTo, firstBar, true);
+
+      a = (double)scrollAreaLength * ((double)endPercent / 100.0);
+//      int second = (int)Math.Round(a, 0);
+      int second = (int)a;
+      string secondBar = "";
+      for (int i = firstBar.Length; i < second; ++i)
+      {
+        secondBar += " ";
+      }
+      PrintImage(screen, 1+ firstBar.Length, yUpTo, secondBar, false);
+
+      string endBar = "";
+      for (int i = firstBar.Length+ secondBar.Length; i < scrollAreaLength; ++i)
+      {
+        endBar += " ";
+      }
+      PrintImage(screen, 1 + firstBar.Length + secondBar.Length, yUpTo, endBar, true);
+
+      //      PrintImage(screen, 1, yUpTo, "                                                                              ", false);
+      //      PrintImage(screen, 1, yUpTo, "   ", true);
       yUpTo++;
 
     }
