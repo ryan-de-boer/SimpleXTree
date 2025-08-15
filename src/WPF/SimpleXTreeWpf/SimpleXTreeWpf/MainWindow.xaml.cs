@@ -643,6 +643,8 @@ namespace SimpleXTreeWpf
                   m_viewOffset = 0;
                 pIndex = flatList.Count - 1;
               }
+              if (pIndex>=flatList.Count)
+                pIndex = flatList.Count - 1;
 
               flatList[pIndex].Selected = true;
 
