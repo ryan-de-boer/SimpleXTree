@@ -70,7 +70,7 @@ namespace SimpleXTreeWpf
         m_bmp = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
         TerminalImage.Source = m_bmp;
 
-        DrawTerminal();
+        DrawTerminal(false, eMouseTrace.None, null, true);
         UpdateTime();
       };
 
