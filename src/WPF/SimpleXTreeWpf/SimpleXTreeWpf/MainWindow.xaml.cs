@@ -202,7 +202,8 @@ namespace SimpleXTreeWpf
       Dispatcher.Invoke(() =>
       {
         Stopwatch sw = Stopwatch.StartNew();
-        DrawTerminal(true);
+//        DrawTerminal(true);
+        DrawTerminal(true, eMouseTrace.None, null, true);
         UpdateTime();
         sw.Stop();
 
@@ -481,9 +482,10 @@ namespace SimpleXTreeWpf
       bool ctrl = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
 
       if (!ctrl)
-        DrawTerminal(true, eMouseTrace.MouseDown, mouseParams);
+        DrawTerminal(true, eMouseTrace.MouseDown, mouseParams, true);
 
 
+      DrawTerminal(true, eMouseTrace.None, null, true);
     }
 
     private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -502,7 +504,7 @@ namespace SimpleXTreeWpf
         Dispatcher.Invoke(() =>
         {
           Stopwatch sw = Stopwatch.StartNew();
-          DrawTerminal(true);
+          DrawTerminal(true, eMouseTrace.None, null, true);
           UpdateTime();
           sw.Stop();
 
@@ -517,7 +519,7 @@ namespace SimpleXTreeWpf
 
         Dispatcher.Invoke(() =>
         {
-          DrawTerminal(true);
+          DrawTerminal(true, eMouseTrace.None, null, true);
           UpdateTime();
         });
       }
@@ -551,7 +553,7 @@ namespace SimpleXTreeWpf
 
         Dispatcher.Invoke(() =>
         {
-          DrawTerminal(true);
+          DrawTerminal(true, eMouseTrace.None, null, true);
           UpdateTime();
         });
       }
@@ -570,7 +572,7 @@ namespace SimpleXTreeWpf
 
         Dispatcher.Invoke(() =>
         {
-          DrawTerminal(true);
+          DrawTerminal(true, eMouseTrace.None, null, true);
           UpdateTime();
         });
       }
@@ -589,7 +591,7 @@ namespace SimpleXTreeWpf
 
         Dispatcher.Invoke(() =>
         {
-          DrawTerminal(true);
+          DrawTerminal(true, eMouseTrace.None, null, true);
           UpdateTime();
         });
       }
@@ -605,7 +607,7 @@ namespace SimpleXTreeWpf
 
         Dispatcher.Invoke(() =>
         {
-          DrawTerminal(true);
+          DrawTerminal(true, eMouseTrace.None, null, true);
           UpdateTime();
         });
       }
@@ -655,7 +657,7 @@ namespace SimpleXTreeWpf
 
         Dispatcher.Invoke(() =>
         {
-          DrawTerminal(true);
+          DrawTerminal(true, eMouseTrace.None, null, true);
           UpdateTime();
         });
       }
@@ -722,7 +724,7 @@ namespace SimpleXTreeWpf
 
         Dispatcher.Invoke(() =>
         {
-          DrawTerminal(true);
+          DrawTerminal(true, eMouseTrace.None, null, true);
           UpdateTime();
         });
 
@@ -797,7 +799,7 @@ namespace SimpleXTreeWpf
       }
     }
 
-    private void PrintString(CharInfo[,] screen, int x, int y, string str, Brush bg, Brush fg, string fontName=FONT_NAME)
+    public static void PrintString(CharInfo[,] screen, int x, int y, string str, Brush bg, Brush fg, string fontName=FONT_NAME)
     {
       int max = 80;
       int strL = str.Length;
@@ -862,7 +864,7 @@ namespace SimpleXTreeWpf
     double MXL = 58.0;
 
 //    void DrawTerminal(bool justDirs = false, bool traceMouse = false, bool traceMouseOver = false, double cellW = 0.0, double cellH = 0.0, double mx = 0.0, double my = 0.0)
-    void DrawTerminal(bool justDirs = false, eMouseTrace mouseTrace = eMouseTrace.None, MouseParams mouseParams = null)
+    void DrawTerminal(bool justDirs = false, eMouseTrace mouseTrace = eMouseTrace.None, MouseParams mouseParams = null, bool force=false)
     {
       bool redraw = false;
 
@@ -949,12 +951,36 @@ namespace SimpleXTreeWpf
       }
       else if (driveLookup["D:\\"].MouseOver)
       {
+        bool max = false;
+        int maxLength = "+   │     │     │     │  │  │  │     ├──cordova-plugin-ba".Length;
+        if (str311.Length > maxLength)
+        {
+          str311 = str311.Substring(0, maxLength);
+          max = true;
+        }
+
         PrintString(screen, xa, 2, str310, new SolidColorBrush(Color.FromRgb(204, 204, 204)), Brushes.Black);
         xa += str310.Length;
-        PrintString(screen, xa, 2, str311, new SolidColorBrush(Color.FromRgb(204, 204, 204)), new SolidColorBrush(Color.FromRgb(255, 255, 8)));
-        xa += str311.Length;
+        //        PrintString(screen, xa, 2, str311, new SolidColorBrush(Color.FromRgb(204, 204, 204)), new SolidColorBrush(Color.FromRgb(255, 255, 8)));
+        driveLookup["D:\\"].CacheMouseOver(xa, 2, str311, new SolidColorBrush(Color.FromRgb(204, 204, 204)), new SolidColorBrush(Color.FromRgb(255, 255, 8)), max);
+        xa = driveLookup["D:\\"].DisplayMouseOver(screen);
+
+//        xa += str311.Length;
         PrintString(screen, xa, 2, str312, new SolidColorBrush(Color.FromRgb(204, 204, 204)), Brushes.Black);
         xa += str312.Length;
+
+//        folder.CacheMouseOver(xa, yUpTo, str51, new SolidColorBrush(Color.FromRgb(204, 204, 204)), new SolidColorBrush(Color.FromRgb(255, 255, 8)), max);
+ //       xa += folder.DisplayMouseOver(screen);
+
+        m_lastMouseOverFolder = m_mouseOverFolder;
+        m_mouseOverFolder = driveLookup["D:\\"];
+
+        if (m_lastMouseOverFolder != null)
+        {
+          m_lastMouseOverFolder.m_handled = false;
+        }
+        m_mouseOverFolder.m_handled = false;
+
       }
       else
       {
@@ -1187,18 +1213,30 @@ namespace SimpleXTreeWpf
         }
         else if (folder.MouseOver)
         {
-          PrintString(screen, xa, yUpTo, str51, new SolidColorBrush(Color.FromRgb(204, 204, 204)), new SolidColorBrush(Color.FromRgb(255, 255, 8)));
-          xa += str51.Length;
+                    folder.CacheMouseOver(xa, yUpTo, str51, new SolidColorBrush(Color.FromRgb(204, 204, 204)), new SolidColorBrush(Color.FromRgb(255, 255, 8)), max);
+                    xa += folder.DisplayMouseOver(screen);
 
-          if (!max)
+          m_lastMouseOverFolder = m_mouseOverFolder;
+          m_mouseOverFolder = folder;
+
+          if (m_lastMouseOverFolder!=null)
           {
-            string restOfLine = " ";
-            for (int j = str51.Length; j < 56; ++j)
-            {
-              restOfLine += " ";
-            }
-            PrintString(screen, xa, yUpTo, restOfLine, new SolidColorBrush(Color.FromRgb(204, 204, 204)), new SolidColorBrush(Color.FromRgb(118, 118, 118)));
+            m_lastMouseOverFolder.m_handled = false;
           }
+          m_mouseOverFolder.m_handled = false;
+
+          //PrintString(screen, xa, yUpTo, str51, new SolidColorBrush(Color.FromRgb(204, 204, 204)), new SolidColorBrush(Color.FromRgb(255, 255, 8)));
+          //xa += str51.Length;
+
+          //if (!max)
+          //{
+          //  string restOfLine = " ";
+          //  for (int j = str51.Length; j < 56; ++j)
+          //  {
+          //    restOfLine += " ";
+          //  }
+          //  PrintString(screen, xa, yUpTo, restOfLine, new SolidColorBrush(Color.FromRgb(204, 204, 204)), new SolidColorBrush(Color.FromRgb(118, 118, 118)));
+          //}
         }
         else
         {
@@ -1424,7 +1462,32 @@ namespace SimpleXTreeWpf
         double fontSize = charHeight * 0.9;
 
         // Draw grid
-        for (int y = 0; y < rows; y++)
+        int yy = 0;
+        int rrows = rows;
+        if (m_mouseOverFolder!=null && !force /*&& m_mouseOverFolder.m_handled==false*/ /*&& mouseTrace==eMouseTrace.MouseOver*/)
+        {
+                    yy = m_mouseOverFolder.m_moy;
+                    rrows = yy + 1;
+          //yy = m_mouseOverFolder.m_moy - 1;
+          //if (yy < 0) yy = 0;
+          //rrows = yy+3;
+          m_mouseOverFolder.m_handled = true;
+        }
+        if (m_lastMouseOverFolder != null && !force /*&& m_lastMouseOverFolder.m_handled == false*/ /*&& mouseTrace == eMouseTrace.MouseOver*/)
+        {
+          int yy1 = m_lastMouseOverFolder.m_moy;
+          if (yy1 < yy)
+          {
+            yy = yy1;
+          }
+          int rrows1 = yy1 + 1;
+          if (rrows1 > rrows)
+          {
+            rrows = rrows1;
+          }
+          m_lastMouseOverFolder.m_handled = true;
+        }
+        for (int y = yy; y < rrows; y++)
         {
           for (int x = 0; x < cols; x++)
           {
@@ -1505,6 +1568,9 @@ namespace SimpleXTreeWpf
       //      Height = 838;
 
     }
+
+    private Folder m_mouseOverFolder;
+    private Folder m_lastMouseOverFolder;
 
     private void DrawRightPanel(CharInfo[,] screen)
     {

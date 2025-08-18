@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media;
 
 namespace SimpleXTreeWpf
 {
@@ -113,6 +114,38 @@ namespace SimpleXTreeWpf
 
       return stringBuilder.ToString();
       
+    }
+
+    public bool m_handled = false;
+
+    public int m_mox; public int m_moy; public string m_mostr; public Brush m_mobg; public Brush m_mofg;
+    public bool m_max;
+    public void CacheMouseOver(int x, int y, string str, Brush bg, Brush fg, bool max)
+    {
+      m_mox = x;
+      m_moy = y;
+      m_mostr = str;
+      m_mobg = bg;
+      m_mofg = fg;
+      m_max = max;
+    }
+
+    public int DisplayMouseOver(CharInfo[,] screen)
+    {
+      MainWindow.PrintString(screen, m_mox, m_moy, m_mostr, m_mobg, m_mofg);
+      int xa = m_mox + m_mostr.Length;
+
+      if (!m_max)
+      {
+        string restOfLine = " ";
+        for (int j = m_mostr.Length; j < 56; ++j)
+        {
+          restOfLine += " ";
+        }
+        MainWindow.PrintString(screen, xa, m_moy, restOfLine, m_mobg, m_mofg);
+      }
+
+      return xa;
     }
   }
 }
